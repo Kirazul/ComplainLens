@@ -1,0 +1,47 @@
+# Deploy the API to a Hugging Face Docker Space on every push to main.
+# One-time setup (repository settings -> Secrets and variables -> Actions):
+#   secret   HF_TOKEN  a Hugging Face write token
+#   variable HF_SPACE  e.g. "your-name/complaintlens-api"
+# Without them, the job skips itself.
+name: Deploy API to Hugging Face
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check configuration
+        id: cfg
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE: ${{ vars.HF_SPACE }}
+        run: |
+          if [ -z "$HF_TOKEN" ] || [ -z "$HF_SPACE" ]; then
+            echo "HF_TOKEN or HF_SPACE not set: skipping deploy"; echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Upload to the Space
+        if: steps.cfg.outputs.skip != 'true'
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE: ${{ vars.HF_SPACE }}
+        run: |
+          pip install --quiet "huggingface_hub>=0.30"
+          mkdir -p space && cp infra/api.Dockerfile space/Dockerfile
+          cp -r pyproject.toml uv.lock src company eval ml space/
+          mkdir -p space/reports && cp -r reports/results space/reports/
+          {
+            echo "---"; echo "title: ComplaintLens API"; echo "sdk: docker"; echo "app_port: 7860"
+            echo "---"; echo; cat README.md
+          } > space/README.md
+          python - <<'EOF'
+          import os
+          from huggingface_hub import HfApi
+          api = HfApi(token=os.environ["HF_TOKEN"])
+          api.create_repo(os.environ["HF_SPACE"], repo_type="space", space_sdk="docker", exist_ok=True)
+          api.upload_folder(folder_path="space", repo_id=os.environ["HF_SPACE"], repo_type="space")
+          EOF

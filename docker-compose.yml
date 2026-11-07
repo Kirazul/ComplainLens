@@ -1,0 +1,31 @@
+# Run the whole system locally with one command:  docker compose up --build
+# Website: http://localhost:3000/en   Console: http://localhost:3000/console   API: http://localhost:8000/docs
+services:
+  api:
+    build:
+      context: .
+      dockerfile: infra/api.Dockerfile
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: sqlite:////app/data/app.db
+      PUBLIC_BASE_URL: http://localhost:3000
+    volumes:
+      - api-data:/app/data
+    ports:
+      - "8000:7860"
+
+  web:
+    build:
+      context: .
+      dockerfile: infra/web.Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+    depends_on:
+      - api
+    ports:
+      - "3000:3000"
+
+volumes:
+  api-data:

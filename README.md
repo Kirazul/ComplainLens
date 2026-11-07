@@ -50,6 +50,26 @@ Process one message from the command line and print its trace:
 uv run complaintlens send "J'ai été facturé deux fois pour ma course d'hier soir !" --sender you@example.com
 ```
 
+## Run everything with Docker (one command)
+
+```powershell
+docker compose up --build      # website :3000, console :3000/console, API :8000/docs
+```
+
+The API image downloads the public 2019 complaint data, retrains the classical models and fetches
+the embedding model at build time, so no model weights are stored in git.
+
+## Deploy (free)
+
+- **API → Hugging Face Docker Space.** In the GitHub repository settings, add the secret `HF_TOKEN`
+  (a Hugging Face write token) and the variable `HF_SPACE` (e.g. `your-name/complaintlens-api`).
+  Every push to `main` then deploys `infra/api.Dockerfile` (workflow `deploy-space.yml`).
+  Set the Space secrets `LLM_API_KEY`, `EMAIL_ADDRESS`, `EMAIL_PASSWORD`, `PUBLIC_BASE_URL`, and
+  optionally `DATABASE_URL` (a free Neon Postgres, `postgresql+psycopg://...`) to keep tickets
+  across restarts.
+- **Website → Vercel.** Import the repository, set the root directory to `apps/web` and the
+  environment variable `NEXT_PUBLIC_API_URL` to the Space URL (`https://<user>-<space>.hf.space`).
+
 ## Data
 
 Data files are not stored in git.

@@ -17,6 +17,7 @@ dependencies = [
     "numpy>=2.0",
     "openai>=3.46.0",
     "polars>=1.30",
+    "psycopg[binary]>=3.2",
     "py3langid>=0.4.0",
     "pydantic-settings>=2.16.2",
     "scikit-learn>=1.6",

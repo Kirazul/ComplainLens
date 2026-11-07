@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     smtp_port: int = 465
 
     public_base_url: str = "http://localhost:3000"
+    # Extra browser origins allowed to call the API (comma-separated), e.g. a custom domain.
+    # localhost:3000 and *.vercel.app are always allowed.
+    cors_origins: str = ""
 
     @property
     def llm_enabled(self) -> bool:
