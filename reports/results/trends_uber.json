@@ -1,0 +1,125 @@
+{
+  "protocol": "Evaluate emerging-issue detection on the real @Uber_Support stream (RQ4).\n\nProtocol (fixed before looking at test results):\n- Data: Uber first contacts, 2017-10-01 .. 2017-12-02, daily bins (Dec 3 is a partial day).\n- Validation = October, test = November-December. Each method's threshold is chosen on validation\n  under the same false-alarm budget (<= BUDGET incidents per day on unmodified data), then applied\n  unchanged to the test period.\n- Controlled injection: on a random day, add m copies (m in 10/20/40) of real messages that contain\n  a moderately rare term (2-15 messages/day in October); success = that term alerts on that day.\n  3 seeds x 60 injections per m and split.\n- Real event: hourly replay of 13-14 Nov 2017 (Uber Eats x Krispy Kreme promotion): delay between\n  the first hour with >= 3 messages about it and the first alert.",
+  "methods": {
+    "zscore": {
+      "chosen_param": 3.0,
+      "incidents_per_day_validation": 2.08,
+      "incidents_per_day_test": 4.94,
+      "injection_recall_test": {
+        "10": {
+          "mean": 0.728,
+          "per_seed": [
+            0.7,
+            0.7333333333333333,
+            0.75
+          ]
+        },
+        "20": {
+          "mean": 0.939,
+          "per_seed": [
+            0.95,
+            0.9166666666666666,
+            0.95
+          ]
+        },
+        "40": {
+          "mean": 1.0,
+          "per_seed": [
+            1.0,
+            1.0,
+            1.0
+          ]
+        }
+      }
+    },
+    "count_threshold": {
+      "chosen_param": 120,
+      "incidents_per_day_validation": 1.12,
+      "incidents_per_day_test": 2.19,
+      "injection_recall_test": {
+        "10": {
+          "mean": 0.0,
+          "per_seed": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "20": {
+          "mean": 0.0,
+          "per_seed": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "40": {
+          "mean": 0.0,
+          "per_seed": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        }
+      }
+    }
+  },
+  "real_event_daily_2017_11_14": [
+    {
+      "terms": [
+        "krispy",
+        "kreme"
+      ],
+      "messages": 102,
+      "z_max": 101.0
+    },
+    {
+      "terms": [
+        "krispykreme"
+      ],
+      "messages": 98,
+      "z_max": 98.0
+    },
+    {
+      "terms": [
+        "doughnuts"
+      ],
+      "messages": 102,
+      "z_max": 86.35
+    },
+    {
+      "terms": [
+        "donuts"
+      ],
+      "messages": 84,
+      "z_max": 84.0
+    },
+    {
+      "terms": [
+        "free"
+      ],
+      "messages": 159,
+      "z_max": 47.85
+    }
+  ],
+  "real_event_hourly": {
+    "onset_hour_utc": "2017-11-14T13:00:00+00:00",
+    "first_alert_hour_utc": "2017-11-14T14:00:00+00:00",
+    "delay_hours": 1,
+    "first_alert": {
+      "term": "doughnuts",
+      "count": 71,
+      "z": 34.68
+    },
+    "event_messages_per_hour_around_onset": [
+      2,
+      1,
+      5,
+      195,
+      39,
+      17,
+      10,
+      6
+    ]
+  }
+}

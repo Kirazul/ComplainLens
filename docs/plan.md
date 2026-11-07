@@ -203,6 +203,28 @@ Source: `reports/results/baseline_complaints2019.json` (code: `ml/scripts/baseli
 - **Caveat:** same protocol as the papers but different fold assignment; the papers also tuned hyperparameters in an inner loop and we did not, which, if anything, favours them.
 - **Target for our fine-tuned encoder:** close the gap to the 88.2 / 55.7 transformer results.
 
+### 5.5 First trend-detection results (RQ4, 2026-11-07)
+Source: `reports/results/trends_uber.json` (code: `src/complaintlens/trends.py`, `ml/scripts/eval_trends.py`).
+
+**Protocol:**
+- Real `@Uber_Support` stream, daily bins.
+- Thresholds are chosen on October under the same alarm budget (≤ 3 incidents/day) and applied unchanged to November.
+- Injection: 10/20/40 real messages about a moderately rare topic (2–15 messages/day) are added on a random day; 3 seeds × 60 trials.
+
+| Method | Recall +10 | +20 | +40 | Incidents/day Oct / Nov |
+|---|---|---|---|---|
+| **Bursting terms, rate-based Poisson z-score** | **0.73** | **0.94** | **1.00** | 2.08 / 4.94 |
+| Fixed count threshold (baseline) | 0.00 | 0.00 | 0.00 | 1.12 / 2.19 |
+
+- **Real event (14 Nov 2017, Uber Eats × Krispy Kreme promotion crash):**
+  - Top incident of the day: "krispy, kreme" (102 messages, z = 101).
+  - Hourly replay: onset 13:00 UTC (5 messages), surge at 14:00 (195 messages), **first alert at 14:00, a 1-hour delay**.
+- **Interpretation:** at a comparable alarm budget, a fixed threshold cannot see emerging niche problems; rates (not raw counts) make busy days harmless (unit-tested).
+- **Limitations:**
+  - November exceeds the budget (4.94/day), partly because of genuine incidents (promotion crash, breach disclosure, Black Friday); these cannot be separated from false alarms without labels.
+  - Spelling variants (`#krispykreme` vs "krispy kreme") form separate incidents → **improvement:** merge near-duplicate terms.
+  - The term-level method does not yet use embeddings (BERTopic comes next and will be compared on the same protocol).
+
 ## 6. The pipeline, stage by stage
 Each NLP stage lists the proposed method, the **baseline** it must beat, and the **metric**.
 
