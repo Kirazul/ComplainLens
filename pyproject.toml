@@ -9,10 +9,18 @@ authors = [
     { name = "Rimel Zouari" },
 ]
 dependencies = [
+    "fastapi>=0.162.2",
+    "httpx>=0.28.1",
+    "imap-tools>=1.16.0",
     "numpy>=2.0",
+    "openai>=3.46.0",
     "polars>=1.30",
+    "py3langid>=0.4.0",
+    "pydantic-settings>=2.16.2",
     "scikit-learn>=1.6",
+    "sqlmodel>=0.0.48",
     "tzdata>=2025.2",  # Windows ships no time-zone database; needed for UTC datetimes
+    "uvicorn[standard]>=0.54.0",
 ]
 
 [dependency-groups]
@@ -34,6 +42,7 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+ignore = ["SIM905"]  # word lists written as "a b c".split() are clearer
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

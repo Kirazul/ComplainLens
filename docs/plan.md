@@ -2,7 +2,7 @@
 
 **Team:** Mohamed Aziz Mansour · Rimel Zouari
 **Module:** NLP Semester Project 2026–2027 (Dr. Nizar Omheni)
-**Status:** research phase done (2026-11-07). The proposal is in [`proposal.md`](proposal.md). Development starts in earnest after the professor approves the topic (spec §12).
+**Status:** the professor approved the topic (confirmed by the team on 2026-11-07). Research and baselines are done; the build has started, beginning with the live email chain. The proposal is in [`proposal.md`](proposal.md).
 
 ---
 
