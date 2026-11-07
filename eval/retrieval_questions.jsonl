@@ -1,0 +1,70 @@
+{"id": "q01", "lang": "en", "gold": "HC-FARES#1", "q": "how do you guys come up with the price of a trip"}
+{"id": "q02", "lang": "en", "gold": "HC-FARES#2", "q": "why was my ride so expensive on friday night, prices were multiplied"}
+{"id": "q03", "lang": "en", "gold": "HC-FARES#3", "q": "the app showed one price but I paid more at the end"}
+{"id": "q04", "lang": "en", "gold": "HC-FARES#4", "q": "my bank statement shows two payments for one trip"}
+{"id": "q05", "lang": "en", "gold": "HC-FARES#5", "q": "where can I download an invoice for my expense report"}
+{"id": "q06", "lang": "en", "gold": "HC-CANCEL#1", "q": "will I pay something if I change my mind after booking"}
+{"id": "q07", "lang": "en", "gold": "HC-CANCEL#2", "q": "the driver took forever to arrive so I cancelled and still got charged"}
+{"id": "q08", "lang": "en", "gold": "HC-CANCEL#3", "q": "I came down 4 minutes late and was charged a fee for not showing up"}
+{"id": "q09", "lang": "en", "gold": "HC-CANCEL#4", "q": "three different drivers accepted and then dropped my request"}
+{"id": "q10", "lang": "en", "gold": "HC-REFUNDS#1", "q": "how long until I see my money back on my card"}
+{"id": "q11", "lang": "en", "gold": "HC-REFUNDS#2", "q": "does the balance in my account expire, can I withdraw it"}
+{"id": "q12", "lang": "en", "gold": "HC-REFUNDS#3", "q": "my discount code was accepted but not applied to the ride"}
+{"id": "q13", "lang": "en", "gold": "HC-REFUNDS#4", "q": "the agent said I'd get my money back, is that confirmed"}
+{"id": "q14", "lang": "en", "gold": "HC-LOST#1", "q": "I think I dropped my wallet in the back seat last week"}
+{"id": "q15", "lang": "en", "gold": "HC-LOST#2", "q": "how can I get my headphones returned and do I have to pay the driver"}
+{"id": "q16", "lang": "en", "gold": "HC-LOST#3", "q": "the driver who has my phone is ignoring me"}
+{"id": "q17", "lang": "en", "gold": "HC-SAFETY#1", "q": "someone got hurt during the trip, what should I do right now"}
+{"id": "q18", "lang": "en", "gold": "HC-SAFETY#2", "q": "the man driving was swerving and seemed drunk, I want to report it"}
+{"id": "q19", "lang": "en", "gold": "HC-SAFETY#3", "q": "after I report something dangerous, when will someone call me back"}
+{"id": "q20", "lang": "en", "gold": "HC-SAFETY#4", "q": "what happens to drivers who are racist or violent"}
+{"id": "q21", "lang": "en", "gold": "HC-DRIVER#1", "q": "my driver was really rude and the car smelled awful"}
+{"id": "q22", "lang": "en", "gold": "HC-DRIVER#2", "q": "he drove around in circles to make the fare bigger"}
+{"id": "q23", "lang": "en", "gold": "HC-DRIVER#3", "q": "can the driver see the stars I gave him"}
+{"id": "q24", "lang": "en", "gold": "HC-DELIVERY#1", "q": "half my meal was not in the bag"}
+{"id": "q25", "lang": "en", "gold": "HC-DELIVERY#2", "q": "dinner showed up 40 minutes after the time they promised"}
+{"id": "q26", "lang": "en", "gold": "HC-DELIVERY#3", "q": "app says my food was dropped off but nothing is at my door"}
+{"id": "q27", "lang": "en", "gold": "HC-DELIVERY#4", "q": "the burger was raw inside"}
+{"id": "q28", "lang": "en", "gold": "HC-APP#1", "q": "the application keeps freezing when I try to book"}
+{"id": "q29", "lang": "en", "gold": "HC-APP#2", "q": "I changed phone number and can't get into my profile anymore"}
+{"id": "q30", "lang": "en", "gold": "HC-APP#3", "q": "there are trips in my history in another city that I never took"}
+{"id": "q31", "lang": "en", "gold": "HC-APP#4", "q": "my account got banned and I don't know why"}
+{"id": "q32", "lang": "en", "gold": "HC-ACCESS#1", "q": "the driver refused to take me because of my guide dog"}
+{"id": "q33", "lang": "en", "gold": "HC-ACCESS#2", "q": "I use a wheelchair, can I get a car with a ramp"}
+{"id": "q34", "lang": "en", "gold": "HC-ACCESS#3", "q": "how quickly do you answer when I write to you"}
+{"id": "q35", "lang": "en", "gold": "HC-FARES#4", "q": "you took the money out twice, fix it"}
+{"id": "q36", "lang": "fr", "gold": "HC-FARES#1", "q": "comment est calculé le prix d'un trajet"}
+{"id": "q37", "lang": "fr", "gold": "HC-FARES#2", "q": "pourquoi c'était si cher samedi soir, le prix était multiplié"}
+{"id": "q38", "lang": "fr", "gold": "HC-FARES#3", "q": "l'appli affichait un montant mais j'ai payé plus à l'arrivée"}
+{"id": "q39", "lang": "fr", "gold": "HC-FARES#4", "q": "ma banque montre deux paiements pour une seule course"}
+{"id": "q40", "lang": "fr", "gold": "HC-FARES#5", "q": "où trouver une facture pour mes notes de frais"}
+{"id": "q41", "lang": "fr", "gold": "HC-CANCEL#1", "q": "est-ce que je paie si je change d'avis après avoir réservé"}
+{"id": "q42", "lang": "fr", "gold": "HC-CANCEL#2", "q": "le chauffeur mettait trop de temps à venir, j'ai annulé et on m'a quand même facturé"}
+{"id": "q43", "lang": "fr", "gold": "HC-CANCEL#3", "q": "je suis descendu avec quelques minutes de retard et on m'a compté des frais"}
+{"id": "q44", "lang": "fr", "gold": "HC-CANCEL#4", "q": "trois chauffeurs ont accepté puis abandonné ma demande"}
+{"id": "q45", "lang": "fr", "gold": "HC-REFUNDS#1", "q": "dans combien de temps je récupère mon argent sur ma carte"}
+{"id": "q46", "lang": "fr", "gold": "HC-REFUNDS#2", "q": "est-ce que le solde de mon compte expire, puis-je le retirer"}
+{"id": "q47", "lang": "fr", "gold": "HC-REFUNDS#3", "q": "mon code de réduction a été accepté mais pas appliqué"}
+{"id": "q48", "lang": "fr", "gold": "HC-REFUNDS#4", "q": "l'agent m'a dit que je serais remboursé, c'est confirmé ?"}
+{"id": "q49", "lang": "fr", "gold": "HC-LOST#1", "q": "je crois que j'ai laissé mon portefeuille sur la banquette arrière"}
+{"id": "q50", "lang": "fr", "gold": "HC-LOST#2", "q": "comment récupérer mes écouteurs, dois-je payer le chauffeur"}
+{"id": "q51", "lang": "fr", "gold": "HC-LOST#3", "q": "le chauffeur qui a mon téléphone ne répond pas"}
+{"id": "q52", "lang": "fr", "gold": "HC-SAFETY#1", "q": "quelqu'un a été blessé pendant le trajet, que dois-je faire tout de suite"}
+{"id": "q53", "lang": "fr", "gold": "HC-SAFETY#2", "q": "le conducteur zigzaguait et semblait ivre, je veux le signaler"}
+{"id": "q54", "lang": "fr", "gold": "HC-SAFETY#3", "q": "après mon signalement, quand quelqu'un va-t-il me rappeler"}
+{"id": "q55", "lang": "fr", "gold": "HC-SAFETY#4", "q": "que se passe-t-il pour les chauffeurs racistes ou violents"}
+{"id": "q56", "lang": "fr", "gold": "HC-DRIVER#1", "q": "mon chauffeur était très impoli et la voiture sentait mauvais"}
+{"id": "q57", "lang": "fr", "gold": "HC-DRIVER#2", "q": "il a tourné en rond pour gonfler le prix"}
+{"id": "q58", "lang": "fr", "gold": "HC-DRIVER#3", "q": "le chauffeur peut-il voir les étoiles que je lui ai données"}
+{"id": "q59", "lang": "fr", "gold": "HC-DELIVERY#1", "q": "la moitié de mon repas n'était pas dans le sac"}
+{"id": "q60", "lang": "fr", "gold": "HC-DELIVERY#2", "q": "le souper est arrivé 40 minutes après l'heure promise"}
+{"id": "q61", "lang": "fr", "gold": "HC-DELIVERY#3", "q": "l'appli dit que ma commande a été déposée mais il n'y a rien devant ma porte"}
+{"id": "q62", "lang": "fr", "gold": "HC-DELIVERY#4", "q": "le burger était cru à l'intérieur"}
+{"id": "q63", "lang": "fr", "gold": "HC-APP#1", "q": "l'application se fige quand j'essaie de réserver"}
+{"id": "q64", "lang": "fr", "gold": "HC-APP#2", "q": "j'ai changé de numéro et je n'arrive plus à entrer dans mon profil"}
+{"id": "q65", "lang": "fr", "gold": "HC-APP#3", "q": "il y a des courses dans mon historique dans une autre ville que je n'ai jamais faites"}
+{"id": "q66", "lang": "fr", "gold": "HC-APP#4", "q": "mon compte a été banni et je ne sais pas pourquoi"}
+{"id": "q67", "lang": "fr", "gold": "HC-ACCESS#1", "q": "le chauffeur a refusé de me prendre à cause de mon chien-guide"}
+{"id": "q68", "lang": "fr", "gold": "HC-ACCESS#2", "q": "je suis en fauteuil roulant, puis-je avoir une voiture avec rampe"}
+{"id": "q69", "lang": "fr", "gold": "HC-ACCESS#3", "q": "en combien de temps répondez-vous quand je vous écris"}
+{"id": "q70", "lang": "fr", "gold": "HC-FARES#4", "q": "vous avez prélevé l'argent deux fois, corrigez ça"}

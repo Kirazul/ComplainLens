@@ -1,0 +1,230 @@
+{
+  "questions": 70,
+  "retrievers": {
+    "bm25": {
+      "recall@1": 0.4,
+      "recall@3": 0.529,
+      "mrr@10": 0.492,
+      "mrr@10_ci95": [
+        0.391,
+        0.591
+      ],
+      "median_ms": 0.03,
+      "mrr@10_en": 0.469,
+      "mrr@10_fr": 0.515
+    }
+  },
+  "paired_vs_bm25_mrr": {},
+  "bm25_failures": [
+    {
+      "id": "q01",
+      "q": "how do you guys come up with the price of a trip",
+      "gold": "HC-FARES#1"
+    },
+    {
+      "id": "q05",
+      "q": "where can I download an invoice for my expense report",
+      "gold": "HC-FARES#5"
+    },
+    {
+      "id": "q06",
+      "q": "will I pay something if I change my mind after booking",
+      "gold": "HC-CANCEL#1"
+    },
+    {
+      "id": "q07",
+      "q": "the driver took forever to arrive so I cancelled and still got charged",
+      "gold": "HC-CANCEL#2"
+    },
+    {
+      "id": "q09",
+      "q": "three different drivers accepted and then dropped my request",
+      "gold": "HC-CANCEL#4"
+    },
+    {
+      "id": "q14",
+      "q": "I think I dropped my wallet in the back seat last week",
+      "gold": "HC-LOST#1"
+    },
+    {
+      "id": "q15",
+      "q": "how can I get my headphones returned and do I have to pay the driver",
+      "gold": "HC-LOST#2"
+    },
+    {
+      "id": "q16",
+      "q": "the driver who has my phone is ignoring me",
+      "gold": "HC-LOST#3"
+    },
+    {
+      "id": "q19",
+      "q": "after I report something dangerous, when will someone call me back",
+      "gold": "HC-SAFETY#3"
+    },
+    {
+      "id": "q20",
+      "q": "what happens to drivers who are racist or violent",
+      "gold": "HC-SAFETY#4"
+    },
+    {
+      "id": "q21",
+      "q": "my driver was really rude and the car smelled awful",
+      "gold": "HC-DRIVER#1"
+    },
+    {
+      "id": "q22",
+      "q": "he drove around in circles to make the fare bigger",
+      "gold": "HC-DRIVER#2"
+    },
+    {
+      "id": "q23",
+      "q": "can the driver see the stars I gave him",
+      "gold": "HC-DRIVER#3"
+    },
+    {
+      "id": "q24",
+      "q": "half my meal was not in the bag",
+      "gold": "HC-DELIVERY#1"
+    },
+    {
+      "id": "q25",
+      "q": "dinner showed up 40 minutes after the time they promised",
+      "gold": "HC-DELIVERY#2"
+    },
+    {
+      "id": "q26",
+      "q": "app says my food was dropped off but nothing is at my door",
+      "gold": "HC-DELIVERY#3"
+    },
+    {
+      "id": "q27",
+      "q": "the burger was raw inside",
+      "gold": "HC-DELIVERY#4"
+    },
+    {
+      "id": "q28",
+      "q": "the application keeps freezing when I try to book",
+      "gold": "HC-APP#1"
+    },
+    {
+      "id": "q30",
+      "q": "there are trips in my history in another city that I never took",
+      "gold": "HC-APP#3"
+    },
+    {
+      "id": "q31",
+      "q": "my account got banned and I don't know why",
+      "gold": "HC-APP#4"
+    },
+    {
+      "id": "q32",
+      "q": "the driver refused to take me because of my guide dog",
+      "gold": "HC-ACCESS#1"
+    },
+    {
+      "id": "q34",
+      "q": "how quickly do you answer when I write to you",
+      "gold": "HC-ACCESS#3"
+    },
+    {
+      "id": "q37",
+      "q": "pourquoi c'était si cher samedi soir, le prix était multiplié",
+      "gold": "HC-FARES#2"
+    },
+    {
+      "id": "q38",
+      "q": "l'appli affichait un montant mais j'ai payé plus à l'arrivée",
+      "gold": "HC-FARES#3"
+    },
+    {
+      "id": "q40",
+      "q": "où trouver une facture pour mes notes de frais",
+      "gold": "HC-FARES#5"
+    },
+    {
+      "id": "q41",
+      "q": "est-ce que je paie si je change d'avis après avoir réservé",
+      "gold": "HC-CANCEL#1"
+    },
+    {
+      "id": "q43",
+      "q": "je suis descendu avec quelques minutes de retard et on m'a compté des frais",
+      "gold": "HC-CANCEL#3"
+    },
+    {
+      "id": "q44",
+      "q": "trois chauffeurs ont accepté puis abandonné ma demande",
+      "gold": "HC-CANCEL#4"
+    },
+    {
+      "id": "q45",
+      "q": "dans combien de temps je récupère mon argent sur ma carte",
+      "gold": "HC-REFUNDS#1"
+    },
+    {
+      "id": "q46",
+      "q": "est-ce que le solde de mon compte expire, puis-je le retirer",
+      "gold": "HC-REFUNDS#2"
+    },
+    {
+      "id": "q49",
+      "q": "je crois que j'ai laissé mon portefeuille sur la banquette arrière",
+      "gold": "HC-LOST#1"
+    },
+    {
+      "id": "q53",
+      "q": "le conducteur zigzaguait et semblait ivre, je veux le signaler",
+      "gold": "HC-SAFETY#2"
+    },
+    {
+      "id": "q54",
+      "q": "après mon signalement, quand quelqu'un va-t-il me rappeler",
+      "gold": "HC-SAFETY#3"
+    },
+    {
+      "id": "q55",
+      "q": "que se passe-t-il pour les chauffeurs racistes ou violents",
+      "gold": "HC-SAFETY#4"
+    },
+    {
+      "id": "q56",
+      "q": "mon chauffeur était très impoli et la voiture sentait mauvais",
+      "gold": "HC-DRIVER#1"
+    },
+    {
+      "id": "q57",
+      "q": "il a tourné en rond pour gonfler le prix",
+      "gold": "HC-DRIVER#2"
+    },
+    {
+      "id": "q58",
+      "q": "le chauffeur peut-il voir les étoiles que je lui ai données",
+      "gold": "HC-DRIVER#3"
+    },
+    {
+      "id": "q59",
+      "q": "la moitié de mon repas n'était pas dans le sac",
+      "gold": "HC-DELIVERY#1"
+    },
+    {
+      "id": "q62",
+      "q": "le burger était cru à l'intérieur",
+      "gold": "HC-DELIVERY#4"
+    },
+    {
+      "id": "q63",
+      "q": "l'application se fige quand j'essaie de réserver",
+      "gold": "HC-APP#1"
+    },
+    {
+      "id": "q67",
+      "q": "le chauffeur a refusé de me prendre à cause de mon chien-guide",
+      "gold": "HC-ACCESS#1"
+    },
+    {
+      "id": "q69",
+      "q": "en combien de temps répondez-vous quand je vous écris",
+      "gold": "HC-ACCESS#3"
+    }
+  ]
+}

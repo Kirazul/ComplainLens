@@ -26,6 +26,7 @@ from complaintlens.llm import ChatClient, complete_json
 from complaintlens.pipeline.base import Context
 from complaintlens.pipeline.understand import Analysis
 from complaintlens.rag.knowledge import Hit, KnowledgeBase
+from complaintlens.rag.retrieval import BM25Retriever, Retriever
 from complaintlens.schemas import Action, Category, MessageType, RiskFlag, StageResult, Urgency
 from complaintlens.settings import get_settings
 
@@ -261,8 +262,11 @@ def respond_stage(ctx: Context) -> StageResult:
         reasons.append(f"high risk ({', '.join(flags) or 'severity 4'}): human handles it")
     else:
         kb: KnowledgeBase = ctx["kb"]
-        query = f"{analysis.summary} {analysis.customer_goal} {ctx['text_masked']}"
-        hits = kb.search(query, lang if lang in ("en", "fr") else "en", k=4)
+        retriever: Retriever = ctx.get("retriever") or BM25Retriever(kb)
+        # The customer's own words, in their language: the English LLM summary is NOT mixed in,
+        # since English words would dilute a French keyword index (the retrieval test set,
+        # eval/retrieval_questions.jsonl, measures retrieval on customer wording).
+        hits = retriever.search(ctx["text_masked"], lang if lang in ("en", "fr") else "en", k=4)
         client: ChatClient | None = ctx.get("llm")
         if client is None:
             action, kind = Action.AWAITING_APPROVAL, "acknowledgement"

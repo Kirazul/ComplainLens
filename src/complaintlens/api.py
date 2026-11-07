@@ -23,6 +23,7 @@ from complaintlens.channels.email import EmailSender, fetch_new_messages
 from complaintlens.events import EventBus
 from complaintlens.llm import default_client
 from complaintlens.rag.knowledge import KnowledgeBase
+from complaintlens.rag.retrieval import build_retriever
 from complaintlens.schemas import Channel, InboundMessage
 from complaintlens.service import Processor
 from complaintlens.settings import get_settings
@@ -73,11 +74,14 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     state.bus = EventBus()
     state.bus.bind(asyncio.get_running_loop())
     senders = {Channel.EMAIL.value: EmailSender(settings)} if settings.email_enabled else {}
+    kb = KnowledgeBase.load(settings.help_center_dir)
+    retriever = await asyncio.to_thread(build_retriever, kb)
     state.processor = Processor(
-        KnowledgeBase.load(settings.help_center_dir),
+        kb,
         default_client(),
         senders=senders,
         publish=state.bus.publish,
+        retriever=retriever,
     )
     await asyncio.to_thread(warm_up)  # load models now, not during the first customer's message
     if settings.email_enabled:
@@ -139,6 +143,7 @@ def health() -> dict[str, Any]:
         "ok": True,
         "company": s.company_name,
         "llm": {"enabled": s.llm_enabled, "model": s.llm_model if s.llm_enabled else None},
+        "retriever": state.processor.retriever.name,
         "email": state.email_status,
     }
 

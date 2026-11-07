@@ -10,6 +10,7 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{(tmp_path / 'api.db').as_posix()}")
     monkeypatch.setenv("LLM_API_KEY", "")  # offline: classical fallback, no network
     monkeypatch.setenv("EMAIL_ADDRESS", "")
+    monkeypatch.setenv("RETRIEVAL", "bm25")  # tests stay offline: no embedding model download
     get_settings.cache_clear()
     store.get_engine.cache_clear()
     from complaintlens.api import app

@@ -25,6 +25,11 @@ class Settings(BaseSettings):
     llm_model: str = "llama-3.3-70b-versatile"
     llm_cache_dir: Path = ROOT / "data" / "cache" / "llm"
 
+    # Retrieval: "hybrid" (BM25 + dense, RRF) or "bm25". Model choice: see
+    # reports/results/retrieval_helpcenter.json.
+    retrieval: str = "hybrid"
+    embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+
     database_url: str = f"sqlite:///{(ROOT / 'data' / 'app.db').as_posix()}"
     models_dir: Path = ROOT / "models"
     help_center_dir: Path = ROOT / "company" / "help_center"

@@ -25,6 +25,7 @@ from complaintlens.pipeline.pii import pii_stage
 from complaintlens.pipeline.respond import render, respond_stage
 from complaintlens.pipeline.understand import understand_stage
 from complaintlens.rag.knowledge import KnowledgeBase
+from complaintlens.rag.retrieval import BM25Retriever, Retriever
 from complaintlens.schemas import Action, InboundMessage, StageResult, utcnow
 from complaintlens.store import Customer, Reply, StageRecord, Ticket, new_session
 
@@ -45,8 +46,10 @@ class Processor:
         senders: dict[str, ReplySender] | None = None,
         publish: Publish | None = None,
         database_url: str | None = None,
+        retriever: Retriever | None = None,
     ) -> None:
         self.kb, self.llm = kb, llm
+        self.retriever = retriever or BM25Retriever(kb)
         self.senders = senders or {}
         self.publish = publish or (lambda event: None)
         self.database_url = database_url
@@ -109,6 +112,7 @@ class Processor:
                 "message": inbound,
                 "session": session,
                 "kb": self.kb,
+                "retriever": self.retriever,
                 "llm": self.llm,
                 "ticket_number": ticket.number,
             }
