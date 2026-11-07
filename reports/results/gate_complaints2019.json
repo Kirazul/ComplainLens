@@ -1,0 +1,57 @@
+{
+  "protocol": "Evaluate the guaranteed automation gate on real labelled data (RQ2).\n\nTask: complaint vs. not (Complaints-on-Twitter 2019, 3,449 expert labels).\nFor each of 10 seeds: split 60/20/20 into train / calibration / test, with duplicate tweets kept in\none part. Train the TF-IDF word+char logistic regression on train, calibrate the gate on\ncalibration (alpha in 2/5/10 %, delta = 10 %), and measure on the untouched test part:\nautomation rate (coverage), error rate among automated messages (selective risk), and how often\nthat error exceeds alpha (guarantee violations; should be <= delta in the long run).\nBaselines: fixed confidence thresholds 0.8 and 0.9 (no guarantee).",
+  "test_accuracy_all_messages": 0.817,
+  "methods": {
+    "gate_alpha_0.02": {
+      "automation_rate_mean": 0.0,
+      "automation_rate_range": [
+        0.0,
+        0.0
+      ],
+      "error_among_automated_mean": 0.0,
+      "error_among_automated_max": 0.0,
+      "violations_of_alpha": 0,
+      "refusals": 10
+    },
+    "gate_alpha_0.05": {
+      "automation_rate_mean": 0.0,
+      "automation_rate_range": [
+        0.0,
+        0.0
+      ],
+      "error_among_automated_mean": 0.0,
+      "error_among_automated_max": 0.0,
+      "violations_of_alpha": 0,
+      "refusals": 10
+    },
+    "gate_alpha_0.1": {
+      "automation_rate_mean": 0.368,
+      "automation_rate_range": [
+        0.0,
+        0.519
+      ],
+      "error_among_automated_mean": 0.0392,
+      "error_among_automated_max": 0.0627,
+      "violations_of_alpha": 0,
+      "refusals": 1
+    },
+    "fixed_0.8": {
+      "automation_rate_mean": 0.31,
+      "automation_rate_range": [
+        0.282,
+        0.344
+      ],
+      "error_among_automated_mean": 0.0315,
+      "error_among_automated_max": 0.045
+    },
+    "fixed_0.9": {
+      "automation_rate_mean": 0.087,
+      "automation_rate_range": [
+        0.059,
+        0.13
+      ],
+      "error_among_automated_mean": 0.0196,
+      "error_among_automated_max": 0.0526
+    }
+  }
+}

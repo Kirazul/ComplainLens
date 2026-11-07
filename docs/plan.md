@@ -240,6 +240,32 @@ Set: `eval/retrieval_questions.jsonl`, 70 customer-style questions (35 EN + 35 F
 - **Finding that contradicts our prior assumption:** equal-weight RRF *hurts* when one retriever is much weaker. On customer wording, BM25 adds noise to the dense ranking. **Decision:** dense by default; hybrid kept as an option for exact-match queries (amounts, codes).
 - **Protocol caveat:** this set has now been used to *select* the retriever, so it is a **development set**. Final retrieval numbers must come from a **second held-out set written by the team** (planned, together with the reranker and the larger embedding models: Qwen3-Embedding-0.6B, EmbeddingGemma-300M, multilingual-e5-large, bge-reranker-v2-m3).
 
+### 5.7 First automation-gate results (RQ2, 2026-11-07)
+Source: `reports/results/gate_complaints2019.json` (code: `src/complaintlens/gate.py`, `ml/scripts/eval_gate.py`).
+
+**Method:** selective risk control, Learn-then-Test (Angelopoulos et al., 2021).
+- A fixed grid of 50 confidence thresholds is defined in advance.
+- Each threshold gets an exact binomial test of "error among automated > α", with Bonferroni correction.
+- The loosest passing threshold is kept. Guarantee: error among automated ≤ α with probability ≥ 1 − δ (δ = 10%).
+- Why not fixed-sequence testing: it stops at the first strict threshold, where too few messages are accepted to reject anything (documented in the code).
+
+**Protocol:** complaint vs. not, TF-IDF word+char LR; 10 seeds of 60/20/20 train/calibration/test (duplicates grouped); ≈690 calibration messages.
+
+| Method | Automated (mean, range) | Error among automated (mean / max) | Violations of α |
+|---|---|---|---|
+| Gate α = 2% | 0% (refused 10/10) | – | 0 |
+| Gate α = 5% | 0% (refused 10/10) | – | 0 |
+| **Gate α = 10%** | **36.8% (0–52%)** | **3.9% / 6.3%** | **0** (1 refusal) |
+| Fixed confidence ≥ 0.8 (no guarantee) | 31.0% | 3.2% / 4.5% | – |
+| Fixed confidence ≥ 0.9 (no guarantee) | 8.7% | 2.0% / 5.3% | – |
+
+- **Interpretation:** a guarantee costs evidence. With ≈690 calibration examples and this model, ≤ 5% cannot be *proven*, so the gate refuses (the safe behaviour). At 10% it automates more than the 0.8 rule *and* carries a guarantee. The 0.9 rule exceeded 5% on one seed, which is exactly the risk a guarantee removes.
+- **Levers** (to be measured, not tuned on this test):
+  - more calibration data (gold sets + silver labels);
+  - a more accurate model (fine-tuned encoder);
+  - a smaller pre-registered grid (smaller Bonferroni penalty).
+- **Report deliverable:** a curve of "automation rate vs. calibration size" at α = 5%.
+
 ## 6. The pipeline, stage by stage
 Each NLP stage lists the proposed method, the **baseline** it must beat, and the **metric**.
 
