@@ -4,7 +4,8 @@ Never touches the test period (the gold set comes from it). Resumable: rerun the
 a quota stop and it continues. The model ID is recorded on every row (spec §4H).
 
 Usage:
-    uv run python ml/scripts/silver_label.py --split train --n 5000 --out data/silver/uber_train.jsonl
+    uv run python ml/scripts/silver_label.py --split train --n 5000 \
+        --out data/silver/uber_train.jsonl
 """
 
 from __future__ import annotations
@@ -47,9 +48,8 @@ def main() -> None:
             seen.add(key)
             messages.append({"id": str(r["conversation_id"]), "text": r["text"]})
     sample = random.Random(2026).sample(messages, min(args.n, len(messages)))
-    print(
-        f"{args.split}: {len(messages)} unique messages, labelling {len(sample)} with {client.model}"
-    )
+    print(f"{args.split}: {len(messages)} unique messages")
+    print(f"labelling {len(sample)} with {client.model}")
     print(run(client, sample, args.out, batch_size=args.batch_size))
 
 
