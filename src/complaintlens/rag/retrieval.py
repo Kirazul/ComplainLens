@@ -103,11 +103,12 @@ def build_retriever(kb: KnowledgeBase) -> Retriever:
 
     s = get_settings()
     bm25 = BM25Retriever(kb)
-    if s.retrieval != "hybrid":
+    if s.retrieval not in ("dense", "hybrid"):
         return bm25
     try:
         embedder = FastEmbedder(s.embedding_model, cache_dir=str(s.models_dir / "fastembed"))
-        return HybridRetriever(bm25, DenseRetriever(kb, embedder))
+        dense = DenseRetriever(kb, embedder)
+        return dense if s.retrieval == "dense" else HybridRetriever(bm25, dense)
     except Exception:
         logging.getLogger(__name__).exception("dense retriever unavailable, using BM25")
         return bm25

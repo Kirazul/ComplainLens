@@ -225,6 +225,21 @@ Source: `reports/results/trends_uber.json` (code: `src/complaintlens/trends.py`,
   - Spelling variants (`#krispykreme` vs "krispy kreme") form separate incidents → **improvement:** merge near-duplicate terms.
   - The term-level method does not yet use embeddings (BERTopic comes next and will be compared on the same protocol).
 
+### 5.6 First retrieval results (RQ3 retrieval part, 2026-11-07)
+Source: `reports/results/retrieval_helpcenter.json`.
+
+Set: `eval/retrieval_questions.jsonl`, 70 customer-style questions (35 EN + 35 FR, one per Help Center section), written before any comparison.
+
+| Retriever | Recall@1 | Recall@3 | MRR@10 [95% CI] | Median latency |
+|---|---|---|---|---|
+| BM25 (from scratch) | 0.40 | 0.53 | 0.49 [0.39, 0.59] | 0.05 ms |
+| **Dense: paraphrase-multilingual-MiniLM-L12-v2 (ONNX)** | **0.50** | **0.70** | **0.62 [0.52, 0.72]** | 65 ms |
+| Hybrid BM25 + dense (RRF, k = 60) | 0.40 | 0.63 | 0.54 [0.44, 0.63] | 72 ms |
+
+- **Dense vs. BM25:** +0.128 MRR, paired bootstrap p = 0.018. **Hybrid vs. BM25:** +0.044, p = 0.06 (not significant).
+- **Finding that contradicts our prior assumption:** equal-weight RRF *hurts* when one retriever is much weaker. On customer wording, BM25 adds noise to the dense ranking. **Decision:** dense by default; hybrid kept as an option for exact-match queries (amounts, codes).
+- **Protocol caveat:** this set has now been used to *select* the retriever, so it is a **development set**. Final retrieval numbers must come from a **second held-out set written by the team** (planned, together with the reranker and the larger embedding models: Qwen3-Embedding-0.6B, EmbeddingGemma-300M, multilingual-e5-large, bge-reranker-v2-m3).
+
 ## 6. The pipeline, stage by stage
 Each NLP stage lists the proposed method, the **baseline** it must beat, and the **metric**.
 

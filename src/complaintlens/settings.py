@@ -25,9 +25,10 @@ class Settings(BaseSettings):
     llm_model: str = "llama-3.3-70b-versatile"
     llm_cache_dir: Path = ROOT / "data" / "cache" / "llm"
 
-    # Retrieval: "hybrid" (BM25 + dense, RRF) or "bm25". Model choice: see
-    # reports/results/retrieval_helpcenter.json.
-    retrieval: str = "hybrid"
+    # Retrieval: "dense", "hybrid" (BM25 + dense, RRF) or "bm25". Chosen on the development
+    # question set (reports/results/retrieval_helpcenter.json): dense MRR 0.62 vs BM25 0.49
+    # (p = 0.018); RRF hybrid 0.54 (not significant): BM25 is too weak on customer wording.
+    retrieval: str = "dense"
     embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 
     database_url: str = f"sqlite:///{(ROOT / 'data' / 'app.db').as_posix()}"
