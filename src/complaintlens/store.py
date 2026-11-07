@@ -6,6 +6,7 @@ ComplaintLens side: Ticket, StageRecord (one per pipeline stage: the X-ray trace
 
 from __future__ import annotations
 
+import secrets
 from datetime import datetime
 from functools import cache
 from typing import Any
@@ -69,6 +70,8 @@ class Ticket(SQLModel, table=True):
     customer_id: int | None = Field(default=None, foreign_key="customer.id")
     trip_id: str | None = None
     total_ms: float | None = None
+    # Secret for the customer's tracking link: only someone with the link can see the ticket.
+    track_key: str = Field(default_factory=lambda: secrets.token_urlsafe(9))
 
     @property
     def number(self) -> str:

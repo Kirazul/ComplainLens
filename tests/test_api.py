@@ -48,6 +48,26 @@ def test_form_message_is_processed_and_traced(client):
     assert client.get("/api/stats").json()["tickets"] == 1
 
 
+def test_customer_can_track_only_with_the_secret_key(client):
+    r = client.post("/api/messages", json={"email": "a@b.co", "body": "Where is my lost phone?"})
+    ticket = r.json()
+    assert ticket["number"].startswith("LG-")
+    view = client.get(f"/api/public/tickets/{ticket['id']}", params={"k": ticket["track_key"]})
+    assert view.status_code == 200
+    body = view.json()
+    assert [p["name"] for p in body["phases"]] == ["received", "understood", "routed", "answered"]
+    assert all(p["done"] for p in body["phases"])
+    assert "analysis" not in body and "sender" not in body  # no internals for customers
+    wrong = client.get(f"/api/public/tickets/{ticket['id']}", params={"k": "guess"})
+    assert wrong.status_code == 404
+
+
+def test_help_center_endpoint_serves_both_languages(client):
+    fr = client.get("/api/help", params={"lang": "fr"}).json()
+    assert len(fr) == 9 and fr[0]["sections"][0]["id"].startswith("HC-")
+    assert any(a["title"].startswith("Objets perdus") for a in fr)
+
+
 def test_invalid_form_is_rejected(client):
     assert (
         client.post("/api/messages", json={"email": "not-an-email", "body": "hi"}).status_code

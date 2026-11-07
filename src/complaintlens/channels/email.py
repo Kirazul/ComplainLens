@@ -25,10 +25,11 @@ from complaintlens.store import Reply, Ticket
 log = logging.getLogger(__name__)
 
 FOOTER = {
-    "en": "\n\n—\nTicket {ticket} · {company} Support\n"
+    "en": "\n\n—\nTicket {ticket} · {company} Support\nFollow your request: {track_url}\n"
     "{company} is a fictional company created for a university NLP project (ComplaintLens). "
     "Replies are produced by an AI system under human supervision.",
-    "fr": "\n\n—\nTicket {ticket} · Support {company}\n{company} est une entreprise fictive créée "
+    "fr": "\n\n—\nTicket {ticket} · Support {company}\nSuivre votre demande : {track_url}\n"
+    "{company} est une entreprise fictive créée "
     "pour un projet universitaire de TALN (ComplaintLens). Les réponses sont produites par un "
     "système d'IA sous supervision humaine.",
 }
@@ -78,6 +79,11 @@ def fetch_new_messages(settings: Settings | None = None) -> list[InboundMessage]
     return out
 
 
+def track_url(ticket: Ticket, settings: Settings) -> str:
+    lang = ticket.language if ticket.language in ("en", "fr") else "en"
+    return f"{settings.public_base_url}/{lang}/track/{ticket.id}?k={ticket.track_key}"
+
+
 def build_reply_email(ticket: Ticket, reply: Reply, settings: Settings) -> EmailMessage:
     lang = ticket.language if ticket.language in FOOTER else "en"
     subject = (ticket.subject or "Your message").strip()
@@ -92,7 +98,9 @@ def build_reply_email(ticket: Ticket, reply: Reply, settings: Settings) -> Email
     if ticket.external_id:  # keep the reply in the customer's conversation thread
         email["In-Reply-To"] = ticket.external_id
         email["References"] = ticket.external_id
-    footer = FOOTER[lang].format(ticket=ticket.number, company=settings.company_name)
+    footer = FOOTER[lang].format(
+        ticket=ticket.number, company=settings.company_name, track_url=track_url(ticket, settings)
+    )
     email.set_content(reply.body + footer)
     return email
 

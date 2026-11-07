@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import secrets
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Any
@@ -152,8 +153,60 @@ def submit_message(payload: MessageIn, background: BackgroundTasks) -> dict[str,
         subject=payload.subject,
         body=payload.body,
     )
-    background.add_task(state.processor.process, inbound)
-    return {"accepted": True}
+    ticket = state.processor.create_ticket(inbound)
+    background.add_task(state.processor.run, ticket.id, inbound)
+    return {"id": ticket.id, "number": ticket.number, "track_key": ticket.track_key}
+
+
+# Customer-facing view of a ticket: progress and sent replies only, never internal analysis.
+PUBLIC_STAGES = {
+    "normalize": "received",
+    "pii_masking": "received",
+    "language": "understood",
+    "understand": "understood",
+    "link": "routed",
+    "respond": "answered",
+}
+
+
+@app.get("/api/public/tickets/{ticket_id}")
+def public_ticket(ticket_id: int, k: str) -> dict[str, Any]:
+    with new_session() as s:
+        t = s.get(Ticket, ticket_id)
+        if t is None or not secrets.compare_digest(t.track_key, k):
+            raise HTTPException(404, "ticket not found")  # same answer: do not reveal existence
+        done = s.exec(select(StageRecord.name).where(StageRecord.ticket_id == ticket_id)).all()
+        replies = s.exec(
+            select(Reply)
+            .where(Reply.ticket_id == ticket_id, Reply.status == "sent")
+            .order_by(col(Reply.id))
+        ).all()
+        phases = ["received", "understood", "routed", "answered"]
+        reached = {PUBLIC_STAGES[n] for n in done if n in PUBLIC_STAGES}
+        return {
+            "number": t.number,
+            "status": t.status,
+            "language": t.language,
+            "received_at": t.received_at,
+            "team": t.team,
+            "phases": [{"name": p, "done": p in reached} for p in phases],
+            "replies": [{"kind": r.kind, "body": r.body, "sent_at": r.sent_at} for r in replies],
+        }
+
+
+@app.get("/api/help")
+def help_center(lang: str = "en") -> list[dict[str, Any]]:
+    kb = state.processor.kb
+    lang = lang if lang in ("en", "fr") else "en"
+    articles: dict[str, dict[str, Any]] = {}
+    for c in kb.chunks:
+        if c.lang != lang:
+            continue
+        art = articles.setdefault(
+            c.article_id, {"id": c.article_id, "title": c.title, "sections": []}
+        )
+        art["sections"].append({"id": c.id, "heading": c.heading, "text": c.text})
+    return list(articles.values())
 
 
 @app.get("/api/tickets")

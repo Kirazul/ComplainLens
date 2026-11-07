@@ -52,6 +52,11 @@ class Processor:
         self.database_url = database_url
 
     def process(self, inbound: InboundMessage) -> Ticket:
+        """Create the ticket and run the whole pipeline (used for email and the CLI)."""
+        return self.run(self.create_ticket(inbound).id, inbound)
+
+    def create_ticket(self, inbound: InboundMessage) -> Ticket:
+        """Fast: store the message and return its ticket (number, tracking key) immediately."""
         with new_session(self.database_url) as session:
             ticket = Ticket(
                 channel=inbound.channel.value,
@@ -70,7 +75,14 @@ class Processor:
             self.publish(
                 {"type": "ticket_created", "ticket_id": ticket.id, "number": ticket.number}
             )
+            return ticket
 
+    def run(self, ticket_id: int | None, inbound: InboundMessage) -> Ticket:
+        """Slow: run the stages for an existing ticket, decide, and send what must be sent."""
+        with new_session(self.database_url) as session:
+            ticket = session.get(Ticket, ticket_id)
+            if ticket is None:
+                raise KeyError(ticket_id)
             seq = 0
 
             def on_stage(result: StageResult) -> None:
