@@ -266,6 +266,22 @@ Source: `reports/results/gate_complaints2019.json` (code: `src/complaintlens/gat
   - a smaller pre-registered grid (smaller Bonferroni penalty).
 - **Report deliverable:** a curve of "automation rate vs. calibration size" at α = 5%.
 
+### 5.8 First problem-discovery results (2026-11-08)
+Source: `reports/results/topics_uber.json` (code: `src/complaintlens/topics.py`, `ml/scripts/eval_topics.py`).
+
+**Protocol:** 41,690 Uber first contacts (Oct–Dec 2017), k = 30 for every method, 3 seeds. The same c-TF-IDF labelling is applied to every method's clusters.
+
+| Method | NPMI coherence | Topic diversity | Largest cluster |
+|---|---|---|---|
+| TF-IDF + k-means | 0.097 ± 0.011 | 0.78 | 18.6% (junk cluster: "pass ride guys thanks please") |
+| LDA | 0.000 ± 0.010 | 0.95 | 8.7% |
+| Multilingual MiniLM embeddings + k-means | 0.088 ± 0.009 | 0.78 | **5.4%** |
+
+- **Coherence:** TF-IDF and embeddings are within about one standard deviation, so the automatic metric cannot separate them. LDA fails on short texts (coherence ≈ 0).
+- **Cluster balance:** NPMI ignores cluster size and so misses TF-IDF's junk cluster. The embedding clusters are balanced and readable: accidents ("his car hit driver driving"), waiting/cancellations, cold food orders, iOS app crashes, surge pricing.
+- **Verdict pending** a human word-intrusion test.
+- **Performance:** batch embedding ran at ≈ 12 messages/s on CPU (55 min for 41.7k). That is acceptable live (65 ms/message) but slow in bulk → use fastembed's data-parallel mode.
+
 ## 6. The pipeline, stage by stage
 Each NLP stage lists the proposed method, the **baseline** it must beat, and the **metric**.
 

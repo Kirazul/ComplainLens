@@ -1,0 +1,428 @@
+{
+  "protocol": "Problem discovery on the real @Uber_Support stream: embeddings vs. classical topic models.\n\nProtocol (fixed in advance): Uber first contacts 2017-10-01..2017-12-02; k = 30 clusters for every\nmethod; seeds 0, 1, 2. Every method's clusters are described by the same c-TF-IDF function, so only\nthe clustering differs. Metrics: NPMI coherence of the top-10 words (computed on the same corpus,\nan intrinsic measure), topic diversity, and the share of the largest cluster (a \"junk\" cluster that\nswallows everything is a known failure).\n\nMethods:\n- tfidf_kmeans: TF-IDF word vectors + k-means\n- lda: latent Dirichlet allocation (counts), each message assigned to its most probable topic\n- embedding_kmeans: multilingual MiniLM sentence embeddings (ONNX) + k-means",
+  "messages": 40935,
+  "methods": {
+    "tfidf_kmeans": {
+      "npmi_mean": 0.0971,
+      "npmi_std": 0.0105,
+      "diversity_mean": 0.778,
+      "largest_cluster_share_mean": 0.186
+    },
+    "lda": {
+      "npmi_mean": -0.0003,
+      "npmi_std": 0.0096,
+      "diversity_mean": 0.946,
+      "largest_cluster_share_mean": 0.087
+    },
+    "embedding_kmeans": {
+      "npmi_mean": 0.0877,
+      "npmi_std": 0.009,
+      "diversity_mean": 0.777,
+      "largest_cluster_share_mean": 0.054
+    }
+  },
+  "largest_topics_seed0": {
+    "tfidf_kmeans": [
+      {
+        "size": 7574,
+        "words": [
+          "pass",
+          "ride",
+          "guys",
+          "thanks",
+          "please",
+          "can"
+        ]
+      },
+      {
+        "size": 3814,
+        "words": [
+          "driver",
+          "him",
+          "his",
+          "driving",
+          "car",
+          "asked"
+        ]
+      },
+      {
+        "size": 1961,
+        "words": [
+          "drivers",
+          "one",
+          "they",
+          "cancel",
+          "ask",
+          "don"
+        ]
+      },
+      {
+        "size": 1753,
+        "words": [
+          "app",
+          "working",
+          "option",
+          "through",
+          "payment",
+          "showing"
+        ]
+      },
+      {
+        "size": 1639,
+        "words": [
+          "charged",
+          "twice",
+          "trip",
+          "cancelled",
+          "refund",
+          "didn"
+        ]
+      },
+      {
+        "size": 1603,
+        "words": [
+          "account",
+          "disabled",
+          "hacked",
+          "password",
+          "access",
+          "locked"
+        ]
+      },
+      {
+        "size": 1569,
+        "words": [
+          "how",
+          "report",
+          "can",
+          "get",
+          "change",
+          "rating"
+        ]
+      },
+      {
+        "size": 1568,
+        "words": [
+          "order",
+          "food",
+          "delivered",
+          "ordered",
+          "hour",
+          "placed"
+        ]
+      },
+      {
+        "size": 1455,
+        "words": [
+          "time",
+          "first",
+          "every",
+          "second",
+          "wait",
+          "wasting"
+        ]
+      },
+      {
+        "size": 1419,
+        "words": [
+          "why",
+          "did",
+          "pay",
+          "charge",
+          "explain",
+          "than"
+        ]
+      },
+      {
+        "size": 1329,
+        "words": [
+          "customer",
+          "service",
+          "worst",
+          "terrible",
+          "horrible",
+          "ever"
+        ]
+      },
+      {
+        "size": 1295,
+        "words": [
+          "all",
+          "day",
+          "sudden",
+          "documents",
+          "drivers",
+          "rides"
+        ]
+      }
+    ],
+    "lda": [
+      {
+        "size": 4007,
+        "words": [
+          "cancel",
+          "him",
+          "then",
+          "mins",
+          "had",
+          "wait"
+        ]
+      },
+      {
+        "size": 3715,
+        "words": [
+          "help",
+          "account",
+          "please",
+          "hacked",
+          "someone",
+          "need"
+        ]
+      },
+      {
+        "size": 3041,
+        "words": [
+          "number",
+          "contact",
+          "left",
+          "asap",
+          "verification",
+          "password"
+        ]
+      },
+      {
+        "size": 3001,
+        "words": [
+          "food",
+          "order",
+          "eats",
+          "delivered",
+          "ordered",
+          "delivery"
+        ]
+      },
+      {
+        "size": 2374,
+        "words": [
+          "know",
+          "where",
+          "all",
+          "why",
+          "don",
+          "location"
+        ]
+      },
+      {
+        "size": 2031,
+        "words": [
+          "minutes",
+          "waiting",
+          "cancelled",
+          "late",
+          "now",
+          "cold"
+        ]
+      },
+      {
+        "size": 1975,
+        "words": [
+          "fee",
+          "cancellation",
+          "charged",
+          "pay",
+          "cleaning",
+          "amount"
+        ]
+      },
+      {
+        "size": 1867,
+        "words": [
+          "like",
+          "how",
+          "out",
+          "sent",
+          "figure",
+          "keep"
+        ]
+      },
+      {
+        "size": 1528,
+        "words": [
+          "his",
+          "car",
+          "friend",
+          "off",
+          "dropped",
+          "name"
+        ]
+      },
+      {
+        "size": 1517,
+        "words": [
+          "trying",
+          "code",
+          "says",
+          "charge",
+          "send",
+          "unable"
+        ]
+      },
+      {
+        "size": 1352,
+        "words": [
+          "customer",
+          "service",
+          "support",
+          "care",
+          "poor",
+          "worst"
+        ]
+      },
+      {
+        "size": 1302,
+        "words": [
+          "about",
+          "doesn",
+          "deliver",
+          "being",
+          "talk",
+          "tried"
+        ]
+      }
+    ],
+    "embedding_kmeans": [
+      {
+        "size": 2068,
+        "words": [
+          "his",
+          "car",
+          "him",
+          "hit",
+          "driver",
+          "driving"
+        ]
+      },
+      {
+        "size": 2036,
+        "words": [
+          "minutes",
+          "cancelled",
+          "mins",
+          "cancel",
+          "away",
+          "waiting"
+        ]
+      },
+      {
+        "size": 2015,
+        "words": [
+          "drivers",
+          "cars",
+          "riders",
+          "driving",
+          "drive",
+          "they"
+        ]
+      },
+      {
+        "size": 2007,
+        "words": [
+          "food",
+          "eats",
+          "ordered",
+          "cold",
+          "mcdonald",
+          "delivered"
+        ]
+      },
+      {
+        "size": 1878,
+        "words": [
+          "charged",
+          "cancelled",
+          "driver",
+          "cash",
+          "didn",
+          "paid"
+        ]
+      },
+      {
+        "size": 1738,
+        "words": [
+          "driver",
+          "drivers",
+          "route",
+          "rating",
+          "him",
+          "location"
+        ]
+      },
+      {
+        "size": 1657,
+        "words": [
+          "app",
+          "working",
+          "ios",
+          "deleting",
+          "error",
+          "crashed"
+        ]
+      },
+      {
+        "size": 1650,
+        "words": [
+          "price",
+          "fare",
+          "cost",
+          "surge",
+          "pricing",
+          "charge"
+        ]
+      },
+      {
+        "size": 1543,
+        "words": [
+          "cancellation",
+          "fee",
+          "cancel",
+          "cancels",
+          "charge",
+          "cancelling"
+        ]
+      },
+      {
+        "size": 1539,
+        "words": [
+          "charged",
+          "twice",
+          "charge",
+          "charges",
+          "double",
+          "trip"
+        ]
+      },
+      {
+        "size": 1519,
+        "words": [
+          "order",
+          "delivered",
+          "placed",
+          "ordered",
+          "restaurant",
+          "orders"
+        ]
+      },
+      {
+        "size": 1517,
+        "words": [
+          "service",
+          "customer",
+          "worst",
+          "ever",
+          "terrible",
+          "horrible"
+        ]
+      }
+    ]
+  }
+}

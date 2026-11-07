@@ -212,6 +212,27 @@ problem starts at 13:00 UTC and the first alert fires at 14:00, one hour after o
 exceeds the alarm budget partly because of genuine incidents that cannot be told apart from false
 alarms without labels.
 
+\subsection{Problem discovery}
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lccc}
+\toprule
+Method ($k=30$, 3 seeds) & NPMI coherence & Diversity & Largest cluster \\
+\midrule
+TF-IDF + $k$-means & 0.097 $\pm$ 0.011 & 0.78 & 18.6\% \\
+LDA & 0.000 $\pm$ 0.010 & 0.95 & 8.7\% \\
+Multilingual embeddings + $k$-means & 0.088 $\pm$ 0.009 & 0.78 & 5.4\% \\
+\bottomrule
+\end{tabular}
+\caption{41{,}690 Uber first contacts; every method's clusters are described with the same c-TF-IDF
+function. Source: \res{topics\_uber.json}.}
+\end{table}
+Coherence does not separate TF-IDF from embeddings (difference $\approx$ one standard deviation),
+and it ignores cluster sizes: TF-IDF puts 18.6\% of messages in one generic cluster (``pass ride
+guys thanks please''), whereas embedding clusters are balanced and name concrete problems
+(accidents, waiting and cancellations, cold food orders, iOS app crashes, surge pricing). LDA fails
+on short texts. \todo{human word-intrusion test to settle the comparison}.
+
 \subsection{Guaranteed automation (RQ2)}
 \label{sec:gate}
 Learn-then-Test \citep{angelopoulos2021ltt}: on a calibration set, each of 50 pre-registered
