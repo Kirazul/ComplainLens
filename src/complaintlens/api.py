@@ -169,6 +169,9 @@ PUBLIC_STAGES = {
 }
 
 
+ANSWERED_STATUSES = {"auto_send", "answered", "no_reply", "closed"}
+
+
 @app.get("/api/public/tickets/{ticket_id}")
 def public_ticket(ticket_id: int, k: str) -> dict[str, Any]:
     with new_session() as s:
@@ -183,6 +186,10 @@ def public_ticket(ticket_id: int, k: str) -> dict[str, Any]:
         ).all()
         phases = ["received", "understood", "routed", "answered"]
         reached = {PUBLIC_STAGES[n] for n in done if n in PUBLIC_STAGES}
+        # "Answered" means a real answer was sent (or none was needed), not an acknowledgement:
+        # a ticket under review or escalated stays at "routed".
+        if t.status not in ANSWERED_STATUSES:
+            reached.discard("answered")
         return {
             "number": t.number,
             "status": t.status,

@@ -7,7 +7,8 @@ Trip: a transparent score, so every link can be explained in the console:
   +10 trip number quoted · +4 amount matches a charge · +3 date matches ("yesterday", "hier soir")
   +3 kind matches the category (food -> delivery, driver -> ride) · +3 the problem described is
   visible in the record ("charged twice" and two charges) · + up to 1 for recency.
-Below ``MIN_SCORE`` we do not guess: the reply will ask which trip the customer means.
+Below ``MIN_SCORE``, or without specific evidence (the kind of trip alone is not evidence), we do
+not guess: the reply will ask which trip the customer means.
 
 Facts given to the reply writer are computed here by code from the record, never by the LLM.
 """
@@ -169,6 +170,11 @@ def trip_facts(trip: Trip) -> list[dict[str, str]]:
     return [{"id": f"F{i}", "text": t} for i, t in enumerate(facts, start=1)]
 
 
+def _is_weak(reason: str) -> bool:
+    """'ride matches the category' is a tie-breaker, not evidence that this is the trip."""
+    return "matches the category" in reason
+
+
 def link_stage(ctx: Context) -> StageResult:
     session, msg = ctx["session"], ctx["message"]
     analysis = ctx.get("analysis")
@@ -183,7 +189,13 @@ def link_stage(ctx: Context) -> StageResult:
         ((t, *score_trip(t, f"{text} {entity_text}", categories, msg.received_at)) for t in trips),
         key=lambda x: -x[1],
     )
-    best = scored[0] if scored and scored[0][1] >= MIN_SCORE else None
+    # A link needs specific evidence (trip number, amount, date or a matching problem in the
+    # record); the trip kind and recency only break ties. Otherwise we ask instead of guessing.
+    best = (
+        scored[0]
+        if scored and scored[0][1] >= MIN_SCORE and any(not _is_weak(w) for w in scored[0][2])
+        else None
+    )
     ctx["customer"] = customer
     ctx["trip"] = best[0] if best else None
     ctx["facts"] = trip_facts(best[0]) if best else []

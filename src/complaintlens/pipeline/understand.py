@@ -144,6 +144,11 @@ def analyse_with_llm(client: ChatClient, text: str) -> Analysis:
     return complete_json(client, _system_prompt(), f"Customer message:\n<<<\n{text}\n>>>", Analysis)
 
 
+def _excerpt(text: str, limit: int = 140) -> str:
+    flat = " ".join(text.split())
+    return flat if len(flat) <= limit else flat[: limit - 1].rsplit(" ", 1)[0] + "…"
+
+
 def fallback_analysis(text: str, p_complaint: float | None, severity: int | None) -> Analysis:
     is_complaint = (p_complaint or 0.0) >= 0.5
     return Analysis(
@@ -154,8 +159,9 @@ def fallback_analysis(text: str, p_complaint: float | None, severity: int | None
         severity=severity if is_complaint else None,
         risk_flags=[],
         sentiment="negative" if is_complaint else "neutral",
-        summary="(no LLM configured: summary unavailable)",
-        customer_goal="(no LLM configured)",
+        # Without an LLM there is no abstractive summary: show the start of the message instead.
+        summary=_excerpt(text),
+        customer_goal="(not extracted: no LLM configured)",
     )
 
 

@@ -56,7 +56,10 @@ def test_customer_can_track_only_with_the_secret_key(client):
     assert view.status_code == 200
     body = view.json()
     assert [p["name"] for p in body["phases"]] == ["received", "understood", "routed", "answered"]
-    assert all(p["done"] for p in body["phases"])
+    # Offline the ticket waits for an agent: routed, but not answered yet (an acknowledgement
+    # is not an answer).
+    assert body["status"] == "awaiting_approval"
+    assert [p["done"] for p in body["phases"]] == [True, True, True, False]
     assert "analysis" not in body and "sender" not in body  # no internals for customers
     wrong = client.get(f"/api/public/tickets/{ticket['id']}", params={"k": "guess"})
     assert wrong.status_code == 404

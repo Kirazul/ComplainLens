@@ -73,6 +73,18 @@ def test_late_food_order_links_to_the_delivery(session):
     assert any("Spring rolls" in t for t in texts)
 
 
+def test_category_alone_is_not_evidence_for_a_trip(session):
+    # Regression: a safety report with no date/amount/ref was linked to the latest ride only
+    # because "ride matches the category"; unrelated double-charge facts were then shown.
+    ctx, result = run(
+        session,
+        "The driver was texting while driving on the highway and I felt unsafe.",
+        ["safety_incident"],
+    )
+    assert ctx["trip"] is None and ctx["facts"] == []
+    assert "ask which one" in result.note
+
+
 def test_vague_message_does_not_guess_a_trip(session):
     ctx, result = run(session, "Your service is bad", ["other"])
     assert ctx["trip"] is None
