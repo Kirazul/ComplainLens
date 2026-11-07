@@ -103,6 +103,26 @@ export interface Health {
   email: { enabled: boolean; address?: string; last_poll_ok?: boolean; last_error?: string | null };
 }
 
+export interface Incident {
+  terms: string[];
+  messages: number;
+  z: number;
+}
+
+export interface Insights {
+  source: string;
+  zscore_threshold: number;
+  timeline: { day: string; messages: number; incidents: Incident[] }[];
+  clusters: { id: number; size: number; words: string[]; examples: string[] }[];
+}
+
+export interface ExperimentRow {
+  question: string;
+  claim: string;
+  value: string;
+  source: string;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
@@ -133,4 +153,6 @@ export const api = {
   publicTicket: (id: number, key: string) =>
     request<PublicTicket>(`/api/public/tickets/${id}?k=${encodeURIComponent(key)}`),
   help: (lang: Lang) => request<HelpArticle[]>(`/api/help?lang=${lang}`),
+  insights: () => request<Insights>("/api/insights"),
+  experiments: () => request<ExperimentRow[]>("/api/experiments"),
 };

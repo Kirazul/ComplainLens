@@ -26,7 +26,7 @@ from complaintlens.rag.knowledge import KnowledgeBase
 from complaintlens.rag.retrieval import build_retriever
 from complaintlens.schemas import Channel, InboundMessage
 from complaintlens.service import Processor
-from complaintlens.settings import get_settings
+from complaintlens.settings import ROOT, get_settings
 from complaintlens.store import Customer, Reply, StageRecord, Ticket, Trip, new_session
 
 log = logging.getLogger(__name__)
@@ -204,6 +204,94 @@ def public_ticket(ticket_id: int, k: str) -> dict[str, Any]:
             "phases": [{"name": p, "done": p in reached} for p in phases],
             "replies": [{"kind": r.kind, "body": r.body, "sent_at": r.sent_at} for r in replies],
         }
+
+
+RESULTS_DIR = ROOT / "reports" / "results"
+
+
+def _result(name: str) -> dict[str, Any]:
+    path = RESULTS_DIR / name
+    if not path.exists():
+        raise HTTPException(404, f"{name} not generated yet")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+@app.get("/api/insights")
+def insights() -> dict[str, Any]:
+    """Daily volume, detected incidents and problem clusters of the real Uber stream."""
+    return _result("insights_uber.json")
+
+
+@app.get("/api/experiments")
+def experiments() -> list[dict[str, Any]]:
+    """Headline numbers of the report, each with the results file that produced it."""
+    rows: list[dict[str, Any]] = []
+
+    def add(question: str, claim: str, value: str, source: str) -> None:
+        rows.append({"question": question, "claim": claim, "value": value, "source": source})
+
+    if (RESULTS_DIR / "baseline_complaints2019.json").exists():
+        b = _result("baseline_complaints2019.json")
+        best = b["task_a_complaint_vs_not"]["models"]["tfidf_word+char_lr"]
+        sev = b["task_b_severity_on_complaints"]["models"]["tfidf_word+char_lr"]
+        add(
+            "RQ1",
+            "Complaint vs. not, macro-F1 (published non-neural best: 79.0)",
+            f"{best['macro_f1_mean'] * 100:.1f} ± {best['macro_f1_std'] * 100:.1f}",
+            "baseline_complaints2019.json",
+        )
+        add(
+            "RQ1",
+            "Severity 1-4, macro-F1 (published LR-BOW: 43.5)",
+            f"{sev['macro_f1_mean'] * 100:.1f} ± {sev['macro_f1_std'] * 100:.1f}",
+            "baseline_complaints2019.json",
+        )
+    if (RESULTS_DIR / "gate_complaints2019.json").exists():
+        g = _result("gate_complaints2019.json")["methods"]["gate_alpha_0.1"]
+        add(
+            "RQ2",
+            "Messages automated at a guaranteed 10% error bound",
+            f"{g['automation_rate_mean'] * 100:.1f}% (violations: {g['violations_of_alpha']})",
+            "gate_complaints2019.json",
+        )
+    if (RESULTS_DIR / "retrieval_helpcenter.json").exists():
+        r = _result("retrieval_helpcenter.json")["retrievers"]
+        dense = next(v for k, v in r.items() if k.startswith("dense"))
+        add(
+            "RQ3",
+            "Help Center retrieval MRR@10, dense vs. BM25 (development set)",
+            f"{dense['mrr@10']:.2f} vs. {r['bm25']['mrr@10']:.2f}",
+            "retrieval_helpcenter.json",
+        )
+    if (RESULTS_DIR / "trends_uber.json").exists():
+        t = _result("trends_uber.json")
+        z = t["methods"]["zscore"]["injection_recall_test"]["20"]["mean"]
+        c = t["methods"]["count_threshold"]["injection_recall_test"]["20"]["mean"]
+        add(
+            "RQ4",
+            "Recall on injected 20-message bursts, z-score vs. count threshold",
+            f"{z:.2f} vs. {c:.2f}",
+            "trends_uber.json",
+        )
+        add(
+            "RQ4",
+            "Delay before the 14 Nov 2017 promotion-crash alert",
+            f"{t['real_event_hourly']['delay_hours']} h",
+            "trends_uber.json",
+        )
+    if (RESULTS_DIR / "rootcause_simulation.json").exists():
+        rc = next(
+            c
+            for c in _result("rootcause_simulation.json")["conditions"]
+            if c["incident_size"] == 50 and c["purity"] == 0.5
+        )
+        add(
+            "RQ5",
+            "Probable cause precision@k, mixed incident of 50 tickets",
+            f"{rc['precision_at_k_ours']:.2f} vs. {rc['precision_at_k_most_frequent']:.2f}",
+            "rootcause_simulation.json",
+        )
+    return rows
 
 
 @app.get("/api/help")

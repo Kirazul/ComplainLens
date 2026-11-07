@@ -72,6 +72,19 @@ def test_help_center_endpoint_serves_both_languages(client):
     assert any(a["title"].startswith("Objets perdus") for a in fr)
 
 
+def test_experiments_trace_each_number_to_a_results_file(client):
+    rows = client.get("/api/experiments").json()
+    assert rows, "at least the committed results should be summarised"
+    for row in rows:
+        assert set(row) == {"question", "claim", "value", "source"}
+        assert row["source"].endswith(".json")
+
+
+def test_insights_serve_timeline_and_clusters(client):
+    body = client.get("/api/insights").json()
+    assert len(body["timeline"]) > 30 and len(body["clusters"]) == 30
+
+
 def test_invalid_form_is_rejected(client):
     assert (
         client.post("/api/messages", json={"email": "not-an-email", "body": "hi"}).status_code
