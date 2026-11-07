@@ -22,7 +22,6 @@ from sqlmodel import Session, select
 from complaintlens.schemas import utcnow
 from complaintlens.store import Customer, Trip
 
-FIRST_NAMES = ["Alex", "Sam", "Camille", "Jordan", "Noah", "Léa", "Maya", "Hugo", "Inès", "Liam"]
 DRIVERS = ["Marc D.", "Fatima B.", "Kevin T.", "Sophie L.", "Youssef A.", "Julie R.", "Omar K."]
 VEHICLES = [
     "Toyota Camry · white",
@@ -83,7 +82,7 @@ def create_demo_customer(
     rng = random.Random(seed)
     customer = Customer(
         contact=contact.lower(),
-        name=(name or rng.choice(FIRST_NAMES)).split()[0],
+        name=name.split()[0] if name and name.strip() else "",  # never invent a name
         language=language if language in ("en", "fr") else "en",
     )
     session.add(customer)

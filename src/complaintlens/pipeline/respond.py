@@ -117,21 +117,43 @@ def verify(draft: Draft, hits: list[Hit], facts: list[dict[str, str]]) -> dict[s
 
 # --- templates (no LLM): safe acknowledgements --------------------------------------------------
 
+TEAM_NAMES_FR = {
+    "Billing": "Facturation",
+    "Safety": "Sécurité",
+    "Driver Operations": "Opérations chauffeurs",
+    "Lost & Found": "Objets trouvés",
+    "Delivery": "Livraison",
+    "Tech & Accounts": "Technique et comptes",
+    "General Support": "Support général",
+    "Support": "Support",
+}
+
+
+def greeting(lang: str, name: str | None) -> str:
+    """'Hello Alex,' or just 'Hello,': we never invent a name we do not know."""
+    word = "Bonjour" if lang == "fr" else "Hello"
+    return f"{word} {name}," if name else f"{word},"
+
+
+def team_label(team: str, lang: str) -> str:
+    return TEAM_NAMES_FR.get(team, team) if lang == "fr" else team
+
+
 TEMPLATES = {
     "escalation": {
-        "en": "Hello {name},\n\nThank you for telling us, and we are sorry this happened. Your "
+        "en": "{greeting}\n\nThank you for telling us, and we are sorry this happened. Your "
         "safety comes first: if you are in danger, please call 911 now.\n\nYour report "
         "(ticket {ticket}) has been sent to our Safety team, who will contact you within 1 hour.",
-        "fr": "Bonjour {name},\n\nMerci de nous avoir prévenus, et nous sommes désolés que cela "
+        "fr": "{greeting}\n\nMerci de nous avoir prévenus, et nous sommes désolés que cela "
         "soit arrivé. Votre sécurité passe avant tout : si vous êtes en danger, appelez le 911 "
         "maintenant.\n\nVotre signalement (ticket {ticket}) a été transmis à notre équipe "
         "Sécurité, qui vous contactera dans un délai d'une heure.",
     },
     "review": {
-        "en": "Hello {name},\n\nThank you for contacting {company}. We have received your message "
+        "en": "{greeting}\n\nThank you for contacting {company}. We have received your message "
         "(ticket {ticket}) and our {team} team is reviewing it. You will hear from us within "
         "24 hours.",
-        "fr": "Bonjour {name},\n\nMerci d'avoir contacté {company}. Nous avons bien reçu votre "
+        "fr": "{greeting}\n\nMerci d'avoir contacté {company}. Nous avons bien reçu votre "
         "message (ticket {ticket}) et notre équipe {team} l'examine. Vous aurez de nos nouvelles "
         "sous 24 heures.",
     },
@@ -144,9 +166,15 @@ TEMPLATES = {
 }
 
 
-def render(kind: str, lang: str, **values: str) -> str:
+def render(kind: str, lang: str, name: str | None = None, team: str = "", ticket: str = "") -> str:
     variants = TEMPLATES[kind]
-    return variants.get(lang, variants["en"]).format(company=get_settings().company_name, **values)
+    lang = lang if lang in variants else "en"
+    return variants[lang].format(
+        company=get_settings().company_name,
+        greeting=greeting(lang, name),
+        team=team_label(team, lang),
+        ticket=ticket,
+    )
 
 
 # --- drafting ----------------------------------------------------------------------------------
@@ -183,7 +211,8 @@ def draft_reply(
         "action_amount.\n"
         "4. If the record does not show the trip or the facts needed, ask one precise question "
         "(proposed_action=ask_information).\n"
-        f"5. Write in {language}, warm and concise (max 130 words), greet the customer by name, "
+        f"5. Write in {language}, warm and concise (max 130 words), greet the customer (by name "
+        "only if a name is given; never invent one), "
         f"sign as '{company} Support'. Do not mention internal fact IDs except as citations.\n"
         "6. Placeholders like [EMAIL_1] are masked personal data: never repeat or guess them.\n"
         "Return ONLY JSON: {reply, citations (list of IDs used), proposed_action (none|refund|"
@@ -191,7 +220,8 @@ def draft_reply(
         "confidence (0-1: how sure you are the reply fully and correctly resolves the message)}."
     )
     user = (
-        f"Customer name: {name}\nAnalysis: {analysis.summary} Goal: {analysis.customer_goal}\n"
+        f"Customer name: {name or '(unknown: greet without a name)'}\n"
+        f"Analysis: {analysis.summary} Goal: {analysis.customer_goal}\n"
         f"Customer message:\n<<<\n{text}\n>>>\n\nSOURCES:\n{_sources_block(hits, facts)}"
     )
     return complete_json(client, system, user, Draft, temperature=0.2)
@@ -204,7 +234,7 @@ def respond_stage(ctx: Context) -> StageResult:
     analysis: Analysis = ctx["analysis"]
     lang = ctx.get("language", "en")
     ticket_no = ctx.get("ticket_number", "LG-??????")
-    name = ctx["customer"].name if ctx.get("customer") else "there"
+    name = ctx["customer"].name if ctx.get("customer") else ""
     facts = ctx.get("facts", [])
     team = route(analysis)
     reasons: list[str] = []

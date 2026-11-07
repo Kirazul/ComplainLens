@@ -152,6 +152,15 @@ def test_hallucinated_number_blocks_auto_send(kb):
     assert "verification failed" in ctx["decision"]["reasons"][0]
 
 
+def test_templates_never_invent_a_name_and_translate_team_names():
+    from complaintlens.pipeline.respond import render
+
+    fr = render("review", "fr", name="", team="Billing", ticket="LG-000001")
+    assert fr.startswith("Bonjour,\n") and "équipe Facturation" in fr
+    en = render("review", "en", name="Alex", team="Billing", ticket="LG-000001")
+    assert en.startswith("Hello Alex,\n") and "Billing team" in en
+
+
 def test_venting_and_spam_get_no_reply(kb):
     ctx = ctx_for(kb, make_analysis(response_required=False, urgency=None), FakeLLM())
     respond_stage(ctx)
