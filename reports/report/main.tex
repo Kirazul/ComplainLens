@@ -1,0 +1,284 @@
+% ComplaintLens: technical report (Deliverable 4). Every number cites the results file in
+% reports/results/ that produced it. Items marked \todo{} are pending experiments: they must be
+% filled from real runs, never estimated.
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.3cm]{geometry}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern,microtype,booktabs,tabularx,xcolor,hyperref,graphicx}
+\usepackage[numbers,sort]{natbib}
+\hypersetup{colorlinks=true,linkcolor=black,citecolor=blue!50!black,urlcolor=blue!50!black}
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+\newcommand{\res}[1]{\texttt{\small reports/results/#1}}
+
+\title{ComplaintLens: Bilingual Complaint Understanding, Routing and Verified Response\\
+with Guaranteed-Risk Automation}
+\author{Mohamed Aziz Mansour \and Rimel Zouari\\[2pt]
+\small NLP Semester Project 2026--2027 --- Dr.\ Nizar Omheni}
+\date{\todo{submission date}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Customer-service teams receive complaints through many channels and languages and must decide, for
+each message, whether it needs an answer, what it is about, whether it is dangerous, and what to
+reply. We present ComplaintLens, an English/French system that turns one incoming message into a
+structured, traced decision: message type, category, severity and risk flags, the linked customer
+record, a reply grounded in company policy and in facts computed from the record, a deterministic
+verification of that reply, and an automation decision with a statistical error bound. We train and
+evaluate on real data (expert-labelled complaint tweets, 41{,}855 real Uber support conversations)
+and deploy the system as the live support desk of a fictional ride and food-delivery company.
+A TF-IDF baseline already exceeds every published non-neural result on complaint identification
+(macro-F1 81.5 vs.\ 79.0); dense multilingual retrieval beats BM25 on customer-worded queries
+(MRR 0.62 vs.\ 0.49, $p=0.018$) while equal-weight rank fusion does not; a rate-based burst detector
+recovers 94\% of injected 20-message bursts where a count threshold recovers none, and flags a real
+app outage one hour after onset; and a Learn-then-Test gate automates 37\% of messages at a
+guaranteed 10\% error bound, refusing to automate when the evidence cannot support a stricter bound.
+\todo{headline numbers for the fine-tuned encoder (RQ1) and grounded generation (RQ3)}
+\end{abstract}
+
+\section{Introduction and problem statement}
+\label{sec:intro}
+\paragraph{Task.} Input: one customer message (text, channel, sender, thread). Output: language
+(EN/FR/other); message type (complaint, request, feedback, praise, spam) and whether a response is
+required; category (11 classes); expressed severity (4 levels, following \citet{trosborg1995pragmatics}
+as operationalised by \citet{jin2021severity}); risk flags (safety, injury, harassment, legal, fraud,
+media, vulnerable person); entities linked to the customer's trip or order; an explainable priority
+and team; a reply grounded in cited policy and record facts; and an automation decision
+(send / await approval / escalate / no reply).
+
+\paragraph{Why it matters.} Answering late or wrongly is costly; answering dangerous messages
+automatically is unacceptable. Our design therefore separates \emph{how strongly} a complaint is
+expressed (severity) from \emph{how risky} it is (risk flags), and never automates safety, injury,
+harassment or legal cases.
+
+\paragraph{Research questions.}
+\textbf{RQ1} Does a small fine-tuned multilingual encoder, distilled from LLM silver labels and human
+labels, match its LLM teacher and beat classical baselines, and how well does it transfer to French?
+\textbf{RQ2} Can the reply decision be automated with a guaranteed error bound, and at what
+automation rate?
+\textbf{RQ3} Do retrieval, record facts and a claim verifier make replies more faithful, and how do
+they compare with real agent replies?
+\textbf{RQ4} Does burst detection find emerging problems earlier than count thresholds?
+
+\section{Related work}
+Complaint identification on social media was introduced by \citet{preotiuc2019complaints}, who
+released 3{,}449 expert-labelled tweets; \citet{jin2021severity} added four severity levels and
+reported transformer results (macro-F1 up to 88.2 for complaints and 55.7 for severity).
+\citet{hardalov2018support} studied response generation on the Customer Support on Twitter corpus.
+Retrieval combines BM25 \citep{robertson2009bm25} with multilingual sentence embeddings
+\citep{reimers2020multilingual}, fused by Reciprocal Rank Fusion \citep{cormack2009rrf}; generation
+grounded on retrieved text follows \citet{lewis2020rag}. Burst detection in streams goes back to
+\citet{kleinberg2003bursty}. Our automation gate follows Learn-then-Test risk control
+\citep{angelopoulos2021ltt}. Significance testing follows \citet{dror2018hitchhiker} and
+\citet{bergkirkpatrick2012significance}.
+
+\section{Data}
+\label{sec:data}
+\begin{table}[h]
+\centering\small
+\begin{tabularx}{\linewidth}{lXll}
+\toprule
+Dataset & Content & Size & Licence \\
+\midrule
+Customer Support on Twitter & Real customer/company tweets, 108 brands, with timestamps and agent replies & 2.81M tweets & CC BY-NC-SA 4.0 \\
+\quad Uber subset & First contacts to @Uber\_Support, Oct--Dec 2017 & 41{,}855 conversations & (same) \\
+Complaints on Twitter & Complaint vs.\ not, 9 domains \citep{preotiuc2019complaints} & 3{,}449 tweets & research use \\
+\quad severity & 4 levels on the 1{,}232 complaints \citep{jin2021severity} & 1{,}232 & research use \\
+LunaGo Help Center & 9 bilingual policy articles (ours, fictional) & 35 sections $\times$ 2 & ours \\
+LunaGo records & Synthetic riders, trips, orders, charges (demo only) & generated & ours \\
+Gold sets & Human annotation, EN + FR \todo{sizes, $\kappa$ per field} & \todo{} & ours \\
+\bottomrule
+\end{tabularx}
+\caption{Datasets. Exploratory statistics: \res{eda\_uber\_first\_contacts.json}.}
+\end{table}
+
+\paragraph{What exploration changed in the design.}
+(i) 95\% of Uber first contacts are one tweet (median 22 words): short-text methods matter.
+(ii) About 49\% mention rides and 16\% food delivery, so the fictional company offers both.
+(iii) The corpus was collected around company replies: only 19 of 19{,}762 customer-started threads
+tagging @Uber\_Support went unanswered, so ``did the company reply?'' cannot label ``response
+required''; that label comes only from human annotation.
+(iv) The busiest day, 14 Nov 2017 (1{,}333 conversations), is a real incident: a free-doughnut
+promotion that crashed the food-delivery app, our real-event test for RQ4.
+(v) The severity release cannot be joined by ID (IDs corrupted to floats such as \texttt{2.26E+16})
+nor by exact text (lower-cased, re-tokenised, \texttt{<user>}/\texttt{<url>} placeholders, one row
+replaced by the spreadsheet error \texttt{\#NAME?}). Both releases share row order and complaint
+labels on all 3{,}449 rows; we align by position and verify each pair by text similarity
+($\geq 0.9$ except the flagged row), keeping the original-cased text.
+
+\paragraph{Preprocessing, each step justified.} No lower-casing, stop-word removal or accent
+stripping for neural models (negation and casing carry meaning; pretrained tokenisers are used as
+is). Brand names and handles are masked (\texttt{[COMPANY]}, \texttt{[USER]}) so that models learn
+the complaint, not the brand. Consecutive tweets of one customer are merged. Email quotes and
+signatures are removed. Personal data is masked before storage and before any external API call.
+Duplicates are grouped so that they never cross train/test boundaries.
+
+\section{System and methods}
+\label{sec:method}
+Every message runs through six traced stages; each stage records its output, confidence and time,
+which the console displays live (the ``X-ray'').
+\begin{enumerate}
+\item \textbf{Normalise}: email quote and signature removal, Unicode normalisation.
+\item \textbf{Mask personal data}: emails, phone numbers (North American and French formats) and
+card numbers validated with the Luhn checksum, so amounts and order numbers are not masked.
+\item \textbf{Language}: py3langid \citep{lui2012langid} restricted to EN/FR with a short-text rule;
+chosen over a 170\,MB alternative for footprint (\todo{accuracy by text length vs.\ alternatives}).
+\item \textbf{Understand}: three signals combined transparently: classical models (TF-IDF word
+1--2 + character 2--5 grams, logistic regression), an LLM prompted with the \emph{same annotation
+guidelines as the human annotators}, and a bilingual recall-first risk lexicon that can add, never
+remove, safety flags. Disagreement between LLM and classical model is an uncertainty signal.
+\item \textbf{Link}: the customer by sender identity; the trip by a transparent evidence score
+(trip number +10, matching amount +4, date +3, problem visible in the record +3). The trip kind is
+only a tie-breaker; without specific evidence the system asks instead of guessing. Facts about the
+record are computed by code, never by the LLM.
+\item \textbf{Respond}: retrieval over the Help Center; an LLM draft restricted to retrieved
+sections and record facts, with mandatory citations; a deterministic verifier (every citation must
+exist and every number in the reply must appear in a cited source); and the gate (Section~\ref{sec:gate}).
+Safety, injury, harassment and legal cases are escalated with a fixed safe acknowledgement; money is
+never granted automatically.
+\end{enumerate}
+
+\section{Experiments and results}
+All numbers come from scripts in \texttt{ml/scripts/}; seeds and configurations are stored in the
+results files.
+
+\subsection{Complaint identification and severity (baselines; RQ1 pending)}
+Protocol: stratified 10-fold cross-validation with duplicates grouped, repeated over 5 seeds; default
+hyperparameters; macro-F1 (classes are imbalanced).
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lcc}
+\toprule
+Model & Complaint vs.\ not & Severity (1--4) \\
+\midrule
+Majority (ours / published) & 39.1 / 39.1 & 13.1 / 13.0 \\
+Best published non-neural & 79.0 & 43.5 \\
+TF-IDF word + LR (ours) & 78.3 $\pm$ 0.2 & 44.6 $\pm$ 0.5 \\
+TF-IDF char + LR (ours) & 79.7 $\pm$ 0.1 & 44.7 $\pm$ 0.6 \\
+\textbf{TF-IDF word+char + LR (ours)} & \textbf{81.5 $\pm$ 0.2} & \textbf{46.2 $\pm$ 1.1} \\
+Best published transformer & 88.2 & 55.7 \\
+Fine-tuned multilingual encoder (ours) & \todo{} & \todo{} \\
+\bottomrule
+\end{tabular}
+\caption{Macro-F1 (\%). Sources: \res{baseline\_complaints2019.json},
+\res{published\_reference\_complaints2019.json}. Word+char beats char-only by +1.6 ($p=0.0005$) and
++2.6 ($p=0.013$), paired bootstrap.}
+\end{table}
+
+Our majority baselines reproduce the published values, an independent check of the data alignment.
+Caveats: same protocol as the papers but different fold assignment, and no inner-loop tuning (which
+favours the papers). Grouping duplicates changed scores by less than the seed variance
+(\res{baseline\_complaints2019\_ungrouped\_ablation.json}).
+
+\subsection{Retrieval (RQ3, retrieval part)}
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lcccc}
+\toprule
+Retriever & R@1 & R@3 & MRR@10 [95\% CI] & Latency \\
+\midrule
+BM25 (implemented from scratch) & 0.40 & 0.53 & 0.49 [0.39, 0.59] & 0.05 ms \\
+\textbf{Dense, multilingual MiniLM} & \textbf{0.50} & \textbf{0.70} & \textbf{0.62 [0.52, 0.72]} & 65 ms \\
+Hybrid BM25 + dense (RRF) & 0.40 & 0.63 & 0.54 [0.44, 0.63] & 72 ms \\
+\bottomrule
+\end{tabular}
+\caption{70 customer-worded questions (35 EN, 35 FR). Dense vs.\ BM25: $+0.128$ MRR, $p=0.018$;
+hybrid vs.\ BM25: $+0.044$, $p=0.06$. Source: \res{retrieval\_helpcenter.json}.}
+\end{table}
+Equal-weight fusion \emph{hurt} because BM25 is much weaker on customer wording. This set was used
+to choose the retriever, so it is a development set; \todo{final numbers on the held-out question
+set written by the team; reranker; larger embedding models}.
+
+\subsection{Emerging-issue detection (RQ4)}
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lcccc}
+\toprule
+Method & +10 msgs & +20 & +40 & Incidents/day (Oct / Nov) \\
+\midrule
+\textbf{Rate-based bursting terms (Poisson $z$)} & \textbf{0.73} & \textbf{0.94} & \textbf{1.00} & 2.08 / 4.94 \\
+Fixed count threshold & 0.00 & 0.00 & 0.00 & 1.12 / 2.19 \\
+\bottomrule
+\end{tabular}
+\caption{Recall on injected bursts of real messages (3 seeds $\times$ 60 trials); thresholds chosen on
+October under an equal alarm budget ($\leq 3$ incidents/day) and applied unchanged to November.
+Source: \res{trends\_uber.json}.}
+\end{table}
+On 14 Nov 2017 the top incident is ``krispy, kreme'' (102 messages, $z=101$); hour by hour, the
+problem starts at 13:00 UTC and the first alert fires at 14:00, one hour after onset. November
+exceeds the alarm budget partly because of genuine incidents that cannot be told apart from false
+alarms without labels.
+
+\subsection{Guaranteed automation (RQ2)}
+\label{sec:gate}
+Learn-then-Test \citep{angelopoulos2021ltt}: on a calibration set, each of 50 pre-registered
+confidence thresholds is tested with an exact binomial test of ``error among automated $> \alpha$''
+at level $\delta/50$; the loosest passing threshold is kept, so that the error among automated
+messages is $\leq \alpha$ with probability $\geq 1-\delta$. Fixed-sequence testing was rejected: at
+the strictest thresholds too few messages are accepted to reject anything.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lccc}
+\toprule
+Method & Automated & Error among automated (mean / max) & Violations \\
+\midrule
+Gate, $\alpha=2\%$ & 0\% (refused 10/10) & -- & 0 \\
+Gate, $\alpha=5\%$ & 0\% (refused 10/10) & -- & 0 \\
+\textbf{Gate, $\alpha=10\%$} & \textbf{36.8\%} & \textbf{3.9\% / 6.3\%} & \textbf{0} \\
+Fixed confidence $\geq 0.8$ & 31.0\% & 3.2\% / 4.5\% & no guarantee \\
+Fixed confidence $\geq 0.9$ & 8.7\% & 2.0\% / 5.3\% & no guarantee \\
+\bottomrule
+\end{tabular}
+\caption{Complaint vs.\ not, 10 seeds, $\approx$690 calibration messages, $\delta=10\%$. Source:
+\res{gate\_complaints2019.json}.}
+\end{table}
+A guarantee costs evidence: with this calibration size and model, $\leq 5\%$ cannot be proven, and
+the gate refuses rather than pretends. \todo{automation rate vs.\ calibration size; with the
+fine-tuned encoder and the gold sets}.
+
+\subsection{Grounded replies (RQ3, generation part)}
+\todo{faithfulness, citation precision/recall, policy violations, blind human comparison with real
+agent replies ($\kappa$), LLM-judge validation, variance over 3 runs, cost and latency}.
+
+\section{Error analysis and limitations}
+Observed failure modes so far, each with a plausible cause:
+(1) \emph{Cross-lingual gap}: without the LLM, the English-trained classical model labels the French
+complaint ``J'ai été facturé deux fois\dots'' as a request (complaint probability 0.28): its training
+data is English only (motivates RQ1).
+(2) \emph{Verifier blind spot}: number matching accepts a wrong number that happens to appear in a
+cited source (``charged 2 times'' makes ``2 days'' pass); claim-level entailment checking is needed.
+(3) \emph{Retrieval}: BM25 misses paraphrases (42 of 70 questions not ranked first).
+(4) \emph{Incidents}: spelling variants (\#krispykreme vs.\ ``krispy kreme'') form separate incidents.
+\todo{error categories with examples for each classifier on the gold sets: sarcasm, multi-issue,
+too short, label ambiguity, translationese}.
+
+\paragraph{Threats to validity.} The Twitter data is English, from 2017, and collected around company
+replies; the French evaluation relies on our own gold set; the Help Center and the customer records
+are fictional, so reply-level results measure faithfulness to \emph{our} policies.
+
+\section{Ethical considerations}
+The demo company is fictional and labelled as such on every page and email; no real brand is
+impersonated. Personal data is masked before storage and before any external call; demo data is
+deleted after the defence. Money is never granted automatically; safety, injury, harassment and
+legal cases always reach a human. Licences are respected (non-commercial, share-alike, no
+redistribution of the raw data). A risk of misuse (using triage to bury complaints) is mitigated by
+ranking severe and risky cases first.
+
+\section{Conclusion and future work}
+\todo{after RQ1 and RQ3 generation results}. Next steps: fine-tuned multilingual encoder, held-out
+retrieval set and reranker, claim-level verifier, calibration-size study for the gate, deployment.
+
+\section*{Contribution statement}
+\todo{per member, consistent with the commit history}.
+
+\section*{AI-use disclosure}
+\todo{table: tool, purpose, extent}. An AI coding assistant was used to help write code, tests and
+documentation; all numbers were produced by the scripts in the repository and checked by the team.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+\end{document}
