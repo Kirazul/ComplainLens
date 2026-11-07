@@ -1,0 +1,32 @@
+# Data and model weights never go in git (spec §6, Deliverable 3).
+# Leading "/" anchors to the repo root, so src/complaintlens/data/ (code) is NOT ignored.
+/data/
+/models/
+/mlruns/
+*.zip
+*.parquet
+*.safetensors
+*.onnx
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Node
+node_modules/
+.next/
+
+# Secrets
+.env
+.env.*
+!.env.example
+
+# OS / editors
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
