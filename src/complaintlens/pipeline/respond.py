@@ -319,6 +319,7 @@ def respond_stage(ctx: Context) -> StageResult:
             "retrieved": [
                 {"id": h.chunk.id, "heading": h.chunk.heading, "score": h.score} for h in hits
             ],
+            "retriever": (ctx.get("retriever") or BM25Retriever(ctx["kb"])).name if hits else None,
             "draft": draft.model_dump() if draft else None,
             "verification": verification,
             "message": message,

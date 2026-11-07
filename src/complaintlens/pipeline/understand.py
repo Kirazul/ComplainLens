@@ -94,7 +94,9 @@ def lexicon_flags(text: str) -> list[RiskFlag]:
 # --- fallback keyword categories (used only when no LLM is configured) -------------------------
 _CATEGORY_KEYWORDS: dict[Category, re.Pattern[str]] = {
     Category.FARE_BILLING: re.compile(
-        r"charg|refund|fare|price|surge|receipt|bill|factur|rembours|prix|tarif|re[çc]u", re.I
+        r"charg|refund|fare|price|surge|receipt|bill|factur|rembours|prix|tarif|re[çc]u|"
+        r"pr[ée]lev|d[ée]bit|pay[ée]",
+        re.I,
     ),
     Category.DRIVER_BEHAVIOUR: re.compile(r"driver|chauffeur|conducteur|rude|impoli", re.I),
     Category.LOST_ITEM: re.compile(r"\blost\b|left my|forgot|oubli|perdu", re.I),

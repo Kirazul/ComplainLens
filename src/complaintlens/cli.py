@@ -33,9 +33,10 @@ def cmd_send(args: argparse.Namespace) -> None:
                 print(f"  note: {event['note']}")
             print("  " + json.dumps(out, ensure_ascii=False, default=str)[:900])
 
-    processor = Processor(
-        KnowledgeBase.load(get_settings().help_center_dir), default_client(), publish=show
-    )
+    from complaintlens.rag.retrieval import build_retriever
+
+    kb = KnowledgeBase.load(get_settings().help_center_dir)
+    processor = Processor(kb, default_client(), publish=show, retriever=build_retriever(kb))
     ticket = processor.process(
         InboundMessage(
             channel=Channel.WEB, sender=args.sender, subject=args.subject, body=args.text

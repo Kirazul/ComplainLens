@@ -135,7 +135,7 @@ function StageBody({ stage }: { stage: StageRecord }) {
                 {retrieved.map((r) => (
                   <li key={r.id}>
                     <span className="font-medium">{r.id}</span> {r.heading}{" "}
-                    <span className="text-muted">BM25 {r.score.toFixed(1)}</span>
+                    <span className="text-muted">score {r.score.toFixed(r.score < 1 ? 3 : 1)}</span>
                   </li>
                 ))}
               </ol>
@@ -143,6 +143,7 @@ function StageBody({ stage }: { stage: StageRecord }) {
               <span className="text-muted">not needed for this decision</span>
             )}
           </Row>
+          {o.retriever ? <Row label="Retriever">{String(o.retriever).replace("dense:", "dense, ")}</Row> : null}
           <Row label="Decision">{humanize(String(decision.action))}</Row>
         </dl>
       );
