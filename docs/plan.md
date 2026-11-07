@@ -187,6 +187,22 @@ Each finding is written next to the design decision it caused.
 
 ---
 
+### 5.4 First baseline results (milestone 3, 2026-11-07)
+Source: `reports/results/baseline_complaints2019.json` (code: `ml/scripts/baseline_complaints2019.py`); published numbers in `reports/results/published_reference_complaints2019.json`.
+
+**Protocol:** D2, stratified 10-fold CV with duplicate tweets kept in one fold, × 5 seeds; default hyperparameters (no tuning); macro-F1 (mean ± std).
+
+| Task | Majority (ours / published) | Best published non-neural | **Ours: TF-IDF word+char + LR** | Best published transformer |
+|---|---|---|---|---|
+| Complaint vs. not | 39.1 / 39.1 | 79.0 | **81.5 ± 0.2** | 88.2 |
+| Severity 1–4 | 13.1 / 13.0 | 43.5 | **46.2 ± 1.1** (QWK 0.50) | 55.7 |
+
+- **Majority-class scores match the papers** to within 0.1, an independent check of our data alignment and metric.
+- **Word+char features beat char-only** on both tasks (paired bootstrap: +1.6 points, p = 0.0005; +2.6 points, p = 0.013).
+- **Duplicate grouping changed scores by less than the seed variance** (ablation file `baseline_complaints2019_ungrouped_ablation.json`): only 64 duplicates (1.9%) here. We report it as checked, not as a problem.
+- **Caveat:** same protocol as the papers but different fold assignment; the papers also tuned hyperparameters in an inner loop and we did not, which, if anything, favours them.
+- **Target for our fine-tuned encoder:** close the gap to the 88.2 / 55.7 transformer results.
+
 ## 6. The pipeline, stage by stage
 Each NLP stage lists the proposed method, the **baseline** it must beat, and the **metric**.
 

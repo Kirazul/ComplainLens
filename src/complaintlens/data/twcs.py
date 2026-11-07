@@ -27,7 +27,8 @@ import polars as pl
 
 _URL = re.compile(r"https?://\S+")
 _HANDLE = re.compile(r"@\w+")
-_SIGNATURE = re.compile(r"\s*[\^\-–]\s*[A-Z]{1,3}\s*$")
+# Agent signatures look like "^AB", "-AB" or "<en dash>AB"; the en dash below is intentional.
+_SIGNATURE = re.compile(r"\s*[\^\-–]\s*[A-Z]{1,3}\s*$")  # noqa: RUF001
 _SPACES = re.compile(r"[ \t]+")
 _BRAND_SUFFIXES = ("_support", "support", "help", "cares", "care")
 
@@ -86,7 +87,9 @@ def _with_roots(tweets: pl.DataFrame) -> pl.DataFrame:
     threads exceed 300 replies, so walking one parent per round is too slow.) A parent that is
     missing from the data ends the chain.
     """
-    present = tweets.select(pl.col("tweet_id").alias("in_response_to_tweet_id"), pl.lit(True).alias("_ok"))
+    present = tweets.select(
+        pl.col("tweet_id").alias("in_response_to_tweet_id"), pl.lit(True).alias("_ok")
+    )
     state = (
         tweets.select("tweet_id", "in_response_to_tweet_id")
         .join(present, on="in_response_to_tweet_id", how="left")
@@ -99,9 +102,7 @@ def _with_roots(tweets: pl.DataFrame) -> pl.DataFrame:
         )
     )
     for _ in range(MAX_JUMP_ROUNDS):
-        jumped = state.join(
-            state.rename({"tweet_id": "anc", "anc": "_anc2"}), on="anc", how="left"
-        )
+        jumped = state.join(state.rename({"tweet_id": "anc", "anc": "_anc2"}), on="anc", how="left")
         if (jumped["_anc2"] == jumped["anc"]).all():
             break
         state = jumped.select("tweet_id", pl.col("_anc2").alias("anc"))
@@ -138,12 +139,9 @@ def build_first_contacts(tweets: pl.DataFrame, brand: str) -> pl.DataFrame:
         .select("root", pl.col("created_at").alias("_reply_time"), pl.col("text").alias("_reply"))
     )
     mention = rf"(?i)@{re.escape(brand)}\b"
-    convs = (
-        roots.join(replies, on="root", how="left")
-        .filter(
-            pl.col("_root_inbound")
-            & (pl.col("_reply_time").is_not_null() | pl.col("_root_text").str.contains(mention))
-        )
+    convs = roots.join(replies, on="root", how="left").filter(
+        pl.col("_root_inbound")
+        & (pl.col("_reply_time").is_not_null() | pl.col("_root_text").str.contains(mention))
     )
 
     customer_tweets = (
@@ -162,11 +160,13 @@ def build_first_contacts(tweets: pl.DataFrame, brand: str) -> pl.DataFrame:
     return (
         convs.join(customer_tweets, on="root", how="inner")
         .with_columns(
-            pl.col("_reply").map_elements(
-                lambda t: mask_text(strip_agent_signature(t), brand), pl.Utf8
-            ).alias("first_reply"),
+            pl.col("_reply")
+            .map_elements(lambda t: mask_text(strip_agent_signature(t), brand), pl.Utf8)
+            .alias("first_reply"),
             pl.col("_reply_time").is_not_null().alias("brand_replied"),
-            (pl.col("_reply_time") - pl.col("_root_time")).dt.total_seconds().alias("reply_delay_s"),
+            (pl.col("_reply_time") - pl.col("_root_time"))
+            .dt.total_seconds()
+            .alias("reply_delay_s"),
         )
         .select(
             pl.col("root").alias("conversation_id"),

@@ -1,0 +1,22 @@
+{
+  "description": "Published results on Complaints-on-Twitter (3,449 tweets), macro-F1 in %. Copied from the papers' tables on 2026-11-07; protocol: nested stratified 10-fold cross-validation with inner 3-fold tuning; fold assignments not available to us.",
+  "complaint_vs_not": {
+    "source": "Preotiuc-Pietro, Gaman, Aletras (ACL 2019), Tables 6-7; Jin & Aletras (NAACL 2021), Table 4",
+    "most_frequent_class": 39.1,
+    "lr_bag_of_words": 77.5,
+    "lr_all_features": 78.0,
+    "lstm": 77.0,
+    "lr_distant_supervision_easyadapt": 79.0,
+    "bert_jin_aletras_2020": 87.0,
+    "roberta_jin_aletras_2020": 86.6,
+    "best_mtl_m_roberta_emo_2021": 88.2
+  },
+  "severity_4_levels": {
+    "source": "Jin & Aletras (NAACL 2021), Table 3",
+    "majority_class": 13.0,
+    "lr_bow": 43.5,
+    "bigru_att": 43.5,
+    "roberta": 54.7,
+    "best_m_roberta_emo": 55.7
+  }
+}

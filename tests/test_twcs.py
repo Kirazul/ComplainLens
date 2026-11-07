@@ -27,6 +27,7 @@ def test_strip_agent_signature():
     )
     assert strip_agent_signature("We can help -JR") == "We can help"
     assert strip_agent_signature("No signature here") == "No signature here"
+    assert strip_agent_signature("Glad to help " + chr(0x2013) + "MK") == "Glad to help"
 
 
 def _tweets() -> pl.DataFrame:

@@ -5,7 +5,7 @@ The two releases describe the same 3,449 tweets **in the same row order**, but t
 cannot be joined by ID or by exact text:
 - tweet IDs were corrupted by a spreadsheet (``2.26E+16``);
 - text was lower-cased and re-tokenised, mentions/links replaced by ``<user>``/``<url>``, HTML
-  entities decoded, and words with curly apostrophes dropped ("they’re" -> "they").
+  entities decoded, and words with a curly apostrophe (U+2019) dropped ("they're" -> "they").
 
 We therefore align by row position and *verify* every pair: identical complaint label and a
 text-similarity ratio above a threshold. We keep the *original* text, whose casing and punctuation

@@ -1,0 +1,118 @@
+{
+  "experiment": "baseline_complaints2019",
+  "date_utc": "2026-11-07T19:17:00+00:00",
+  "git_commit": "c21af75+dirty",
+  "python": "3.12.15",
+  "sklearn": "1.9.1",
+  "protocol": {
+    "cv": "stratified 10-fold, duplicates grouped in one fold",
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4
+    ],
+    "hyperparameters": "defaults (LR class_weight=balanced, max_iter=2000); word 1-2 grams, char_wb 2-5 grams, min_df=2, sublinear_tf",
+    "normalisation": "URLs->[URL], @handles->[USER]",
+    "duplicate_texts_in_data": 64
+  },
+  "task_a_complaint_vs_not": {
+    "models": {
+      "majority": {
+        "macro_f1_mean": 0.3913,
+        "macro_f1_std": 0.0,
+        "macro_f1_seed0_ci95": [
+          0.3856,
+          0.3971
+        ],
+        "accuracy_mean": 0.6428
+      },
+      "tfidf_word_lr": {
+        "macro_f1_mean": 0.7829,
+        "macro_f1_std": 0.0018,
+        "macro_f1_seed0_ci95": [
+          0.7672,
+          0.7945
+        ],
+        "accuracy_mean": 0.7943
+      },
+      "tfidf_char_lr": {
+        "macro_f1_mean": 0.7965,
+        "macro_f1_std": 0.0008,
+        "macro_f1_seed0_ci95": [
+          0.7812,
+          0.8083
+        ],
+        "accuracy_mean": 0.8067
+      },
+      "tfidf_word+char_lr": {
+        "macro_f1_mean": 0.8148,
+        "macro_f1_std": 0.0021,
+        "macro_f1_seed0_ci95": [
+          0.7989,
+          0.8251
+        ],
+        "accuracy_mean": 0.8257
+      }
+    },
+    "best": "tfidf_word+char_lr",
+    "paired_test_best_vs_second": {
+      "a": "tfidf_word+char_lr",
+      "b": "tfidf_char_lr",
+      "delta_macro_f1": 0.0164,
+      "p_value_one_sided": 0.0005
+    }
+  },
+  "task_b_severity_on_complaints": {
+    "models": {
+      "majority": {
+        "macro_f1_mean": 0.1307,
+        "macro_f1_std": 0.0,
+        "macro_f1_seed0_ci95": [
+          0.1228,
+          0.1374
+        ],
+        "accuracy_mean": 0.3539,
+        "quadratic_kappa_mean": 0.0
+      },
+      "tfidf_word_lr": {
+        "macro_f1_mean": 0.446,
+        "macro_f1_std": 0.0046,
+        "macro_f1_seed0_ci95": [
+          0.418,
+          0.4719
+        ],
+        "accuracy_mean": 0.4701,
+        "quadratic_kappa_mean": 0.4854
+      },
+      "tfidf_char_lr": {
+        "macro_f1_mean": 0.447,
+        "macro_f1_std": 0.006,
+        "macro_f1_seed0_ci95": [
+          0.4162,
+          0.4725
+        ],
+        "accuracy_mean": 0.4782,
+        "quadratic_kappa_mean": 0.4754
+      },
+      "tfidf_word+char_lr": {
+        "macro_f1_mean": 0.4625,
+        "macro_f1_std": 0.0106,
+        "macro_f1_seed0_ci95": [
+          0.4431,
+          0.4981
+        ],
+        "accuracy_mean": 0.4912,
+        "quadratic_kappa_mean": 0.4987
+      }
+    },
+    "best": "tfidf_word+char_lr",
+    "paired_test_best_vs_second": {
+      "a": "tfidf_word+char_lr",
+      "b": "tfidf_char_lr",
+      "delta_macro_f1": 0.0264,
+      "p_value_one_sided": 0.0125
+    }
+  }
+}
