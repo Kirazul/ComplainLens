@@ -1,0 +1,1784 @@
+{
+  "source": "Customer Support on Twitter, @Uber_Support first contacts (brand masked)",
+  "zscore_threshold": 3.0,
+  "timeline": [
+    {
+      "day": "2017-10-01",
+      "messages": 10,
+      "incidents": []
+    },
+    {
+      "day": "2017-10-02",
+      "messages": 19,
+      "incidents": []
+    },
+    {
+      "day": "2017-10-03",
+      "messages": 25,
+      "incidents": []
+    },
+    {
+      "day": "2017-10-04",
+      "messages": 64,
+      "incidents": []
+    },
+    {
+      "day": "2017-10-05",
+      "messages": 766,
+      "incidents": []
+    },
+    {
+      "day": "2017-10-06",
+      "messages": 761,
+      "incidents": []
+    },
+    {
+      "day": "2017-10-07",
+      "messages": 703,
+      "incidents": []
+    },
+    {
+      "day": "2017-10-08",
+      "messages": 683,
+      "incidents": [
+        {
+          "terms": [
+            "night"
+          ],
+          "messages": 26,
+          "z": 4.7
+        },
+        {
+          "terms": [
+            "showed"
+          ],
+          "messages": 12,
+          "z": 4.6
+        },
+        {
+          "terms": [
+            "look"
+          ],
+          "messages": 10,
+          "z": 3.9
+        }
+      ]
+    },
+    {
+      "day": "2017-10-09",
+      "messages": 622,
+      "incidents": [
+        {
+          "terms": [
+            "wouldn",
+            "airport"
+          ],
+          "messages": 25,
+          "z": 4.0
+        },
+        {
+          "terms": [
+            "showing"
+          ],
+          "messages": 12,
+          "z": 3.8
+        }
+      ]
+    },
+    {
+      "day": "2017-10-10",
+      "messages": 620,
+      "incidents": [
+        {
+          "terms": [
+            "trips"
+          ],
+          "messages": 15,
+          "z": 3.6
+        },
+        {
+          "terms": [
+            "mobile"
+          ],
+          "messages": 11,
+          "z": 3.0
+        }
+      ]
+    },
+    {
+      "day": "2017-10-11",
+      "messages": 699,
+      "incidents": [
+        {
+          "terms": [
+            "does"
+          ],
+          "messages": 20,
+          "z": 3.2
+        }
+      ]
+    },
+    {
+      "day": "2017-10-12",
+      "messages": 719,
+      "incidents": [
+        {
+          "terms": [
+            "disabled"
+          ],
+          "messages": 26,
+          "z": 5.4
+        }
+      ]
+    },
+    {
+      "day": "2017-10-13",
+      "messages": 716,
+      "incidents": [
+        {
+          "terms": [
+            "mins",
+            "hell"
+          ],
+          "messages": 36,
+          "z": 3.7
+        }
+      ]
+    },
+    {
+      "day": "2017-10-14",
+      "messages": 652,
+      "incidents": [
+        {
+          "terms": [
+            "terrible"
+          ],
+          "messages": 12,
+          "z": 3.5
+        }
+      ]
+    },
+    {
+      "day": "2017-10-15",
+      "messages": 692,
+      "incidents": [
+        {
+          "terms": [
+            "night",
+            "friend",
+            "something"
+          ],
+          "messages": 57,
+          "z": 4.5
+        },
+        {
+          "terms": [
+            "deliver"
+          ],
+          "messages": 13,
+          "z": 4.2
+        },
+        {
+          "terms": [
+            "credit"
+          ],
+          "messages": 23,
+          "z": 3.6
+        }
+      ]
+    },
+    {
+      "day": "2017-10-16",
+      "messages": 669,
+      "incidents": [
+        {
+          "terms": [
+            "promo",
+            "codes"
+          ],
+          "messages": 27,
+          "z": 3.8
+        },
+        {
+          "terms": [
+            "cars",
+            "driving"
+          ],
+          "messages": 25,
+          "z": 3.6
+        },
+        {
+          "terms": [
+            "taxi"
+          ],
+          "messages": 11,
+          "z": 3.4
+        }
+      ]
+    },
+    {
+      "day": "2017-10-17",
+      "messages": 615,
+      "incidents": [
+        {
+          "terms": [
+            "right"
+          ],
+          "messages": 18,
+          "z": 4.3
+        },
+        {
+          "terms": [
+            "route"
+          ],
+          "messages": 14,
+          "z": 3.6
+        }
+      ]
+    },
+    {
+      "day": "2017-10-18",
+      "messages": 631,
+      "incidents": [
+        {
+          "terms": [
+            "next"
+          ],
+          "messages": 15,
+          "z": 5.6
+        }
+      ]
+    },
+    {
+      "day": "2017-10-19",
+      "messages": 642,
+      "incidents": [
+        {
+          "terms": [
+            "around"
+          ],
+          "messages": 14,
+          "z": 3.7
+        }
+      ]
+    },
+    {
+      "day": "2017-10-20",
+      "messages": 720,
+      "incidents": []
+    },
+    {
+      "day": "2017-10-21",
+      "messages": 698,
+      "incidents": [
+        {
+          "terms": [
+            "supposed"
+          ],
+          "messages": 10,
+          "z": 3.2
+        }
+      ]
+    },
+    {
+      "day": "2017-10-22",
+      "messages": 653,
+      "incidents": []
+    },
+    {
+      "day": "2017-10-23",
+      "messages": 645,
+      "incidents": [
+        {
+          "terms": [
+            "arrived"
+          ],
+          "messages": 12,
+          "z": 4.3
+        },
+        {
+          "terms": [
+            "name"
+          ],
+          "messages": 12,
+          "z": 4.2
+        }
+      ]
+    },
+    {
+      "day": "2017-10-24",
+      "messages": 660,
+      "incidents": [
+        {
+          "terms": [
+            "fare"
+          ],
+          "messages": 19,
+          "z": 4.0
+        },
+        {
+          "terms": [
+            "cant"
+          ],
+          "messages": 12,
+          "z": 3.0
+        }
+      ]
+    },
+    {
+      "day": "2017-10-25",
+      "messages": 765,
+      "incidents": [
+        {
+          "terms": [
+            "seriously"
+          ],
+          "messages": 13,
+          "z": 4.4
+        },
+        {
+          "terms": [
+            "accident"
+          ],
+          "messages": 12,
+          "z": 3.4
+        }
+      ]
+    },
+    {
+      "day": "2017-10-26",
+      "messages": 742,
+      "incidents": [
+        {
+          "terms": [
+            "jersey"
+          ],
+          "messages": 14,
+          "z": 9.9
+        },
+        {
+          "terms": [
+            "route"
+          ],
+          "messages": 12,
+          "z": 3.7
+        },
+        {
+          "terms": [
+            "sign"
+          ],
+          "messages": 14,
+          "z": 3.1
+        }
+      ]
+    },
+    {
+      "day": "2017-10-27",
+      "messages": 743,
+      "incidents": [
+        {
+          "terms": [
+            "she"
+          ],
+          "messages": 12,
+          "z": 3.1
+        }
+      ]
+    },
+    {
+      "day": "2017-10-28",
+      "messages": 821,
+      "incidents": [
+        {
+          "terms": [
+            "night"
+          ],
+          "messages": 36,
+          "z": 6.3
+        },
+        {
+          "terms": [
+            "later"
+          ],
+          "messages": 13,
+          "z": 4.2
+        },
+        {
+          "terms": [
+            "price"
+          ],
+          "messages": 14,
+          "z": 3.2
+        }
+      ]
+    },
+    {
+      "day": "2017-10-29",
+      "messages": 880,
+      "incidents": [
+        {
+          "terms": [
+            "night",
+            "tonight",
+            "taxi"
+          ],
+          "messages": 84,
+          "z": 7.5
+        },
+        {
+          "terms": [
+            "awful"
+          ],
+          "messages": 10,
+          "z": 3.2
+        }
+      ]
+    },
+    {
+      "day": "2017-10-30",
+      "messages": 735,
+      "incidents": [
+        {
+          "terms": [
+            "extra"
+          ],
+          "messages": 17,
+          "z": 3.8
+        },
+        {
+          "terms": [
+            "item"
+          ],
+          "messages": 13,
+          "z": 3.8
+        }
+      ]
+    },
+    {
+      "day": "2017-10-31",
+      "messages": 605,
+      "incidents": [
+        {
+          "terms": [
+            "pass"
+          ],
+          "messages": 11,
+          "z": 3.6
+        }
+      ]
+    },
+    {
+      "day": "2017-11-01",
+      "messages": 745,
+      "incidents": [
+        {
+          "terms": [
+            "pass",
+            "purchase",
+            "10am",
+            "buy",
+            "link"
+          ],
+          "messages": 123,
+          "z": 26.8
+        },
+        {
+          "terms": [
+            "flat"
+          ],
+          "messages": 12,
+          "z": 7.8
+        },
+        {
+          "terms": [
+            "explain"
+          ],
+          "messages": 12,
+          "z": 3.4
+        }
+      ]
+    },
+    {
+      "day": "2017-11-02",
+      "messages": 639,
+      "incidents": [
+        {
+          "terms": [
+            "flat"
+          ],
+          "messages": 12,
+          "z": 5.3
+        },
+        {
+          "terms": [
+            "pass"
+          ],
+          "messages": 29,
+          "z": 4.6
+        },
+        {
+          "terms": [
+            "info"
+          ],
+          "messages": 13,
+          "z": 4.3
+        }
+      ]
+    },
+    {
+      "day": "2017-11-03",
+      "messages": 661,
+      "incidents": [
+        {
+          "terms": [
+            "many"
+          ],
+          "messages": 12,
+          "z": 3.7
+        },
+        {
+          "terms": [
+            "cancels"
+          ],
+          "messages": 13,
+          "z": 3.5
+        }
+      ]
+    },
+    {
+      "day": "2017-11-04",
+      "messages": 685,
+      "incidents": [
+        {
+          "terms": [
+            "deliver"
+          ],
+          "messages": 15,
+          "z": 3.0
+        }
+      ]
+    },
+    {
+      "day": "2017-11-05",
+      "messages": 739,
+      "incidents": [
+        {
+          "terms": [
+            "book"
+          ],
+          "messages": 17,
+          "z": 3.4
+        },
+        {
+          "terms": [
+            "completely"
+          ],
+          "messages": 10,
+          "z": 3.4
+        },
+        {
+          "terms": [
+            "other",
+            "driving"
+          ],
+          "messages": 29,
+          "z": 3.1
+        }
+      ]
+    },
+    {
+      "day": "2017-11-06",
+      "messages": 684,
+      "incidents": [
+        {
+          "terms": [
+            "details"
+          ],
+          "messages": 11,
+          "z": 3.6
+        },
+        {
+          "terms": [
+            "gave"
+          ],
+          "messages": 13,
+          "z": 3.6
+        }
+      ]
+    },
+    {
+      "day": "2017-11-07",
+      "messages": 635,
+      "incidents": [
+        {
+          "terms": [
+            "says"
+          ],
+          "messages": 25,
+          "z": 3.7
+        }
+      ]
+    },
+    {
+      "day": "2017-11-08",
+      "messages": 682,
+      "incidents": [
+        {
+          "terms": [
+            "keep",
+            "driving",
+            "start"
+          ],
+          "messages": 41,
+          "z": 3.8
+        }
+      ]
+    },
+    {
+      "day": "2017-11-09",
+      "messages": 629,
+      "incidents": [
+        {
+          "terms": [
+            "sure",
+            "min"
+          ],
+          "messages": 35,
+          "z": 3.9
+        },
+        {
+          "terms": [
+            "every"
+          ],
+          "messages": 17,
+          "z": 3.5
+        },
+        {
+          "terms": [
+            "message",
+            "past"
+          ],
+          "messages": 25,
+          "z": 3.2
+        }
+      ]
+    },
+    {
+      "day": "2017-11-10",
+      "messages": 661,
+      "incidents": [
+        {
+          "terms": [
+            "shame"
+          ],
+          "messages": 10,
+          "z": 5.8
+        },
+        {
+          "terms": [
+            "side",
+            "other",
+            "telling",
+            "far",
+            "happened"
+          ],
+          "messages": 59,
+          "z": 4.1
+        },
+        {
+          "terms": [
+            "next"
+          ],
+          "messages": 13,
+          "z": 3.9
+        }
+      ]
+    },
+    {
+      "day": "2017-11-11",
+      "messages": 389,
+      "incidents": [
+        {
+          "terms": [
+            "taxi",
+            "his"
+          ],
+          "messages": 28,
+          "z": 3.2
+        },
+        {
+          "terms": [
+            "location"
+          ],
+          "messages": 13,
+          "z": 3.1
+        }
+      ]
+    },
+    {
+      "day": "2017-11-12",
+      "messages": 19,
+      "incidents": []
+    },
+    {
+      "day": "2017-11-13",
+      "messages": 450,
+      "incidents": [
+        {
+          "terms": [
+            "address"
+          ],
+          "messages": 19,
+          "z": 4.2
+        },
+        {
+          "terms": [
+            "signed"
+          ],
+          "messages": 10,
+          "z": 3.8
+        }
+      ]
+    },
+    {
+      "day": "2017-11-14",
+      "messages": 1333,
+      "incidents": [
+        {
+          "terms": [
+            "krispy",
+            "krispykreme",
+            "kreme",
+            "free",
+            "2pm"
+          ],
+          "messages": 356,
+          "z": 101.0
+        },
+        {
+          "terms": [
+            "doughnuts",
+            "donuts",
+            "office",
+            "london",
+            "doughnut"
+          ],
+          "messages": 271,
+          "z": 86.3
+        },
+        {
+          "terms": [
+            "crashed",
+            "crashing",
+            "crash",
+            "everyone",
+            "working"
+          ],
+          "messages": 130,
+          "z": 26.0
+        }
+      ]
+    },
+    {
+      "day": "2017-11-15",
+      "messages": 691,
+      "incidents": [
+        {
+          "terms": [
+            "delhi"
+          ],
+          "messages": 10,
+          "z": 4.9
+        },
+        {
+          "terms": [
+            "yesterday"
+          ],
+          "messages": 15,
+          "z": 4.2
+        },
+        {
+          "terms": [
+            "minute"
+          ],
+          "messages": 12,
+          "z": 3.9
+        }
+      ]
+    },
+    {
+      "day": "2017-11-16",
+      "messages": 761,
+      "incidents": [
+        {
+          "terms": [
+            "hour",
+            "hold",
+            "long"
+          ],
+          "messages": 54,
+          "z": 5.2
+        },
+        {
+          "terms": [
+            "gave",
+            "fee"
+          ],
+          "messages": 46,
+          "z": 4.4
+        },
+        {
+          "terms": [
+            "vehicle"
+          ],
+          "messages": 12,
+          "z": 3.3
+        }
+      ]
+    },
+    {
+      "day": "2017-11-17",
+      "messages": 693,
+      "incidents": [
+        {
+          "terms": [
+            "tonight"
+          ],
+          "messages": 12,
+          "z": 3.2
+        },
+        {
+          "terms": [
+            "tell"
+          ],
+          "messages": 19,
+          "z": 3.1
+        },
+        {
+          "terms": [
+            "forgot"
+          ],
+          "messages": 10,
+          "z": 3.0
+        }
+      ]
+    },
+    {
+      "day": "2017-11-18",
+      "messages": 39,
+      "incidents": []
+    },
+    {
+      "day": "2017-11-19",
+      "messages": 588,
+      "incidents": [
+        {
+          "terms": [
+            "night",
+            "experience",
+            "charges",
+            "tonight",
+            "canceled"
+          ],
+          "messages": 90,
+          "z": 5.3
+        },
+        {
+          "terms": [
+            "sucks"
+          ],
+          "messages": 11,
+          "z": 3.6
+        },
+        {
+          "terms": [
+            "done"
+          ],
+          "messages": 11,
+          "z": 3.3
+        }
+      ]
+    },
+    {
+      "day": "2017-11-20",
+      "messages": 762,
+      "incidents": [
+        {
+          "terms": [
+            "may"
+          ],
+          "messages": 11,
+          "z": 4.5
+        },
+        {
+          "terms": [
+            "does",
+            "kindly"
+          ],
+          "messages": 45,
+          "z": 4.3
+        },
+        {
+          "terms": [
+            "trips",
+            "paid",
+            "fare"
+          ],
+          "messages": 60,
+          "z": 4.1
+        }
+      ]
+    },
+    {
+      "day": "2017-11-21",
+      "messages": 733,
+      "incidents": [
+        {
+          "terms": [
+            "double",
+            "amount"
+          ],
+          "messages": 28,
+          "z": 4.7
+        },
+        {
+          "terms": [
+            "many",
+            "right",
+            "business"
+          ],
+          "messages": 51,
+          "z": 4.5
+        },
+        {
+          "terms": [
+            "reply",
+            "report"
+          ],
+          "messages": 34,
+          "z": 4.3
+        }
+      ]
+    },
+    {
+      "day": "2017-11-22",
+      "messages": 785,
+      "incidents": [
+        {
+          "terms": [
+            "response",
+            "saying",
+            "hours",
+            "pathetic"
+          ],
+          "messages": 73,
+          "z": 3.9
+        },
+        {
+          "terms": [
+            "delete"
+          ],
+          "messages": 13,
+          "z": 3.8
+        },
+        {
+          "terms": [
+            "discount"
+          ],
+          "messages": 12,
+          "z": 3.1
+        }
+      ]
+    },
+    {
+      "day": "2017-11-23",
+      "messages": 746,
+      "incidents": [
+        {
+          "terms": [
+            "hello"
+          ],
+          "messages": 23,
+          "z": 3.8
+        },
+        {
+          "terms": [
+            "matter"
+          ],
+          "messages": 10,
+          "z": 3.8
+        },
+        {
+          "terms": [
+            "half"
+          ],
+          "messages": 13,
+          "z": 3.2
+        }
+      ]
+    },
+    {
+      "day": "2017-11-24",
+      "messages": 701,
+      "incidents": [
+        {
+          "terms": [
+            "black"
+          ],
+          "messages": 12,
+          "z": 4.6
+        },
+        {
+          "terms": [
+            "thanksgiving"
+          ],
+          "messages": 10,
+          "z": 3.9
+        },
+        {
+          "terms": [
+            "cash"
+          ],
+          "messages": 20,
+          "z": 3.5
+        }
+      ]
+    },
+    {
+      "day": "2017-11-25",
+      "messages": 712,
+      "incidents": [
+        {
+          "terms": [
+            "hold"
+          ],
+          "messages": 13,
+          "z": 4.2
+        },
+        {
+          "terms": [
+            "picking"
+          ],
+          "messages": 10,
+          "z": 3.7
+        }
+      ]
+    },
+    {
+      "day": "2017-11-26",
+      "messages": 752,
+      "incidents": [
+        {
+          "terms": [
+            "journey"
+          ],
+          "messages": 11,
+          "z": 3.3
+        },
+        {
+          "terms": [
+            "gps"
+          ],
+          "messages": 14,
+          "z": 3.1
+        }
+      ]
+    },
+    {
+      "day": "2017-11-27",
+      "messages": 832,
+      "incidents": []
+    },
+    {
+      "day": "2017-11-28",
+      "messages": 704,
+      "incidents": [
+        {
+          "terms": [
+            "understand"
+          ],
+          "messages": 11,
+          "z": 3.2
+        },
+        {
+          "terms": [
+            "happened"
+          ],
+          "messages": 14,
+          "z": 3.1
+        }
+      ]
+    },
+    {
+      "day": "2017-11-29",
+      "messages": 799,
+      "incidents": [
+        {
+          "terms": [
+            "pass",
+            "purchase",
+            "link",
+            "option"
+          ],
+          "messages": 67,
+          "z": 12.7
+        },
+        {
+          "terms": [
+            "flat"
+          ],
+          "messages": 10,
+          "z": 5.1
+        },
+        {
+          "terms": [
+            "gone"
+          ],
+          "messages": 13,
+          "z": 4.9
+        }
+      ]
+    },
+    {
+      "day": "2017-11-30",
+      "messages": 892,
+      "incidents": [
+        {
+          "terms": [
+            "pass",
+            "bought",
+            "passes"
+          ],
+          "messages": 58,
+          "z": 6.8
+        },
+        {
+          "terms": [
+            "may"
+          ],
+          "messages": 12,
+          "z": 3.6
+        },
+        {
+          "terms": [
+            "shouldn"
+          ],
+          "messages": 11,
+          "z": 3.5
+        }
+      ]
+    },
+    {
+      "day": "2017-12-01",
+      "messages": 979,
+      "incidents": [
+        {
+          "terms": [
+            "shows"
+          ],
+          "messages": 17,
+          "z": 4.5
+        },
+        {
+          "terms": [
+            "almost"
+          ],
+          "messages": 25,
+          "z": 3.8
+        },
+        {
+          "terms": [
+            "person"
+          ],
+          "messages": 13,
+          "z": 3.3
+        }
+      ]
+    },
+    {
+      "day": "2017-12-02",
+      "messages": 840,
+      "incidents": [
+        {
+          "terms": [
+            "put"
+          ],
+          "messages": 16,
+          "z": 3.0
+        }
+      ]
+    }
+  ],
+  "clusters": [
+    {
+      "id": 19,
+      "size": 2236,
+      "words": [
+        "his",
+        "car",
+        "him",
+        "hit",
+        "driver",
+        "driving",
+        "accident",
+        "rude"
+      ],
+      "examples": [
+        "Dear [USER] this ride was my FIRST neg exp. 2nd is ur email! #sorrynotsorry I reported ur driver's car reeking of gasoline &amp; exhaust #useLyft [URL]",
+        "1) My [USER] driver arrived, took one look at me in makeup, cancelled the trip and sped off.",
+        "[COMPANY] [URL]\n[COMPANY] This driver Muhammad Saleem is uneducated.don't no my pick up location.who give rights [COMPANY] to charg passengers.this is shame full [COMPANY]"
+      ]
+    },
+    {
+      "id": 1,
+      "size": 2188,
+      "words": [
+        "drivers",
+        "cars",
+        "riders",
+        "driving",
+        "drive",
+        "gps",
+        "they",
+        "stop"
+      ],
+      "examples": [
+        "Big fan of [USER]. Not a fan of driver watching movies on phone whilst driving. #7529 #Liverpool Sun 1st Oct. [USER] [URL]",
+        "Yes [USER] driver, please almost hit that car trying to change lanes and being totally aware of it 🙄🙄🙄",
+        "[USER] [COMPANY] [USER] Uhhhhh, people are losing professions and careers arguing with [COMPANY] drivers? No more [COMPANY] for me!"
+      ]
+    },
+    {
+      "id": 5,
+      "size": 2129,
+      "words": [
+        "minutes",
+        "away",
+        "mins",
+        "waiting",
+        "late",
+        "cancelled",
+        "wait",
+        "airport"
+      ],
+      "examples": [
+        "Just had to wait for a 2nd [COMPANY] after 1 arrived on the wrong side of the road (despite me keying in exact address) then immediately leaving\nGets better. Driver instantly voided trip then appeared on the correct side of the road so I opened door... but he'd taken a new fare.\nHe claimed he'd \"waited\" and I wasn't there even though I watched him arrive then immediately drive off\nHere he is sitting right in front of me refusing to honour the fare he'd just accepted and fucked up [URL]\nThe in-app [COMPANY] system does not seem to allow me to feed this back without screwing over the 2nd driver who did his job well so...\n[COMPANY] Just happened again. I cannot fucking believe this.",
+        "Not super happy about waiting over 30 min for a [USER] driver quoted to be 20 min away when I'm trying to leave the airport :/",
+        "Officially never using [USER]’s scheduled rides again. I ordered a pick up ride for 6, and it didn’t get to me until 6:10. Every minute counts in LA traffic."
+      ]
+    },
+    {
+      "id": 11,
+      "size": 2048,
+      "words": [
+        "food",
+        "eats",
+        "ordered",
+        "cold",
+        "mcdonald",
+        "delivered",
+        "meal",
+        "deliver"
+      ],
+      "examples": [
+        "Be aware [USER] will not help nor refund you on orders if you receive bad food due to their lack of riders! [USER] shouldn't accept jobs [URL]",
+        "mahne [COMPANY] eats bullshitting right now pushed our order back like 4 times",
+        "#[COMPANY]eats can’t handle it sort yourself out I want my donuts come one."
+      ]
+    },
+    {
+      "id": 10,
+      "size": 1914,
+      "words": [
+        "charged",
+        "cancelled",
+        "driver",
+        "cash",
+        "didn",
+        "pay",
+        "trip",
+        "paid"
+      ],
+      "examples": [
+        "Getting charged an extra $80 from [USER] because the driver said someone peed in the car? This is just outrageous and getting out of hand....",
+        "Really [USER]??? I was charged after the driver cancelled my ride. Second time it happened 😤",
+        ".[USER] [COMPANY] Thanks for the pool driver that never showed at DCA’s Southwest Airlines arrivals door last night, then cancelled the ride and charged me $5. Shouldn’t get charged when a driver doesn’t show at correct pickup. #shouldausedlyft"
+      ]
+    },
+    {
+      "id": 7,
+      "size": 1871,
+      "words": [
+        "driver",
+        "him",
+        "drivers",
+        "location",
+        "refused",
+        "rating",
+        "destination",
+        "wrong"
+      ],
+      "examples": [
+        "Took a ride 4m gulshan 1 DNCC- Banasree F block.After half way driver turn off AC &amp; he dropped us on Banasree BlockC\n[USER] [COMPANY] [URL]\n[USER] [COMPANY] __email__\n01714741851",
+        "[COMPANY] my [COMPANY] driver took off with my stuff and it’s not lost because he even blocked my number",
+        "[COMPANY] could you please put on the wish-list for the app [COMPANY]eats Drivers use a flashing notification for drivers to tap-on &amp; read when delivery instructions exist?"
+      ]
+    },
+    {
+      "id": 4,
+      "size": 1644,
+      "words": [
+        "price",
+        "fare",
+        "cost",
+        "surge",
+        "pricing",
+        "prices",
+        "charge",
+        "charging"
+      ],
+      "examples": [
+        "[USER] I applied this promo for a ride estimated at around Rs.674, expecting rs325 off! Did not get any discount! Ur CS is nt refunding! [URL]",
+        "[COMPANY] why was my ride 30-40 % more than estimated cost?",
+        "[USER] [USER] [COMPANY] trying to figure out how I can pay for my guests rides to and from my venue. Help?"
+      ]
+    },
+    {
+      "id": 24,
+      "size": 1618,
+      "words": [
+        "app",
+        "working",
+        "ios",
+        "error",
+        "deleting",
+        "crashed",
+        "use",
+        "won"
+      ],
+      "examples": [
+        "[COMPANY] your app is not accepting my payment and i've told 5 different people about my issues and they keep giving me useless advice",
+        "[COMPANY] I requested help in the app almost 2 hours ago, with no response. [COMPANY]+[COMPANY] Eats keep saying my payment method is invalid.",
+        "I wanted free donuts but the app has crashed! [USER] 😡"
+      ]
+    },
+    {
+      "id": 26,
+      "size": 1601,
+      "words": [
+        "worst",
+        "service",
+        "customer",
+        "ever",
+        "terrible",
+        "horrible",
+        "experience",
+        "services"
+      ],
+      "examples": [
+        "Worst Services from #[COMPANY]. After booking a cab, three cabs automticaly changed and [COMPANY] didn't respond aftr complaint.\n[USER] [COMPANY]\n[USER] [COMPANY] It's a month passed but [USER] has no time to revert. Worst Services.\n[USER] [COMPANY]",
+        "[USER] customer service is atrocious.",
+        "I’m disappointed [USER] [USER] been waiting all afternoon for our office treat #NoDonuts"
+      ]
+    },
+    {
+      "id": 29,
+      "size": 1593,
+      "words": [
+        "charged",
+        "twice",
+        "charge",
+        "charges",
+        "double",
+        "trip",
+        "cleaning",
+        "charging"
+      ],
+      "examples": [
+        "[USER] [COMPANY] charged me $70 for an [COMPANY]pool ride quoted at $9!! You need to fix this now! This is STEALING [URL]",
+        "[USER] [COMPANY] [USER] [USER] [USER] Duplicate charge already acknowledged still no refund (Card/Paytm). Ridiculous.(3/3)",
+        "[USER] You guys just triple placed the same order and now i'm being charged 3x and CANT GET IN TOUCH WITH A HUMAN BEING."
+      ]
+    },
+    {
+      "id": 12,
+      "size": 1571,
+      "words": [
+        "cancellation",
+        "fee",
+        "cancel",
+        "cancels",
+        "cancelling",
+        "charge",
+        "pay",
+        "fees"
+      ],
+      "examples": [
+        "[USER] you have to stop charging me fees when drivers don't arrive and cancel. And also don't pick up their phone!",
+        "Why is customer not credited a cancelation charge when driver cancels ride aftr making customer wait fr more than 5mins [USER] [COMPANY]",
+        "[COMPANY] Please refund (not [COMPANY] credit) cancellation fee resulting from driver error - app not helpful for complaint"
+      ]
+    },
+    {
+      "id": 20,
+      "size": 1519,
+      "words": [
+        "order",
+        "delivered",
+        "placed",
+        "ordered",
+        "restaurant",
+        "orders",
+        "food",
+        "hour"
+      ],
+      "examples": [
+        "[USER] The 1st ticket was raised on 15th Sep and its 4 Oct the issue is still not resolved &amp; answered since last 7 days. #LazyUber\n[USER] [USER] [USER] You just blocked my account instead of solving the issue, Is this what you do to solve the issue, block it?? #LazyUber",
+        "[COMPANY] hello I have an issue with an order can someone please help me",
+        "Disappointed that I had [USER] donuts confirmed on [USER] only for the order to be cancelled 15 minutes later..."
+      ]
+    },
+    {
+      "id": 8,
+      "size": 1470,
+      "words": [
+        "pass",
+        "ride",
+        "rides",
+        "passes",
+        "purchase",
+        "rider",
+        "schedule",
+        "request"
+      ],
+      "examples": [
+        "[USER] need option to clear previous ride payment while scheduling ride, currently it's available only while booking new ride. [COMPANY]",
+        "[COMPANY] Is there a unique ID that is assigned to each completed ride that I can see? Trying to troubleshoot [USER] integration probs.",
+        "[COMPANY] your app wont let me schedule a ride in advance"
+      ]
+    },
+    {
+      "id": 15,
+      "size": 1442,
+      "words": [
+        "account",
+        "disabled",
+        "login",
+        "password",
+        "log",
+        "reset",
+        "deactivated",
+        "access"
+      ],
+      "examples": [
+        "[COMPANY] account not working due to [COMPANY] eats password verification failure. Please activate my account back.[COMPANY]",
+        "[USER] I have falsely applied a US code to my GER account which I cannot use (HITTHEROAD). Please can you remove the code as I cannot? Thanks",
+        "[COMPANY] I can't access my account. It was deactivated. Idk[USER] someone is using my number to access [COMPANY]"
+      ]
+    },
+    {
+      "id": 6,
+      "size": 1392,
+      "words": [
+        "smells",
+        "fuck",
+        "guys",
+        "guy",
+        "fucking",
+        "all",
+        "shit",
+        "man"
+      ],
+      "examples": [
+        "[COMPANY] just run a lady over at bottom of great titchfield st, ambulance &amp; police on the scene😩",
+        "Hey [COMPANY] - where the \"F\" ARE YOU?!?&gt;!?!?!?",
+        "[COMPANY] #[COMPANY]India #ShameOnYou #TakeAction 🤬😡😡 [URL]"
+      ]
+    },
+    {
+      "id": 3,
+      "size": 1362,
+      "words": [
+        "airport",
+        "available",
+        "city",
+        "area",
+        "live",
+        "delhi",
+        "cities",
+        "mumbai"
+      ],
+      "examples": [
+        "[COMPANY] I booked Sedan from Jaipur airport and got Etios Liva. No space for luggage. We all are cramped in back seat\n[COMPANY] Luggage on front seat and we all cramped on back seat. Shame [COMPANY] you have no control. [URL]\n[COMPANY] Booked [COMPANY] airport as it claimed more space. Paid higher price but got pain in return.\n[COMPANY] Now talking on phone while driving",
+        "[USER] I’ve had so many glitches trying to travel around Indianapolis for work travel that can’t be captured in your in-app feedback",
+        "[COMPANY] Is [COMPANY]Vino still available in Adelaide? Asking for an alcoholic friend..."
+      ]
+    },
+    {
+      "id": 16,
+      "size": 1325,
+      "words": [
+        "fix",
+        "krispykreme",
+        "help",
+        "wtf",
+        "donuts",
+        "link",
+        "website",
+        "why"
+      ],
+      "examples": [
+        "[COMPANY] [USER] Can I get costumer service that is useful instead of scripted people who can’t comprehend basic sentences?\n[COMPANY] [USER] Been through 7 people now. This costumer service is appalling.\n[COMPANY] [USER] For something so small I can’t imagine if I actually had a bigger issue. Time to install that [USER] app.",
+        "[USER] are you seriously not working?",
+        "[USER] [URL]"
+      ]
+    },
+    {
+      "id": 18,
+      "size": 1278,
+      "words": [
+        "minutes",
+        "mins",
+        "wait",
+        "waiting",
+        "hour",
+        "min",
+        "long",
+        "away"
+      ],
+      "examples": [
+        "Major fail by [USER] - order placed at 3.30 didn't arrive until 5.30, and my team had all gone home already. So much for celebrating. 💁",
+        "Seriously [USER] — why does my pick up time switch from 5 mins to 12 and then 13 mins and when I cancel, I am charged $2 — make it easy!",
+        "[USER] i just have my third order with you guys. it's the worst experience ever. and i tried to call u guy , and i hungup after 15 mins waiting line ."
+      ]
+    },
+    {
+      "id": 22,
+      "size": 1161,
+      "words": [
+        "left",
+        "lost",
+        "contact",
+        "her",
+        "friend",
+        "car",
+        "mobile",
+        "wallet"
+      ],
+      "examples": [
+        "[COMPANY] Hey, left phone in [COMPANY] in Mcr Sat PM. Driver says will drop off at Universal Sq tomorrow. Do i need to book to collect? thx",
+        "worst thing you can do is forget your phone in an [COMPANY]\nso... my [COMPANY] driver wont give me back my phone. Fml.",
+        "[COMPANY] I left my luggage in the trunk of the car!!! How do I contact the driver?"
+      ]
+    },
+    {
+      "id": 21,
+      "size": 1126,
+      "words": [
+        "payment",
+        "paytm",
+        "method",
+        "paypal",
+        "cash",
+        "bank",
+        "money",
+        "receipt"
+      ],
+      "examples": [
+        "[USER] my Paytm has been debitted twice for orders I did not place. Whom should I contact?",
+        "[COMPANY] I didn’t make this transaction and yet you took money...sounds like stealing to me [URL]",
+        "[COMPANY] [USER] Receive multiple coupons weekly... but unable to apply...every time same issue...Promotion codes r not available for this account and all trips will be charged at the full price. Pls look into it."
+      ]
+    },
+    {
+      "id": 2,
+      "size": 1066,
+      "words": [
+        "vehicle",
+        "car",
+        "license",
+        "drive",
+        "insurance",
+        "documents",
+        "inspection",
+        "approved"
+      ],
+      "examples": [
+        "[USER] I wasn't offered the option to tip my driver after my ride, but I want to! Help!",
+        "[COMPANY] I need to speak to someone about an insurance issue. My carrier is claiming I am a driver for you",
+        "[COMPANY] I need to speak with someone directly at [COMPANY] 2 straighten out an my pending [COMPANY] driver application. I’m not happy right now"
+      ]
+    },
+    {
+      "id": 9,
+      "size": 1030,
+      "words": [
+        "complaint",
+        "support",
+        "issue",
+        "response",
+        "team",
+        "reply",
+        "complaints",
+        "resolved"
+      ],
+      "examples": [
+        "[USER] [COMPANY] please help! Your Indian colleagues not able view my teeets and complaints. [URL]",
+        "[COMPANY] why hasn’t anyone responded to my messages?",
+        "[USER] [USER] Will there be any compensation to those who had numerous issues with the promotion today and were unable to order? [URL]"
+      ]
+    },
+    {
+      "id": 28,
+      "size": 993,
+      "words": [
+        "refund",
+        "refunded",
+        "money",
+        "full",
+        "want",
+        "back",
+        "refunds",
+        "trip"
+      ],
+      "examples": [
+        "[COMPANY] If I have the driver phone I was issued a couple years ago, can I return it &amp; get my deposits credited back to my acct?",
+        "[COMPANY] i had a trip yesterday it has been overcharged from Rs 327/- to Rs 611/- look into this n refund my hard earn. [URL]",
+        ".[COMPANY] customer service is consistently garbage. Request refund—they settle 150% original fare projection—ignore everything said in communication—just copy/paste marketing. [USER] like “did you die tho?” #voteWithYourWallet, I [USER]’ed home. #boston #rideOrDie #[COMPANY] #lyft [URL]"
+      ]
+    },
+    {
+      "id": 27,
+      "size": 971,
+      "words": [
+        "verification",
+        "number",
+        "sms",
+        "mobile",
+        "log",
+        "login",
+        "code",
+        "old"
+      ],
+      "examples": [
+        "[COMPANY] I got a new phone. I signed in from new phone. My account got disable. Happened 59th time...grow up\n[COMPANY] [URL]\n[COMPANY] Just received this...shud I not buy new phone?? Kindly clarify yr stand on this? Is human running the system or is system is running humans? [URL]\n[COMPANY] Do I need to seek your kind permission before I buy a new phone? Is that what u want?",
+        "[USER] help, I can’t log in because for some reason my phone number is missing a digit!!\n[USER] [COMPANY] help!",
+        "[USER] please remove my name from promotional sms.\nBecoz i am living in remote area where no cab required..\nMy number:-8866555677"
+      ]
+    },
+    {
+      "id": 0,
+      "size": 945,
+      "words": [
+        "contact",
+        "number",
+        "customer",
+        "speak",
+        "call",
+        "someone",
+        "talk",
+        "need"
+      ],
+      "examples": [
+        "[COMPANY]\nI want to lodge a complaint, can you arrange the right address to reach you",
+        "[USER] Hi! I've partnered w/ you in the past but my contact is no longer with [COMPANY] - could you connect me with your marketing department?",
+        "[USER] I have a bone to pick with you and for some reason you hide the number to call for customer service. Give me your number."
+      ]
+    },
+    {
+      "id": 25,
+      "size": 869,
+      "words": [
+        "credit",
+        "gift",
+        "cards",
+        "credits",
+        "payment",
+        "debit",
+        "visa",
+        "add"
+      ],
+      "examples": [
+        "[COMPANY] help! app isn't taking my card. I'm upset because I need a card as a payment option to use m gift card",
+        "[USER] help my son’s [COMPANY] app for payment says check with bank....I keep trying different cards...is it an app problem",
+        "[COMPANY] a card of mine has several unauthorized trips. Please assist"
+      ]
+    },
+    {
+      "id": 23,
+      "size": 821,
+      "words": [
+        "address",
+        "emails",
+        "mail",
+        "sent",
+        "send",
+        "link",
+        "password",
+        "reset"
+      ],
+      "examples": [
+        "[USER] - Hello, I've been charged for a journey I didn't take.The __email__ is apparently not for incoming queries. How do I resolve?",
+        "[COMPANY] trying to log in but it says my phone and email aren't linked, sent an email 2 hours ago but no reply yet",
+        "[USER]-India from 09849098933 what is your email address to lodge complaints?your app help is no help.pl reply"
+      ]
+    },
+    {
+      "id": 14,
+      "size": 727,
+      "words": [
+        "promo",
+        "code",
+        "codes",
+        "apply",
+        "promotion",
+        "promotional",
+        "valid",
+        "applied"
+      ],
+      "examples": [
+        "[COMPANY] need help with promocode. Pls share the customer care number.",
+        "[COMPANY] hello, how come I can’t change my invite code anymore?",
+        "[COMPANY] my promo was not applied to my last trips. How can I get help?"
+      ]
+    },
+    {
+      "id": 17,
+      "size": 618,
+      "words": [
+        "hacked",
+        "account",
+        "hack",
+        "password",
+        "someone",
+        "changed",
+        "fraud",
+        "scam"
+      ],
+      "examples": [
+        "[USER] I think my [COMPANY] account has been hacked, but your page to notify you that I've been hacked conveniently doesn't work???",
+        "[COMPANY] my account has somehow been hacked. The number has been changed and I'm getting notifications of journey charges. Help asap.\n[COMPANY] [COMPANY] can anyone help me please, this is pretty urgent thanks, and my account has been compromised due to your poor security.",
+        "when you finally get [USER] and someone has used your number so you can't even sign up... what the heck"
+      ]
+    },
+    {
+      "id": 13,
+      "size": 407,
+      "words": [
+        "check",
+        "dms",
+        "sent",
+        "respond",
+        "please",
+        "reply",
+        "dmed",
+        "thanks"
+      ],
+      "examples": [
+        "[COMPANY] please check your dm",
+        "Unable to respond to your DM for some reason, but I didn't receive a message to my app about this. Maybe I'm missing something? [URL]",
+        "[COMPANY] Ive sent you a message in your DM can you help me"
+      ]
+    }
+  ]
+}

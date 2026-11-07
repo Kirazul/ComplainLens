@@ -21,6 +21,8 @@ from collections import Counter
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 
+import numpy as np
+
 from complaintlens.rag.knowledge import tokenize
 
 PLACEHOLDERS = {"company", "user", "url", "email", "phone", "card"}
@@ -97,11 +99,19 @@ def group_incidents(
     alerts: Iterable[Alert],
     docs_by_bin: Sequence[set[str]] | dict[int, Sequence[set[str]]],
     min_jaccard: float = 0.3,
+    vectors_by_bin: dict[int, np.ndarray] | None = None,
+    min_cosine: float = 0.8,
 ) -> list[Incident]:
-    """Merge alerts of the same bin whose terms occur in largely the same messages.
+    """Merge alerts of the same bin that describe the same problem.
+
+    Two bursting terms are merged when (a) they occur in largely the same messages (Jaccard), or
+    (b) if message embeddings are given, the average embedding of their messages is similar
+    (cosine). (b) matters because customers use different words in different messages: on
+    14 Nov 2017, "#krispykreme", "krispy kreme", "doughnuts" and "donuts" almost never share a
+    tweet (Jaccard <= 0.1), yet they are one incident.
 
     ``docs_by_bin`` is either the term sets of the messages of one bin (when all alerts share a
-    bin) or a mapping bin -> list of term sets.
+    bin) or a mapping bin -> list of term sets; ``vectors_by_bin`` maps bin -> (messages x dim).
     """
     by_bin: dict[int, list[Alert]] = {}
     for a in alerts:
@@ -110,13 +120,26 @@ def group_incidents(
     for b, bin_alerts in sorted(by_bin.items()):
         docs = docs_by_bin[b] if isinstance(docs_by_bin, dict) else docs_by_bin
         occurrences = {a.term: {k for k, d in enumerate(docs) if a.term in d} for a in bin_alerts}
+        centroids: dict[str, np.ndarray] = {}
+        if vectors_by_bin is not None and b in vectors_by_bin:
+            vectors = vectors_by_bin[b]
+            for term, idx in occurrences.items():
+                if idx:
+                    c = vectors[sorted(idx)].astype(np.float64).mean(axis=0)
+                    centroids[term] = c / (np.linalg.norm(c) or 1.0)
         groups: list[list[Alert]] = []
         for a in sorted(bin_alerts, key=lambda x: -x.z):
             for g in groups:
                 anchor = occurrences[g[0].term]
                 mine = occurrences[a.term]
                 union = anchor | mine
-                if union and len(anchor & mine) / len(union) >= min_jaccard:
+                same_messages = bool(union) and len(anchor & mine) / len(union) >= min_jaccard
+                same_meaning = (
+                    g[0].term in centroids
+                    and a.term in centroids
+                    and float(centroids[g[0].term] @ centroids[a.term]) >= min_cosine
+                )
+                if same_messages or same_meaning:
                     g.append(a)
                     break
             else:
