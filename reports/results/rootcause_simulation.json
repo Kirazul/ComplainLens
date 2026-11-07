@@ -1,0 +1,42 @@
+{
+  "protocol": "Evaluate probable-cause detection in a controlled simulation (RQ5).\n\nReal complaint data has no metadata with a known cause, so causes are planted in synthetic ticket\nmetadata with realistic marginals (OS, app version, city zone, vehicle, payment, time of day).\nFor each trial: 5,000 baseline tickets; an incident of n tickets (20 / 50 / 100) in which a share\n`purity` (0.5 / 0.8) carries 1-2 planted field values and the rest is normal traffic. Success is\nmeasured as precision@k, with k = number of planted values. Null incidents (no cause) measure false\ndiscoveries. Baseline: the most frequent values inside the incident. 200 trials per condition.",
+  "conditions": [
+    {
+      "incident_size": 20,
+      "purity": 0.5,
+      "precision_at_k_ours": 0.657,
+      "precision_at_k_most_frequent": 0.35
+    },
+    {
+      "incident_size": 20,
+      "purity": 0.8,
+      "precision_at_k_ours": 0.922,
+      "precision_at_k_most_frequent": 0.96
+    },
+    {
+      "incident_size": 50,
+      "purity": 0.5,
+      "precision_at_k_ours": 0.86,
+      "precision_at_k_most_frequent": 0.415
+    },
+    {
+      "incident_size": 50,
+      "purity": 0.8,
+      "precision_at_k_ours": 0.973,
+      "precision_at_k_most_frequent": 0.985
+    },
+    {
+      "incident_size": 100,
+      "purity": 0.5,
+      "precision_at_k_ours": 0.975,
+      "precision_at_k_most_frequent": 0.333
+    },
+    {
+      "incident_size": 100,
+      "purity": 0.8,
+      "precision_at_k_ours": 0.998,
+      "precision_at_k_most_frequent": 1.0
+    }
+  ],
+  "null_incidents_with_any_cause": 0.015
+}

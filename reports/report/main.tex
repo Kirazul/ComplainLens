@@ -233,6 +233,17 @@ guys thanks please''), whereas embedding clusters are balanced and name concrete
 (accidents, waiting and cancellations, cold food orders, iOS app crashes, surge pricing). LDA fails
 on short texts. \todo{human word-intrusion test to settle the comparison}.
 
+\subsection{Probable causes (controlled simulation)}
+For an incident, each metadata value (OS, app version, zone, vehicle, payment, time of day) gets a
+one-sided Fisher exact test of over-representation against baseline traffic, Benjamini--Hochberg
+correction, and a lift ranking. Real data has no metadata with known causes, so 1--2 causes are
+planted in simulated tickets (200 trials per condition; \res{rootcause\_simulation.json}).
+With 50\% purity, precision@$k$ is 0.66 / 0.86 / 0.98 for incidents of 20 / 50 / 100 tickets, against
+0.35 / 0.42 / 0.33 for ranking the most frequent values. With 80\% purity both rankings exceed 0.92 (the
+frequency ranking is slightly better on small incidents, where the significance requirement costs
+power). On incidents without any cause, only 1.5\% report one, whereas the frequency ranking always
+reports something.
+
 \subsection{Guaranteed automation (RQ2)}
 \label{sec:gate}
 Learn-then-Test \citep{angelopoulos2021ltt}: on a calibration set, each of 50 pre-registered

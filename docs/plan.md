@@ -282,6 +282,29 @@ Source: `reports/results/topics_uber.json` (code: `src/complaintlens/topics.py`,
 - **Verdict pending** a human word-intrusion test.
 - **Performance:** batch embedding ran at ≈ 12 messages/s on CPU (55 min for 41.7k). That is acceptable live (65 ms/message) but slow in bulk → use fastembed's data-parallel mode.
 
+### 5.9 First root-cause results (RQ5, controlled simulation, 2026-11-08)
+Source: `reports/results/rootcause_simulation.json` (code: `src/complaintlens/rootcause.py`, `ml/scripts/eval_rootcause.py`).
+
+**Protocol:**
+- 1–2 metadata values are planted in an incident of 20/50/100 tickets, with purity 50%/80% (the share of the incident that carries the cause).
+- 5,000 baseline tickets; 200 trials per condition; precision@k.
+
+| Size | Purity | **Lift + Fisher + BH** | Most frequent value |
+|---|---|---|---|
+| 20 | 50% | **0.66** | 0.35 |
+| 20 | 80% | 0.92 | 0.96 |
+| 50 | 50% | **0.86** | 0.42 |
+| 50 | 80% | 0.97 | 0.985 |
+| 100 | 50% | **0.975** | 0.33 |
+| 100 | 80% | 0.998 | 1.0 |
+
+- **Null incidents (no cause):** 1.5% report any cause (BH targets ≤ 5%). The baseline always reports one.
+- **Interpretation:**
+  - Mixed incidents (realistic): over-representation testing is far better.
+  - Nearly pure incidents: the planted value dominates, so the frequency ranking ties (and wins slightly at small sizes, where the significance requirement costs power).
+  - The decisive advantage is not inventing causes.
+- **Limitation:** simulated metadata. On real data, the method is demonstrated on the synthetic LunaGo records only.
+
 ## 6. The pipeline, stage by stage
 Each NLP stage lists the proposed method, the **baseline** it must beat, and the **metric**.
 
