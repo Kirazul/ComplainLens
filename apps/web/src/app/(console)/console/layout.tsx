@@ -30,6 +30,9 @@ export default function ConsoleLayout({ children }: LayoutProps<"/console">) {
             <Link href="/console/insights" className="text-sm hover:text-sent">
               Insights
             </Link>
+            <Link href="/console/annotate" className="text-sm hover:text-sent">
+              Annotate
+            </Link>
             <Link href="/en" className="text-sm hover:text-sent">
               Customer site
             </Link>

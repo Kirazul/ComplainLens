@@ -103,6 +103,24 @@ class Reply(SQLModel, table=True):
     error: str | None = None
 
 
+class AnnotationItem(SQLModel, table=True):
+    """A message to label for the gold sets (eval/gold/*.jsonl, or authored in the console)."""
+
+    id: str = Field(primary_key=True)  # e.g. "en-0001", "fr-0012"
+    set: str = Field(index=True)  # pilot | gold_en | gold_fr
+    lang: str
+    text: str
+    meta: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+
+
+class Annotation(SQLModel, table=True):
+    id: int | None = Field(default=None, primary_key=True)
+    item_id: str = Field(foreign_key="annotationitem.id", index=True)
+    annotator: str = Field(index=True)
+    labels: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
+    created_at: datetime = Field(default_factory=utcnow)
+
+
 @cache
 def get_engine(url: str | None = None):
     url = url or get_settings().database_url

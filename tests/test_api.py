@@ -85,6 +85,37 @@ def test_insights_serve_timeline_and_clusters(client):
     assert len(body["timeline"]) > 30 and len(body["clusters"]) == 30
 
 
+def test_annotation_flow_over_http(client):
+    first = client.get("/api/annotate/next", params={"annotator": "Aziz", "set": "pilot"}).json()
+    item = first["item"]
+    assert item["set"] == "pilot" and first["progress"]["items"]["pilot"] == 50
+    labels = {
+        "message_type": "complaint",
+        "response_required": True,
+        "urgency": "24h",
+        "categories": ["delivery_order"],
+        "severity": 2,
+        "risk_flags": [],
+    }
+    ok = client.post(
+        "/api/annotate", json={"item_id": item["id"], "annotator": "aziz", "labels": labels}
+    )
+    assert ok.status_code == 200
+    bad = {**labels, "severity": None}  # complaint without severity: rejected
+    assert (
+        client.post(
+            "/api/annotate", json={"item_id": item["id"], "annotator": "aziz", "labels": bad}
+        ).status_code
+        == 422
+    )
+    nxt = client.get("/api/annotate/next", params={"annotator": "aziz"}).json()["item"]
+    assert nxt["id"] != item["id"]
+    fr = client.post(
+        "/api/annotate/items", json={"text": "Mon chauffeur était impoli", "lang": "fr"}
+    )
+    assert fr.status_code == 201 and fr.json()["set"] == "gold_fr"
+
+
 def test_invalid_form_is_rejected(client):
     assert (
         client.post("/api/messages", json={"email": "not-an-email", "body": "hi"}).status_code

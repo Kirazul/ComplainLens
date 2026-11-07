@@ -123,6 +123,35 @@ export interface ExperimentRow {
   source: string;
 }
 
+export interface AnnotationItem {
+  id: string;
+  set: string;
+  lang: string;
+  text: string;
+  meta: Record<string, unknown>;
+}
+
+export interface GoldLabels {
+  message_type: string;
+  response_required: boolean;
+  urgency: string | null;
+  categories: string[];
+  severity: number | null;
+  risk_flags: string[];
+  note?: string | null;
+}
+
+export interface AnnotationProgress {
+  items: Record<string, number>;
+  labelled: Record<string, Record<string, number>>;
+}
+
+export interface Agreement {
+  set: string;
+  double_labelled_items: number;
+  fields: Record<string, { kappa?: number | null; kappa_quadratic?: number | null; agreement: number }>;
+}
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
@@ -154,5 +183,17 @@ export const api = {
     request<PublicTicket>(`/api/public/tickets/${id}?k=${encodeURIComponent(key)}`),
   help: (lang: Lang) => request<HelpArticle[]>(`/api/help?lang=${lang}`),
   insights: () => request<Insights>("/api/insights"),
+  annotateNext: (annotator: string, set: string) =>
+    request<{ item: AnnotationItem | null; progress: AnnotationProgress }>(
+      `/api/annotate/next?annotator=${encodeURIComponent(annotator)}&set=${set}`,
+    ),
+  annotateSave: (item_id: string, annotator: string, labels: GoldLabels) =>
+    request<{ saved: boolean; progress: AnnotationProgress }>("/api/annotate", {
+      method: "POST",
+      body: JSON.stringify({ item_id, annotator, labels }),
+    }),
+  annotateAddItem: (text: string, lang: "en" | "fr") =>
+    request<AnnotationItem>("/api/annotate/items", { method: "POST", body: JSON.stringify({ text, lang }) }),
+  agreement: (set: string) => request<Agreement>(`/api/annotate/agreement?set=${set}`),
   experiments: () => request<ExperimentRow[]>("/api/experiments"),
 };

@@ -19,6 +19,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, EmailStr, Field
 from sqlmodel import col, func, select
 
+from complaintlens import annotation
 from complaintlens.channels.email import EmailSender, fetch_new_messages
 from complaintlens.events import EventBus
 from complaintlens.llm import default_client
@@ -84,6 +85,9 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         retriever=retriever,
     )
     await asyncio.to_thread(warm_up)  # load models now, not during the first customer's message
+    with new_session() as s:  # gold-set items for the annotation page
+        for path in sorted(GOLD_DIR.glob("*.jsonl")):
+            annotation.load_items(s, path)
     if settings.email_enabled:
         state.email_status = {"enabled": True, "address": settings.email_address}
         state.email_task = asyncio.create_task(email_loop())
@@ -204,6 +208,73 @@ def public_ticket(ticket_id: int, k: str) -> dict[str, Any]:
             "phases": [{"name": p, "done": p in reached} for p in phases],
             "replies": [{"kind": r.kind, "body": r.body, "sent_at": r.sent_at} for r in replies],
         }
+
+
+GOLD_DIR = ROOT / "eval" / "gold"
+
+
+class AnnotateIn(BaseModel):
+    item_id: str
+    annotator: str = Field(min_length=2, max_length=40)
+    labels: annotation.Labels
+
+
+class NewItemIn(BaseModel):
+    text: str = Field(min_length=2, max_length=2000)
+    lang: str = Field(pattern="^(en|fr)$")
+
+
+@app.get("/api/annotate/next")
+def annotate_next(annotator: str, set: str = "pilot") -> dict[str, Any]:
+    if set not in annotation.SETS:
+        raise HTTPException(400, f"set must be one of {annotation.SETS}")
+    with new_session() as s:
+        item = annotation.next_item(s, annotator.lower(), set)
+        return {
+            "item": item.model_dump() if item else None,
+            "progress": annotation.progress(s),
+        }
+
+
+@app.post("/api/annotate")
+def annotate_save(payload: AnnotateIn) -> dict[str, Any]:
+    with new_session() as s:
+        from complaintlens.store import AnnotationItem
+
+        if s.get(AnnotationItem, payload.item_id) is None:
+            raise HTTPException(404, "item not found")
+        annotation.save(s, payload.item_id, payload.annotator.lower(), payload.labels)
+        return {"saved": True, "progress": annotation.progress(s)}
+
+
+@app.post("/api/annotate/items", status_code=201)
+def annotate_add_item(payload: NewItemIn) -> dict[str, Any]:
+    """Author a gold message (used for the French set: no licensed French data exists)."""
+    from complaintlens.store import AnnotationItem
+
+    with new_session() as s:
+        prefix = f"{payload.lang}-authored-"
+        count = s.exec(
+            select(func.count())
+            .select_from(AnnotationItem)
+            .where(col(AnnotationItem.id).startswith(prefix))
+        ).one()
+        item = AnnotationItem(
+            id=f"{prefix}{count + 1:04d}",
+            set=f"gold_{payload.lang}",
+            lang=payload.lang,
+            text=payload.text.strip(),
+            meta={"source": "authored by the team (fictional, no personal data)"},
+        )
+        s.add(item)
+        s.commit()
+        return item.model_dump()
+
+
+@app.get("/api/annotate/agreement")
+def annotate_agreement(set: str = "pilot") -> dict[str, Any]:
+    with new_session() as s:
+        return annotation.agreement(s, set)
 
 
 RESULTS_DIR = ROOT / "reports" / "results"
