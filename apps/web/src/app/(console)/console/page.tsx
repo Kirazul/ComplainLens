@@ -12,7 +12,7 @@ import { ago } from "@/lib/time";
 
 const EXAMPLES = [
   "J'ai été facturé deux fois pour ma course d'hier soir !",
-  "My food order was 30 minutes late and the spring rolls were missing.",
+  "The driver took a huge detour on ride LG-45782, the fare doubled.",
   "The driver was texting while driving on the highway and I felt unsafe.",
   "How do cancellation fees work?",
 ];
@@ -21,7 +21,7 @@ const TABS = [
   { id: "all", label: "All", statuses: null },
   { id: "todo", label: "To do", statuses: ["awaiting_approval", "escalated"] },
   { id: "ai", label: "Solved by AI", statuses: ["auto_send"] },
-  { id: "answered", label: "Answered", statuses: ["answered"] },
+  { id: "waiting", label: "Waiting on customer", statuses: ["needs_info", "answered"] },
   { id: "closed", label: "Closed", statuses: ["closed", "no_reply"] },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];

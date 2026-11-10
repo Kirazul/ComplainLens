@@ -6,6 +6,7 @@ from imap_tools import MailMessage
 from sqlmodel import select
 
 from complaintlens.channels.email import build_reply_email, is_automatic, to_inbound
+from complaintlens.demo_data import add_starter_rides, customer_trips, get_or_create_customer
 from complaintlens.rag.knowledge import KnowledgeBase
 from complaintlens.schemas import Channel, InboundMessage
 from complaintlens.service import Processor
@@ -119,7 +120,12 @@ def test_end_to_end_refund_case_sends_ack_and_keeps_draft_for_approval(processor
     }
     sender = RecordingSender()
     p, events, url = processor_factory(FakeLLM(ANALYSIS, draft), sender)
-    ticket = p.process(inbound())
+    with new_session(url) as s:  # the customer has an account and quotes the ride's ID
+        customer, _ = get_or_create_customer(s, "prof@univ.tn", "Prof", "en")
+        add_starter_rides(s, customer)
+        ride = next(t for t in customer_trips(s, customer.id) if len(t.charges) == 2).id
+        s.commit()
+    ticket = p.process(inbound(f"I was charged twice for my ride last night ({ride})!"))
 
     assert ticket.status == "awaiting_approval" and ticket.team == "Billing"
     assert ticket.trip_id is not None

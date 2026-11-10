@@ -38,7 +38,7 @@ export function TicketView({ ticketId }: Readonly<{ ticketId: number }>) {
   }, [ticketId, version]);
 
   useEffect(() => {
-    Promise.all([api.help("en"), api.help("fr")])
+    Promise.all([api.knowledge("en"), api.knowledge("fr")])
       .then(([en, fr]) => {
         const map: Sources = {};
         for (const [lang, articles] of [["en", en], ["fr", fr]] as const)
@@ -112,7 +112,7 @@ export function TicketView({ ticketId }: Readonly<{ ticketId: number }>) {
 
         <aside className="space-y-4">
           <Decision ticket={ticket} />
-          <TripCheck ticket={ticket} facts={facts} />
+          <RideCheck ticket={ticket} facts={facts} />
           <Card title="Customer">
             <dl className="space-y-1.5 text-sm">
               <Row label="Name">{ticket.customer?.name || ticket.sender_name || "Not given"}</Row>
@@ -143,7 +143,14 @@ export function TicketView({ ticketId }: Readonly<{ ticketId: number }>) {
 function Bubble({ item, customer, now, sources }: { item: ThreadItem; customer: string; now: number; sources: Sources }) {
   const mine = item.from === "lunago";
   const who = !mine ? customer : item.author ? `${item.author} (agent)` : "AI assistant";
-  const kind = item.kind === "acknowledgement" ? "automatic acknowledgement" : item.kind === "escalation" ? "safety message" : null;
+  const kind =
+    item.kind === "acknowledgement"
+      ? "automatic acknowledgement"
+      : item.kind === "escalation"
+        ? "safety message"
+        : item.kind === "question"
+          ? "asked for the ride ID"
+          : null;
   const delivery =
     item.status === "queued"
       ? "waiting to be posted on the forum"
@@ -306,35 +313,38 @@ function Decision({ ticket }: { ticket: TicketDetail }) {
   );
 }
 
-// How a claim about a trip is checked: the record is found by the customer's email, the trip by
-// evidence in the message, and the facts the reply may use are computed by code.
-function TripCheck({ ticket, facts }: { ticket: TicketDetail; facts: Fact[] }) {
+// How a ride problem is checked: the ride is found only by its ID, on the customer's own account;
+// what the customer says is then checked against the record, and the facts the reply may use are
+// computed by code.
+function RideCheck({ ticket, facts }: { ticket: TicketDetail; facts: Fact[] }) {
   const link = ticket.stages.find((s) => s.name === "link");
   if (!link) return null;
-  const why = (link.output.why as string[] | undefined) ?? [];
+  const out = link.output as {
+    about_ride?: boolean;
+    ride_ids_quoted?: string[];
+    checks?: { ok: boolean; text: string }[];
+    customer?: { has_account?: boolean; rides?: number };
+  };
   const trip = ticket.trip;
+  const account = out.customer?.has_account ? "Has an account" : "Guest (no account)";
   return (
-    <Card title="Trip check">
-      {trip ? (
+    <Card title="Ride check">
+      {!out.about_ride ? (
+        <p className="text-sm text-muted">Not about a specific ride: no ride needed.</p>
+      ) : trip ? (
         <>
           <p className="text-sm">
-            Linked to <span className="font-semibold">{String(trip.id)}</span>, a {trip.kind === "delivery" ? "food order" : "ride"}.
+            Ride <span className="font-semibold">{String(trip.id)}</span>, on this customer&apos;s account.
           </p>
-          {why.length > 0 && (
-            <>
-              <h3 className="mt-3 text-sm font-semibold">Why this one</h3>
-              <ul className="mt-1 space-y-0.5 text-sm">
-                {why.map((w) => {
-                  const against = /\(-\d+\)$/.test(w);
-                  return (
-                    <li key={w} className={against ? "text-review" : ""}>
-                      <span aria-hidden>{against ? "✗ " : "✓ "}</span>
-                      {w.replace(/\s*\([+-]?\d+\)$/, "")}
-                    </li>
-                  );
-                })}
-              </ul>
-            </>
+          {(out.checks ?? []).length > 0 && (
+            <ul className="mt-2 space-y-0.5 text-sm">
+              {(out.checks ?? []).map((c) => (
+                <li key={c.text} className={c.ok ? "" : "text-review"}>
+                  <span aria-hidden>{c.ok ? "✓ " : "✗ "}</span>
+                  {c.text.charAt(0).toUpperCase() + c.text.slice(1)}
+                </li>
+              ))}
+            </ul>
           )}
           <h3 className="mt-3 text-sm font-semibold">What the record says</h3>
           <ul className="mt-1 space-y-1 text-sm">
@@ -348,7 +358,12 @@ function TripCheck({ ticket, facts }: { ticket: TicketDetail; facts: Fact[] }) {
         </>
       ) : (
         <p className="text-sm">
-          No trip matched with enough evidence (trip number, amount, date or the problem itself), so the reply asks the customer which one.
+          {out.ride_ids_quoted?.length
+            ? `${out.ride_ids_quoted.join(", ")} is not on this customer's account, so the AI asked again.`
+            : "No ride ID yet, so the AI asked the customer for it."}
+          <span className="mt-1 block text-muted">
+            {account}, {out.customer?.rides ?? 0} rides.
+          </span>
         </p>
       )}
     </Card>

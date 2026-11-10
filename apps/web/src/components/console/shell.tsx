@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState, useSyncExternalStore, type FormEvent, type ReactNode } from "react";
 
+import { ComplaintLensMark } from "@/components/brand";
 import { api, ApiError, session, type Session } from "@/lib/api";
 
 /** The signed-in session; `undefined` before the browser has read it (first render). */
@@ -63,7 +64,7 @@ function Header({ session: s }: { session: Session }) {
     <header className="border-b border-line bg-white">
       <nav aria-label="Console" className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:gap-6 sm:px-5">
         <Link href="/console" className="flex items-center gap-2 font-semibold tracking-tight">
-          <Crescent />
+          <ComplaintLensMark size={24} />
           <span className="hidden sm:inline">ComplaintLens</span>
         </Link>
         <div className="flex h-full gap-0.5 overflow-x-auto text-sm sm:gap-1">
@@ -178,7 +179,7 @@ function SignIn() {
     <main className="grid min-h-screen place-items-center px-5 py-10">
       <div className="w-full max-w-sm">
         <div className="flex items-center gap-2.5 text-lg font-semibold">
-          <Crescent size={28} />
+          <ComplaintLensMark size={28} />
           ComplaintLens
         </div>
         <h1 className="mt-8 text-2xl font-semibold">Sign in to the support console</h1>
@@ -206,14 +207,5 @@ function SignIn() {
         </Link>
       </div>
     </main>
-  );
-}
-
-function Crescent({ size = 22 }: { size?: number }) {
-  return (
-    <svg viewBox="0 0 32 32" width={size} height={size} aria-hidden>
-      <rect width="32" height="32" rx="8" fill="#172033" />
-      <path d="M20.5 7.5a9 9 0 1 0 4 16.6A10 10 0 0 1 20.5 7.5Z" fill="#f2a33a" />
-    </svg>
   );
 }

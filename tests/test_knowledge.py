@@ -36,4 +36,6 @@ def test_search_finds_the_right_policy_in_each_language():
         "HC-FARES#4"
     )
     assert base.search("I left my phone in the car", "en")[0].chunk.article_id == "HC-LOST"
-    assert base.search("my food order never arrived", "en")[0].chunk.article_id == "HC-DELIVERY"
+    assert (
+        base.search("the driver took a much longer route", "en")[0].chunk.article_id == "HC-DRIVER"
+    )

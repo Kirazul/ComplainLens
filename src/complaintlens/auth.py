@@ -6,6 +6,8 @@
   Only its SHA-256 is stored, so the database cannot be used to sign in either. Tokens expire
   after ``SESSION_HOURS`` and are revoked on sign-out.
 - Roles: ``agent`` handles tickets; ``admin`` also manages the team.
+- Customers sign in to the website the same way, in a separate table (``CustomerSession``): a
+  customer token never opens the console, and a staff token never opens a customer account.
 """
 
 from __future__ import annotations
@@ -24,7 +26,7 @@ from sqlmodel import Session, col, delete, func, select
 
 from complaintlens.schemas import as_utc, utcnow
 from complaintlens.settings import get_settings
-from complaintlens.store import LoginSession, User, new_session
+from complaintlens.store import Customer, CustomerSession, LoginSession, User, new_session
 
 log = logging.getLogger(__name__)
 USERNAME = re.compile(r"^[a-z0-9._-]{3,32}$")
@@ -172,3 +174,53 @@ def ensure_admin() -> None:
             )
         )
         s.commit()
+
+
+# --- customers (the LunaGo website) -------------------------------------------------------------
+
+CUSTOMER_SESSION_DAYS = 30
+
+
+def start_customer_session(session: Session, customer: Customer) -> str:
+    token = secrets.token_urlsafe(32)
+    now = utcnow()
+    session.exec(delete(CustomerSession).where(col(CustomerSession.expires_at) < now))
+    session.add(
+        CustomerSession(
+            token_hash=_token_hash(token),
+            customer_id=customer.id,
+            expires_at=now + timedelta(days=CUSTOMER_SESSION_DAYS),
+        )
+    )
+    session.commit()
+    return token
+
+
+def end_customer_session(session: Session, token: str) -> None:
+    session.exec(delete(CustomerSession).where(CustomerSession.token_hash == _token_hash(token)))
+    session.commit()
+
+
+def authenticate_customer(session: Session, email: str, password: str) -> Customer | None:
+    customer = session.exec(
+        select(Customer).where(Customer.contact == email.strip().lower())
+    ).first()
+    if customer is None or not customer.password_hash:
+        verify_password(password, _DUMMY_HASH)
+        return None
+    return customer if verify_password(password, customer.password_hash) else None
+
+
+def current_customer(request: Request) -> Customer:
+    token = bearer(request)
+    if token:
+        with new_session() as s:
+            login = s.get(CustomerSession, _token_hash(token))
+            if login is not None and as_utc(login.expires_at) >= utcnow():
+                customer = s.get(Customer, login.customer_id)
+                if customer is not None:
+                    return customer
+    raise HTTPException(401, "sign in required")
+
+
+CurrentCustomer = Annotated[Customer, Depends(current_customer)]

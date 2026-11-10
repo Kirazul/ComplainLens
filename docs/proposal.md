@@ -25,7 +25,7 @@ Done by hand, this is slow, inconsistent and risky, and recurring problems are n
 
 At corpus level: emerging-issue alerts with probable-cause hypotheses.
 
-**Use case.** A ride-hailing and food-delivery support desk. For a live demonstration, the system runs as the support desk of a **fictional** bilingual company ("LunaGo", one app for rides and food delivery), with a real website, email address and chat bot, so that anyone can send a complaint and watch it being processed end to end. Out-of-scope inputs, and all safety and legal cases, go to a human.
+**Use case.** A ride-hailing support desk. For a live demonstration, the system runs as the support desk of a **fictional** bilingual company ("LunaGo", one app for rides and food delivery), with a real website, email address and chat bot, so that anyone can send a complaint and watch it being processed end to end. Out-of-scope inputs, and all safety and legal cases, go to a human.
 
 ### 2. Objectives (measurable)
 1. **Understanding:** a fine-tuned multilingual encoder, distilled from LLM silver labels plus human labels, matches or beats its LLM teacher and a TF-IDF baseline in macro-F1 on our human-annotated test set (5 seeds, 95% bootstrap CI), at a fraction of the cost. Zero-shot transfer to French is measured.
@@ -35,7 +35,7 @@ At corpus level: emerging-issue alerts with probable-cause hypotheses.
 
 ### 3. Data (all downloaded and profiled)
 - **Customer Support on Twitter** (Kaggle; CC BY-NC-SA 4.0): 2.8M real customer/company tweets from 108 brands, with timestamps and real agent replies.
-  - Includes **41,855 Uber customer conversations** (Oct–Dec 2017; median 22 words; ~49% rides, ~16% food delivery).
+  - Includes **37,065 Uber ride-support conversations** (Oct–Dec 2017; median 22 words; food-delivery conversations removed).
   - Also Lyft, used as a generalisation test.
   - Contains a real incident: an app crash during a free-doughnut promotion (14 Nov 2017).
 - **Complaints on Twitter** (Preoțiuc-Pietro et al., ACL 2019) with **severity labels** (Jin & Aletras, NAACL 2021): 3,449 expert-labelled tweets; a published reference point.

@@ -24,9 +24,10 @@ def test_form_message_is_processed_and_traced(client, staff):
         "link",
         "respond",
     ]
-    assert detail["trip"] is not None
+    # A ride complaint without a ride ID: never guessed from "yesterday", the customer is asked.
+    assert detail["trip"] is None and detail["status"] == "needs_info"
     assert [m["from"] for m in detail["thread"]] == ["customer", "lunago"]
-    assert detail["thread"][1]["kind"] == "acknowledgement"
+    assert detail["thread"][1]["kind"] == "question"
     assert client.get("/api/stats", headers=staff).json()["tickets"] == 1
 
 
@@ -38,18 +39,19 @@ def test_customer_can_track_only_with_the_secret_key(client):
     assert view.status_code == 200
     body = view.json()
     assert [p["name"] for p in body["phases"]] == ["received", "understood", "routed", "answered"]
-    # Offline the ticket waits for an agent: routed, but not answered yet (an acknowledgement
-    # is not an answer).
-    assert body["status"] == "awaiting_approval"
+    # A lost item is a ride problem: without a ride ID we ask for it, so the ticket is routed but
+    # not answered yet (a question is not an answer).
+    assert body["status"] == "needs_info"
     assert [p["done"] for p in body["phases"]] == [True, True, True, False]
     assert "analysis" not in body and "sender" not in body  # no internals for customers
     wrong = client.get(f"/api/public/tickets/{ticket['id']}", params={"k": "guess"})
     assert wrong.status_code == 404
 
 
-def test_help_center_endpoint_serves_both_languages(client):
-    fr = client.get("/api/help", params={"lang": "fr"}).json()
-    assert len(fr) == 9 and fr[0]["sections"][0]["id"].startswith("HC-")
+def test_knowledge_base_is_private_and_serves_both_languages(client, staff):
+    assert client.get("/api/knowledge").status_code == 401
+    fr = client.get("/api/knowledge", params={"lang": "fr"}, headers=staff).json()
+    assert len(fr) == 8 and fr[0]["sections"][0]["id"].startswith("HC-")
     assert any(a["title"].startswith("Objets perdus") for a in fr)
 
 
@@ -74,7 +76,7 @@ def test_annotation_flow_over_http(client, staff):
         "message_type": "complaint",
         "response_required": True,
         "urgency": "24h",
-        "categories": ["delivery_order"],
+        "categories": ["fare_billing"],
         "severity": 2,
         "risk_flags": [],
     }

@@ -1,6 +1,7 @@
-"""What customers use: send a message, follow and continue the conversation, read the Help Center.
+"""What anyone can use without an account: send a message, follow and continue the conversation.
 
 A conversation is private to whoever holds its tracking key (``k``), given when it starts.
+Accounts, rides and bookings are in ``account.py``.
 """
 
 from __future__ import annotations
@@ -43,6 +44,8 @@ class MessageIn(BaseModel):
     name: str | None = Field(default=None, max_length=80)
     subject: str | None = Field(default=None, max_length=200)
     body: str = Field(min_length=2, max_length=5000)
+    # The ride the message is about, when the customer knows it (e.g. from "Your rides").
+    ride: str | None = Field(default=None, pattern=r"^LG-\d{4,6}$")
 
 
 class FollowUpIn(BaseModel):
@@ -63,31 +66,20 @@ def health() -> dict[str, Any]:
     }
 
 
-@router.get("/help")
-def help_center(lang: str = "en") -> list[dict[str, Any]]:
-    lang = lang if lang in ("en", "fr") else "en"
-    articles: dict[str, dict[str, Any]] = {}
-    for c in state.processor.kb.chunks:
-        if c.lang != lang:
-            continue
-        art = articles.setdefault(
-            c.article_id, {"id": c.article_id, "title": c.title, "sections": []}
-        )
-        art["sections"].append({"id": c.id, "heading": c.heading, "text": c.text})
-    return list(articles.values())
-
-
 @router.post("/messages", status_code=202)
 def submit_message(
     payload: MessageIn, request: Request, background: BackgroundTasks
 ) -> dict[str, Any]:
     """Start a conversation: accept now, process in the background."""
     state.limiter.check(client_ip(request))
+    subject = payload.subject
+    if payload.ride:  # in the subject, where the pipeline (and the agent) read it with the text
+        subject = f"{subject} (ride {payload.ride})" if subject else f"Ride {payload.ride}"
     inbound = InboundMessage(
         channel=payload.channel,
         sender=str(payload.email).lower(),
         sender_name=payload.name,
-        subject=payload.subject,
+        subject=subject,
         body=payload.body,
     )
     ticket = state.processor.create_ticket(inbound)

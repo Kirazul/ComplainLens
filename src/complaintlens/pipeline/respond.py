@@ -47,7 +47,6 @@ TEAMS = {
     Category.DRIVER_BEHAVIOUR: "Driver Operations",
     Category.CANCELLATION_NO_SHOW: "Driver Operations",
     Category.LOST_ITEM: "Lost & Found",
-    Category.DELIVERY_ORDER: "Delivery",
     Category.APP_TECHNICAL: "Tech & Accounts",
     Category.ACCOUNT_ACCESS: "Tech & Accounts",
     Category.OTHER: "General Support",
@@ -182,7 +181,6 @@ TEAM_NAMES_FR = {
     "Safety": "Sécurité",
     "Driver Operations": "Opérations chauffeurs",
     "Lost & Found": "Objets trouvés",
-    "Delivery": "Livraison",
     "Tech & Accounts": "Technique et comptes",
     "General Support": "Support général",
     "Support": "Support",
@@ -217,6 +215,30 @@ TEMPLATES = {
         "message (ticket {ticket}) et notre équipe {team} l'examine. Vous aurez de nos nouvelles "
         "sous 24 heures.",
     },
+    "review_ride": {
+        "en": "{greeting}\n\nThank you for contacting {company}. We have found ride {ride} on your "
+        "account, and our {team} team is reviewing it (ticket {ticket}). You will hear from us "
+        "within 24 hours.",
+        "fr": "{greeting}\n\nMerci d'avoir contacté {company}. Nous avons trouvé la course {ride} "
+        "dans votre compte, et notre équipe {team} l'examine (ticket {ticket}). Vous aurez de nos "
+        "nouvelles sous 24 heures.",
+    },
+    "ask_ride": {
+        "en": "{greeting}\n\nWe can look into this right away. Which ride is it about? Reply "
+        "with its ride ID (it looks like LG-12345 and is on your receipt), or sign in on our "
+        "website and choose the ride in the chat.",
+        "fr": "{greeting}\n\nNous pouvons vérifier cela tout de suite. De quelle course "
+        "s'agit-il ? Répondez avec son numéro (il ressemble à LG-12345 et figure sur votre "
+        "reçu), ou connectez-vous sur notre site et choisissez la course dans le clavardage.",
+    },
+    "ride_not_found": {
+        "en": "{greeting}\n\nWe could not find ride {ride} on the account that uses this email "
+        "address. Please check the ride ID on your receipt and send it here, or sign in on our "
+        "website and choose the ride in the chat.",
+        "fr": "{greeting}\n\nNous ne trouvons pas la course {ride} dans le compte associé à "
+        "cette adresse courriel. Vérifiez le numéro sur votre reçu et envoyez-le ici, ou "
+        "connectez-vous sur notre site et choisissez la course dans le clavardage.",
+    },
     "unsupported_language": {
         "en": "Hello,\n\nThank you for contacting {company} (ticket {ticket}). We currently answer "
         "in English and French; an agent will review your message.\n\nBonjour, merci d'avoir "
@@ -226,7 +248,9 @@ TEMPLATES = {
 }
 
 
-def render(kind: str, lang: str, name: str | None = None, team: str = "", ticket: str = "") -> str:
+def render(
+    kind: str, lang: str, name: str | None = None, team: str = "", ticket: str = "", ride: str = ""
+) -> str:
     variants = TEMPLATES[kind]
     lang = lang if lang in variants else "en"
     return variants[lang].format(
@@ -234,16 +258,22 @@ def render(kind: str, lang: str, name: str | None = None, team: str = "", ticket
         greeting=greeting(lang, name),
         team=team_label(team, lang),
         ticket=ticket,
+        ride=ride,
     )
 
 
 # --- drafting ----------------------------------------------------------------------------------
 
 
-def _sources_block(hits: list[Hit], facts: list[dict[str, str]]) -> str:
+def _sources_block(hits: list[Hit], facts: list[dict[str, str]], about_ride: bool = True) -> str:
     lines = ["HELP CENTER SECTIONS:"]
     lines += [f"[{h.chunk.id}] {h.chunk.title} > {h.chunk.heading}: {h.chunk.text}" for h in hits]
-    lines.append("\nCUSTOMER RECORD FACTS:" if facts else "\nCUSTOMER RECORD FACTS: none found")
+    if facts:
+        lines.append("\nCUSTOMER RECORD FACTS:")
+    elif about_ride:
+        lines.append("\nCUSTOMER RECORD FACTS: none found (the ride could not be identified)")
+    else:
+        lines.append("\nCUSTOMER RECORD FACTS: not needed (the message is not about one ride)")
     lines += [f"[{f['id']}] {f['text']}" for f in facts]
     return "\n".join(lines)
 
@@ -257,12 +287,13 @@ def draft_reply(
     hits: list[Hit],
     facts: list[dict[str, str]],
     history: list[dict[str, str]] | None = None,
+    about_ride: bool = True,
 ) -> Draft:
     company = get_settings().company_name
     language = {"fr": "French", "en": "English"}.get(lang, "English")
     system = (
-        f"You are a customer-support agent of {company}, a ride-hailing app that also delivers "
-        "food. Write the reply to the customer.\n"
+        f"You are a customer-support agent of {company}, a ride-hailing app. "
+        "Write the reply to the customer.\n"
         "STRICT RULES:\n"
         "1. Use ONLY information from SOURCES. Never invent policies, amounts, delays or facts.\n"
         "2. After EVERY sentence that states a policy or a fact, put its source ID in square "
@@ -271,8 +302,9 @@ def draft_reply(
         "3. Never promise money. If a refund/credit/fee waiver is justified by policy and record, "
         f"say that you have asked the {team_label('Billing', lang)} team to approve it, and set "
         "proposed_action and action_amount.\n"
-        "4. If the record does not show the trip or the facts needed, ask one precise question "
-        "(proposed_action=ask_information).\n"
+        "4. If the message is about one ride but no record facts are given, ask for the ride "
+        "number (e.g. LG-12345) or its date and time (proposed_action=ask_information). If the "
+        "message is not about one ride, never ask for one.\n"
         f"5. Write in {language}, warm and concise (max 130 words), greet the customer (by name "
         "only if a name is given; never invent one), "
         f"sign as '{company} Support'. Do not mention internal fact IDs except as citations.\n"
@@ -284,7 +316,8 @@ def draft_reply(
     user = (
         f"Customer name: {name or '(unknown: greet without a name)'}\n"
         f"Analysis: {analysis.summary} Goal: {analysis.customer_goal}\n"
-        f"Customer message:\n<<<\n{text}\n>>>\n\nSOURCES:\n{_sources_block(hits, facts)}"
+        f"Customer message:\n<<<\n{text}\n>>>\n\n"
+        f"SOURCES:\n{_sources_block(hits, facts, about_ride)}"
     )
     if history and len(history) > 1:  # a follow-up: answer the latest message, in context
         said = "\n".join(
@@ -332,11 +365,23 @@ def respond_stage(ctx: Context) -> StageResult:
         message = render("escalation", lang, name=name, ticket=ticket_no)
         flags = sorted(f.value for f in set(analysis.risk_flags) & ESCALATION_FLAGS)
         reasons.append(f"high risk ({', '.join(flags) or 'severity 4'}): human handles it")
+    elif ctx.get("about_ride") and ctx.get("trip") is None:
+        # A ride problem is answered only once we know which ride: ask, never guess.
+        action, kind = Action.NEEDS_INFO, "question"
+        missing = ctx.get("ride_not_found")
+        message = render(
+            "ride_not_found" if missing else "ask_ride", lang, name=name, ride=missing or ""
+        )
+        reasons.append(
+            f"ride {missing} is not on the customer's account: asked again"
+            if missing
+            else "ride problem without a ride ID: asked for it"
+        )
     else:
         kb: KnowledgeBase = ctx["kb"]
         retriever: Retriever = ctx.get("retriever") or BM25Retriever(kb)
         # Customer's words (their language) fused with the LLM's English summary (same sections,
-        # mapped back to their language): MRR 0.657 vs 0.613 on the development questions
+        # mapped back to their language): MRR 0.65 vs 0.60 on the 62 development questions
         # (reports/results/retrieval_summary.json). Without an LLM, the text alone is used.
         llm_summary = analysis.summary if ctx.get("llm") else None
         hits = search_with_summary(
@@ -345,11 +390,27 @@ def respond_stage(ctx: Context) -> StageResult:
         client: ChatClient | None = ctx.get("llm")
         if client is None:
             action, kind = Action.AWAITING_APPROVAL, "acknowledgement"
-            message = render("review", lang, name=name, ticket=ticket_no, team=team)
+            trip = ctx.get("trip")
+            message = render(
+                "review_ride" if trip else "review",
+                lang,
+                name=name,
+                ticket=ticket_no,
+                team=team,
+                ride=trip.id if trip else "",
+            )
             reasons.append("no LLM configured: an agent writes the answer")
         else:
             draft = draft_reply(
-                client, ctx["text_masked"], analysis, lang, name, hits, facts, ctx.get("history")
+                client,
+                ctx["text_masked"],
+                analysis,
+                lang,
+                name,
+                hits,
+                facts,
+                ctx.get("history"),
+                ctx.get("about_ride", True),
             )
             verification = verify(draft, hits, facts)
             message = draft.reply

@@ -11,7 +11,7 @@ const TYPES = ["complaint", "request", "feedback", "praise", "spam_or_irrelevant
 const URGENCY = ["immediate", "24h", "standard"];
 const CATEGORIES = [
   "fare_billing", "driver_behaviour", "safety_incident", "lost_item", "cancellation_no_show",
-  "delivery_order", "app_technical", "account_access", "promotions_credits", "accessibility", "other",
+  "app_technical", "account_access", "promotions_credits", "accessibility", "other",
 ];
 const RISKS = [
   "safety", "injury", "harassment_discrimination", "legal_threat", "fraud_account_takeover",

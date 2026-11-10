@@ -11,7 +11,7 @@ from tests.fakes import FakeLLM
 # --- over HTTP, offline (no LLM: every answer waits for an agent) ------------------------------
 
 
-def start_chat(client, body="I left my phone in the car last night, can you help me find it?"):
+def start_chat(client, body="I cannot log in to my account since this morning, please help."):
     r = client.post(
         "/api/messages", json={"email": "sam@example.com", "body": body, "channel": "chat"}
     )
@@ -28,7 +28,7 @@ def test_follow_up_joins_the_same_conversation(client, staff):
     ticket = start_chat(client)
     r = client.post(
         f"/api/public/tickets/{ticket['id']}/messages",
-        json={"k": ticket["track_key"], "body": "It is a black phone in a blue case."},
+        json={"k": ticket["track_key"], "body": "I already tried resetting my password."},
     )
     assert r.status_code == 202
     view = public(client, ticket)
@@ -40,7 +40,7 @@ def test_follow_up_joins_the_same_conversation(client, staff):
     assert detail["messages"] == 2
     assert len(detail["stages"]) == 6  # the trace of the latest run only
     understood = next(s for s in detail["stages"] if s["name"] == "normalize")
-    assert understood["output"]["chars_received"] > len("It is a black phone in a blue case.")
+    assert understood["output"]["chars_received"] > len("I already tried resetting my password.")
 
 
 def test_follow_up_needs_the_tracking_key(client):

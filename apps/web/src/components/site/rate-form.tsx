@@ -3,13 +3,16 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
+import { useAccount } from "@/components/site/account";
+import { normaliseRideId, RIDE_ID, RideField } from "@/components/site/ride-field";
 import { api, ApiError, type Lang } from "@/lib/api";
 import type { Dict } from "@/lib/i18n";
 
-// A trip rating, as in the app: stars and a comment. It enters the pipeline as channel "review";
+// A ride rating, as in the app: stars and a comment. It enters the pipeline as channel "review";
 // the rating travels in the subject, so the classifier reads it with the comment.
 export function RateForm({ lang, t, contact }: { lang: Lang; t: Dict["rate"]; contact: Dict["contact"] }) {
   const router = useRouter();
+  const me = useAccount();
   const [stars, setStars] = useState(0);
   const [hover, setHover] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -18,10 +21,12 @@ export function RateForm({ lang, t, contact }: { lang: Lang; t: Dict["rate"]; co
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
-    const email = String(data.get("email") ?? "").trim();
+    const email = me?.customer.email ?? String(data.get("email") ?? "").trim();
     const comment = String(data.get("comment") ?? "").trim();
+    const ride = normaliseRideId(String(data.get("ride") ?? ""));
     if (!stars) return setError(t.pickStars);
     if (!email) return setError(contact.errorEmpty);
+    if (ride && !RIDE_ID.test(ride)) return setError(contact.errorRide);
     if (stars <= 3 && comment.length < 2) return setError(t.commentNeeded);
     setSending(true);
     setError(null);
@@ -31,6 +36,7 @@ export function RateForm({ lang, t, contact }: { lang: Lang; t: Dict["rate"]; co
         channel: "review",
         subject: t.subject.replace("{n}", String(stars)),
         body: comment || t.star[stars - 1],
+        ride: ride || undefined,
       });
       router.push(`/${lang}/track/?id=${ticket.id}&k=${encodeURIComponent(ticket.track_key)}`);
     } catch (err) {
@@ -40,23 +46,18 @@ export function RateForm({ lang, t, contact }: { lang: Lang; t: Dict["rate"]; co
   }
 
   const shown = hover || stars;
-  const field =
-    "mt-2 w-full rounded-xl border border-lilac bg-white px-4 py-3 text-night placeholder:text-slate/50 focus:border-night";
+  const field = "mt-2 w-full rounded-xl border border-lilac bg-white px-4 py-3 text-night placeholder:text-slate/50 focus:border-night";
   return (
     <form onSubmit={onSubmit} className="space-y-8" noValidate>
+      <div className="max-w-md">
+        <RideField me={me} lang={lang} t={contact} field={field} />
+      </div>
       <fieldset>
         <legend className="font-semibold text-night">{t.stars}</legend>
         <div className="mt-3 flex gap-1" onMouseLeave={() => setHover(0)}>
           {[1, 2, 3, 4, 5].map((n) => (
             <label key={n} className="cursor-pointer" onMouseEnter={() => setHover(n)}>
-              <input
-                type="radio"
-                name="stars"
-                value={n}
-                checked={stars === n}
-                onChange={() => setStars(n)}
-                className="peer sr-only"
-              />
+              <input type="radio" name="stars" value={n} checked={stars === n} onChange={() => setStars(n)} className="peer sr-only" />
               <span className="sr-only">{t.star[n - 1]}</span>
               <svg
                 viewBox="0 0 24 24"
@@ -65,10 +66,7 @@ export function RateForm({ lang, t, contact }: { lang: Lang; t: Dict["rate"]; co
                 }`}
                 aria-hidden
               >
-                <path
-                  fill="currentColor"
-                  d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z"
-                />
+                <path fill="currentColor" d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z" />
               </svg>
             </label>
           ))}
@@ -89,11 +87,12 @@ export function RateForm({ lang, t, contact }: { lang: Lang; t: Dict["rate"]; co
         />
       </label>
 
-      <label className="block max-w-md">
-        <span className="font-semibold text-night">{contact.email}</span>
-        <input name="email" type="email" required autoComplete="email" className={field} />
-        <span className="mt-1 block text-sm text-slate">{contact.emailHint}</span>
-      </label>
+      {!me && (
+        <label className="block max-w-md">
+          <span className="font-semibold text-night">{contact.email}</span>
+          <input name="email" type="email" required autoComplete="email" className={field} />
+        </label>
+      )}
 
       {error && (
         <p role="alert" className="rounded-xl bg-amber/15 px-4 py-3 text-night">

@@ -12,6 +12,8 @@ Design decisions (see docs/plan.md §5.3 and §6.1):
 - Other @handles become ``[USER]`` (TWCS already anonymises customers as numbers).
 - URLs become ``[URL]``; emojis, casing and accents are kept on purpose (they carry meaning).
 - Agent signatures such as ``^AB`` are removed from replies.
+- LunaGo offers rides only. The @Uber_Support stream also carries Uber Eats (food delivery)
+  messages: they are out of scope and dropped (``FOOD_DELIVERY``, about 11% of first contacts).
 
 Usage:
     python -m complaintlens.data.twcs twcs.csv --brand Uber_Support --out first_contacts.parquet
@@ -27,6 +29,12 @@ import polars as pl
 
 _URL = re.compile(r"https?://\S+")
 _HANDLE = re.compile(r"@\w+")
+# Food-delivery conversations (Uber Eats), matched on the masked text: out of scope for a rides
+# company. Explicit words only; "order" alone is ambiguous and is not used.
+FOOD_DELIVERY = (
+    r"(?i)\[COMPANY\]\s?eats|\beats\b|\bfood|restaurant|\bmeals?\b|deliver|courier|"
+    r"\bdinner\b|\blunch\b|\bbreakfast\b|\bpizza|\bburgers?\b"
+)
 # Agent signatures look like "^AB", "-AB" or "<en dash>AB"; the en dash below is intentional.
 _SIGNATURE = re.compile(r"\s*[\^\-–]\s*[A-Z]{1,3}\s*$")  # noqa: RUF001
 _SPACES = re.compile(r"[ \t]+")
@@ -111,8 +119,8 @@ def _with_roots(tweets: pl.DataFrame) -> pl.DataFrame:
     return tweets.join(state.select("tweet_id", pl.col("anc").alias("root")), on="tweet_id")
 
 
-def build_first_contacts(tweets: pl.DataFrame, brand: str) -> pl.DataFrame:
-    """One row per conversation a customer opened with ``brand``.
+def build_first_contacts(tweets: pl.DataFrame, brand: str, rides_only: bool = True) -> pl.DataFrame:
+    """One row per conversation a customer opened with ``brand`` (rides only by default).
 
     Columns: conversation_id, created_at, customer_id, text (customer tweets written before the
     brand's first reply, masked, joined by newlines), n_customer_tweets, brand_replied,
@@ -157,6 +165,8 @@ def build_first_contacts(tweets: pl.DataFrame, brand: str) -> pl.DataFrame:
         .agg(pl.col("text").str.join("\n"), pl.len().alias("n_customer_tweets"))
     )
 
+    if rides_only:
+        customer_tweets = customer_tweets.filter(~pl.col("text").str.contains(FOOD_DELIVERY))
     return (
         convs.join(customer_tweets, on="root", how="inner")
         .with_columns(

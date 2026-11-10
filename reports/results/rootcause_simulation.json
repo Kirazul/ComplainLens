@@ -4,20 +4,20 @@
     {
       "incident_size": 20,
       "purity": 0.5,
-      "precision_at_k_ours": 0.657,
-      "precision_at_k_most_frequent": 0.35
+      "precision_at_k_ours": 0.652,
+      "precision_at_k_most_frequent": 0.34
     },
     {
       "incident_size": 20,
       "purity": 0.8,
-      "precision_at_k_ours": 0.922,
-      "precision_at_k_most_frequent": 0.96
+      "precision_at_k_ours": 0.915,
+      "precision_at_k_most_frequent": 0.958
     },
     {
       "incident_size": 50,
       "purity": 0.5,
-      "precision_at_k_ours": 0.86,
-      "precision_at_k_most_frequent": 0.415
+      "precision_at_k_ours": 0.85,
+      "precision_at_k_most_frequent": 0.41
     },
     {
       "incident_size": 50,
@@ -28,8 +28,8 @@
     {
       "incident_size": 100,
       "purity": 0.5,
-      "precision_at_k_ours": 0.975,
-      "precision_at_k_most_frequent": 0.333
+      "precision_at_k_ours": 0.978,
+      "precision_at_k_most_frequent": 0.328
     },
     {
       "incident_size": 100,

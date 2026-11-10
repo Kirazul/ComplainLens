@@ -101,9 +101,6 @@ _CATEGORY_KEYWORDS: dict[Category, re.Pattern[str]] = {
     Category.DRIVER_BEHAVIOUR: re.compile(r"driver|chauffeur|conducteur|rude|impoli", re.I),
     Category.LOST_ITEM: re.compile(r"\blost\b|left my|forgot|oubli|perdu", re.I),
     Category.CANCELLATION_NO_SHOW: re.compile(r"cancel|no.?show|waited|annul|attendu", re.I),
-    Category.DELIVERY_ORDER: re.compile(
-        r"order|food|meal|delivery|restaurant|commande|livraison|repas", re.I
-    ),
     Category.APP_TECHNICAL: re.compile(r"\bapp\b|crash|bug|error|appli|erreur|plant", re.I),
     Category.ACCOUNT_ACCESS: re.compile(
         r"account|log ?in|password|locked|compte|mot de passe|bloqu", re.I
@@ -128,8 +125,8 @@ def _classical():
 def _system_prompt() -> str:
     company = get_settings().company_name
     return (
-        f"You analyse customer messages sent to {company}, a ride-hailing app that also delivers "
-        "food (one app). Label the message exactly as defined in these annotation guidelines, "
+        f"You analyse customer messages sent to {company}, a ride-hailing app. "
+        "Label the message exactly as defined in these annotation guidelines, "
         "which human annotators also follow:\n\n"
         f"{GUIDELINES.read_text(encoding='utf-8')}\n\n"
         "Return ONLY a JSON object with keys: message_type, response_required (bool), urgency "

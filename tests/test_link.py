@@ -1,11 +1,16 @@
+"""Stage 5: a ride problem is linked only through a ride ID on the customer's own account."""
+
 from datetime import timedelta
 
 import pytest
 
-from complaintlens.pipeline.link import link_stage, trip_facts
+from complaintlens.demo_data import add_starter_rides, customer_trips, get_or_create_customer
+from complaintlens.pipeline.link import link_stage, ride_refs, trip_facts
 from complaintlens.pipeline.understand import Analysis
 from complaintlens.schemas import Channel, InboundMessage, utcnow
 from complaintlens.store import new_session
+
+SENDER = "prof@univ.tn"
 
 
 @pytest.fixture
@@ -14,137 +19,126 @@ def session(tmp_path):
         yield s
 
 
-def analysis(categories, entities=()):
+def account(session, email=SENDER):
+    """A customer with an account and the starter history; returns their rides, newest first."""
+    customer, _ = get_or_create_customer(session, email, "Prof", "en")
+    add_starter_rides(session, customer)
+    return customer_trips(session, customer.id)
+
+
+def analysis(categories, message_type="complaint"):
     return Analysis(
-        message_type="complaint",
+        message_type=message_type,
         response_required=True,
         urgency="24h",
         categories=categories,
-        severity=2,
+        severity=2 if message_type == "complaint" else None,
         sentiment="negative",
-        entities=list(entities),
+        entities=[],
         summary="s",
         customer_goal="g",
     )
 
 
-def run(session, text, categories, sender="prof@univ.tn"):
+def run(session, text, categories, message_type="complaint", sender=SENDER):
     msg = InboundMessage(channel=Channel.EMAIL, sender=sender, body=text, received_at=utcnow())
     ctx = {
         "session": session,
         "message": msg,
         "text": text,
         "language": "fr",
-        "analysis": analysis(categories),
+        "analysis": analysis(categories, message_type),
     }
-    result = link_stage(ctx)
-    return ctx, result
+    return ctx, link_stage(ctx)
 
 
-def test_first_time_sender_gets_a_deterministic_demo_profile(session):
-    _, result = run(session, "hello", ["other"])
+def test_first_time_sender_is_a_guest_without_rides(session):
+    _, result = run(session, "hello", ["other"], "request")
     assert result.output["customer"]["new_demo_profile"] is True
-    _, again = run(session, "hello again", ["other"])
-    assert again.output["customer"]["new_demo_profile"] is False
+    assert result.output["customer"]["has_account"] is False
+    _, again = run(session, "hello again", ["other"], "request")
     assert again.output["customer"]["id"] == result.output["customer"]["id"]
 
 
-def test_charged_twice_last_night_links_to_the_duplicate_charge(session):
-    ctx, result = run(
-        session, "J'ai été facturé deux fois pour ma course d'hier soir", ["fare_billing"]
-    )
-    trip = ctx["trip"]
-    assert trip is not None and trip.kind == "ride"
-    assert len([c for c in trip.charges if c["type"] == "capture"]) == 2
+def test_ride_complaint_without_an_id_is_not_guessed(session):
+    account(session)
+    text = "J'ai été facturé deux fois pour ma course d'hier soir"
+    ctx, result = run(session, text, ["fare_billing"])
+    assert ctx["about_ride"] is True and ctx["trip"] is None and ctx["facts"] == []
+    assert "no ride ID" in result.note
+
+
+def test_ride_id_on_the_account_is_linked_and_checked(session):
+    dup = next(t for t in account(session) if len(t.charges) == 2)
+    text = f"Facturé deux fois hier soir pour {dup.id.lower().replace('-', '')}"
+    ctx, result = run(session, text, ["fare_billing"])
+    assert ctx["trip"].id == dup.id
     facts = " ".join(f["text"] for f in ctx["facts"])
     assert "really charged 2 times" in facts
-    assert "matches no payment line" not in facts  # no amount quoted: nothing to contradict
-    assert result.output["why"]  # the link is explained
+    assert {"ok": True, "text": "two charge lines on record: on record"} in result.output["checks"]
+
+
+def test_ride_id_of_someone_else_is_not_found(session):
+    other = account(session, "someone.else@example.com")[0]
+    account(session)
+    ctx, result = run(session, f"Problem with {other.id}", ["fare_billing"])
+    assert ctx["trip"] is None and ctx["ride_not_found"] == other.id
+    assert "not on this customer's account" in result.note
 
 
 def test_amount_that_matches_no_charge_is_flagged_not_overwritten(session):
-    # Real case from the live demo: the customer quoted 24,50 $ but the linked ride shows other
-    # amounts; the reply must not state the record's amount as if the customer agreed with it.
-    ctx, result = run(
-        session,
-        "J'ai été facturé deux fois pour ma course d'hier soir (24,50 $)",
-        ["fare_billing"],
-    )
-    assert ctx["trip"] is not None  # the date and the double charge are still real evidence
-    assert "amount quoted matches no charge (-2)" in result.output["why"]
+    # Real case from the live demo: the customer quoted 24,50 $ but the ride shows other amounts;
+    # the reply must not state the record's amount as if the customer agreed with it.
+    dup = next(t for t in account(session) if len(t.charges) == 2)
+    ctx, result = run(session, f"{dup.id}: facturé deux fois (24,50 $)", ["fare_billing"])
+    assert {"ok": False, "text": "the amount quoted matches no charge"} in result.output["checks"]
     assert "The customer mentions $24.50" in ctx["facts"][-1]["text"]
     assert ctx["facts"][-1]["id"] == f"F{len(ctx['facts'])}"
 
 
-def test_late_food_order_links_to_the_delivery(session):
-    ctx, _ = run(
-        session,
-        "My food order was super late and the spring rolls were missing",
-        ["delivery_order"],
-    )
-    assert ctx["trip"].kind == "delivery"
-    texts = [f["text"] for f in ctx["facts"]]
-    assert any("26 minutes" in t for t in texts)
-    assert any("Spring rolls" in t for t in texts)
+def test_longer_route_is_on_the_record(session):
+    detour = next(t for t in account(session) if t.details.get("suggested_km"))
+    ctx, _ = run(session, f"The driver took a long detour on {detour.id}", ["driver_behaviour"])
+    assert any("suggested route" in f["text"] for f in ctx["facts"])
 
 
-def test_category_alone_is_not_evidence_for_a_trip(session):
-    # Regression: a safety report with no date/amount/ref was linked to the latest ride only
-    # because "ride matches the category"; unrelated double-charge facts were then shown.
-    ctx, result = run(
-        session,
-        "The driver was texting while driving on the highway and I felt unsafe.",
-        ["safety_incident"],
-    )
-    assert ctx["trip"] is None and ctx["facts"] == []
-    assert "ask which one" in result.note
-
-
-def test_vague_message_does_not_guess_a_trip(session):
-    ctx, result = run(session, "Your service is bad", ["other"])
-    assert ctx["trip"] is None
-    assert "ask which one" in result.note
-
-
-def test_trip_facts_are_numbered_for_citation(session):
-    ctx, _ = run(
-        session,
-        "cancel fee was unfair, I cancelled because the driver was late",
-        ["cancellation_no_show"],
-    )
-    assert ctx["trip"].status == "cancelled"
+def test_cancellation_facts_are_numbered_for_citation(session):
+    cancelled = next(t for t in account(session) if t.status == "cancelled")
+    ctx, _ = run(session, f"Unfair fee on {cancelled.id}, the driver was late", ["fare_billing"])
     ids = [f["id"] for f in trip_facts(ctx["trip"])]
     assert ids == [f"F{i}" for i in range(1, len(ids) + 1)]
     assert any("7 minutes later" in f["text"] for f in ctx["facts"])
 
 
+def test_questions_and_feedback_need_no_ride(session):
+    account(session)
+    for text, categories, kind in (
+        ("How do cancellation fees work?", ["cancellation_no_show"], "request"),
+        ("I can't log in to my account", ["account_access"], "complaint"),
+        ("You should let us tip in cash", ["other"], "feedback"),
+    ):
+        ctx, result = run(session, text, categories, kind)
+        assert ctx["about_ride"] is False and ctx["trip"] is None and result.note is None, text
+
+
 def test_returning_customer_read_back_from_database_still_links(tmp_path):
-    # Regression: SQLite returns naive datetimes in a new session; scoring must not crash.
+    # Regression: SQLite returns naive datetimes in a new session; checking must not crash.
     url = f"sqlite:///{(tmp_path / 'r.db').as_posix()}"
     with new_session(url) as s1:
-        run(s1, "hello", ["other"], sender="back@univ.tn")
+        ride = account(s1, "back@univ.tn")[0]
         s1.commit()
     with new_session(url) as s2:
-        ctx, _ = run(s2, "charged twice yesterday", ["fare_billing"], sender="back@univ.tn")
-        assert ctx["trip"] is not None
+        text = f"charged twice yesterday on {ride.id}"
+        ctx, _ = run(s2, text, ["fare_billing"], sender="back@univ.tn")
+        assert ctx["trip"].id == ride.id
 
 
-def test_old_trips_are_not_linked_by_relative_dates(session):
-    # Sanity: the duplicate-charge ride is dated yesterday evening.
-    ctx, _ = run(session, "charged twice yesterday", ["fare_billing"])
-    assert ctx["trip"].started_at.date() == (utcnow() - timedelta(days=1)).date()
+def test_starter_history_has_last_nights_double_charge(session):
+    rides = account(session)
+    dup = next(t for t in rides if len(t.charges) == 2)
+    assert dup.started_at.date() == (utcnow() - timedelta(days=1)).date()
+    assert len(rides) == 6
 
 
-def test_a_ride_is_not_linked_to_a_food_order_complaint(session):
-    # Real case from the live demo: "my food never arrived last night" was linked to last night's
-    # ride on the date alone.
-    ctx, result = run(
-        session,
-        "I ordered food last night and it never arrived, but I was charged.",
-        ["delivery_order", "fare_billing"],
-    )
-    linked = ctx["trip"]
-    assert linked is None or linked.kind == "delivery"
-    for candidate in result.output["candidates"]:
-        if candidate["kind"] == "ride":
-            assert candidate["score"] < 3  # below MIN_SCORE: never linked
+def test_ride_ids_are_normalised():
+    assert ride_refs("lg12345 and LG-12345, then Lg-6789") == ["LG-12345", "LG-6789"]

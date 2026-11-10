@@ -1,37 +1,37 @@
 {
-  "questions": 70,
+  "questions": 62,
   "llm": "openai/gpt-oss-120b",
   "embedder": "dense:sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2+int8",
   "variants": {
     "dense_text": {
-      "mrr@10": 0.589,
-      "recall@1": 0.443,
-      "recall@3": 0.671
+      "mrr@10": 0.59,
+      "recall@1": 0.452,
+      "recall@3": 0.677
     },
     "bm25_text": {
-      "mrr@10": 0.492,
-      "recall@1": 0.4,
-      "recall@3": 0.529
+      "mrr@10": 0.503,
+      "recall@1": 0.403,
+      "recall@3": 0.581
     },
     "dense_summary": {
-      "mrr@10": 0.668,
-      "recall@1": 0.543,
-      "recall@3": 0.757
+      "mrr@10": 0.66,
+      "recall@1": 0.532,
+      "recall@3": 0.758
     },
     "bm25_summary": {
-      "mrr@10": 0.498,
-      "recall@1": 0.386,
-      "recall@3": 0.571
+      "mrr@10": 0.496,
+      "recall@1": 0.387,
+      "recall@3": 0.565
     },
     "rrf_dense_text+dense_summary": {
-      "mrr@10": 0.643,
-      "recall@1": 0.529,
-      "recall@3": 0.714
+      "mrr@10": 0.637,
+      "recall@1": 0.516,
+      "recall@3": 0.677
     },
     "rrf_dense_text+dense_summary+bm25_summary": {
-      "mrr@10": 0.617,
+      "mrr@10": 0.621,
       "recall@1": 0.5,
-      "recall@3": 0.714
+      "recall@3": 0.677
     }
   }
 }

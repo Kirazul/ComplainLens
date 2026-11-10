@@ -1,17 +1,17 @@
 {
-  "questions": 70,
+  "questions": 62,
   "retrievers": {
     "bm25": {
-      "recall@1": 0.4,
-      "recall@3": 0.529,
-      "mrr@10": 0.492,
+      "recall@1": 0.403,
+      "recall@3": 0.581,
+      "mrr@10": 0.503,
       "mrr@10_ci95": [
-        0.391,
-        0.591
+        0.396,
+        0.607
       ],
       "median_ms": 0.03,
-      "mrr@10_en": 0.469,
-      "mrr@10_fr": 0.515
+      "mrr@10_en": 0.495,
+      "mrr@10_fr": 0.511
     }
   },
   "paired_vs_bm25_mrr": {},
@@ -57,6 +57,11 @@
       "gold": "HC-LOST#3"
     },
     {
+      "id": "q18",
+      "q": "the man driving was swerving and seemed drunk, I want to report it",
+      "gold": "HC-SAFETY#2"
+    },
+    {
       "id": "q19",
       "q": "after I report something dangerous, when will someone call me back",
       "gold": "HC-SAFETY#3"
@@ -80,26 +85,6 @@
       "id": "q23",
       "q": "can the driver see the stars I gave him",
       "gold": "HC-DRIVER#3"
-    },
-    {
-      "id": "q24",
-      "q": "half my meal was not in the bag",
-      "gold": "HC-DELIVERY#1"
-    },
-    {
-      "id": "q25",
-      "q": "dinner showed up 40 minutes after the time they promised",
-      "gold": "HC-DELIVERY#2"
-    },
-    {
-      "id": "q26",
-      "q": "app says my food was dropped off but nothing is at my door",
-      "gold": "HC-DELIVERY#3"
-    },
-    {
-      "id": "q27",
-      "q": "the burger was raw inside",
-      "gold": "HC-DELIVERY#4"
     },
     {
       "id": "q28",
@@ -200,16 +185,6 @@
       "id": "q58",
       "q": "le chauffeur peut-il voir les étoiles que je lui ai données",
       "gold": "HC-DRIVER#3"
-    },
-    {
-      "id": "q59",
-      "q": "la moitié de mon repas n'était pas dans le sac",
-      "gold": "HC-DELIVERY#1"
-    },
-    {
-      "id": "q62",
-      "q": "le burger était cru à l'intérieur",
-      "gold": "HC-DELIVERY#4"
     },
     {
       "id": "q63",

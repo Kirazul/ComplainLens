@@ -137,3 +137,23 @@ def test_build_first_contacts_merges_customer_tweets_before_first_reply():
     assert b["brand_replied"] is False
     assert b["first_reply"] is None
     assert b["reply_delay_s"] is None
+
+
+def test_food_delivery_conversations_are_out_of_scope():
+    import re
+
+    from complaintlens.data.twcs import FOOD_DELIVERY
+
+    food = re.compile(FOOD_DELIVERY.removeprefix("(?i)"), re.IGNORECASE)
+    for text in (
+        "my [COMPANY] eats order is an hour late",
+        "#[COMPANY]EATS terrible service",
+        "the courier never delivered my food",
+    ):
+        assert food.search(text), text
+    for text in (
+        "My driver took a detour and I was charged $12 more",
+        "I left my phone in the car, the driver ordered me out",  # "order" alone is not food
+        "Charged twice for one ride",
+    ):
+        assert not food.search(text), text

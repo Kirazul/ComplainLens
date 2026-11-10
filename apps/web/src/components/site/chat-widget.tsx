@@ -5,8 +5,10 @@ import { useSearchParams } from "next/navigation";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 
 import { Moon } from "@/components/moon";
+import { useAccount } from "@/components/site/account";
 import { Messages, ReplyBox, useConversation, type ConversationRef } from "@/components/site/conversation";
-import { api, ApiError, type Lang } from "@/lib/api";
+import { api, ApiError, type Account, type Lang, type Ride } from "@/lib/api";
+import { dateTime } from "@/lib/format";
 import type { Dict } from "@/lib/i18n";
 import { remember, useRemembered } from "@/lib/storage";
 
@@ -27,6 +29,12 @@ export function ChatWidget({ lang, t }: { lang: Lang; t: Dict }) {
     setUserOpen(null);
   }
   const open = userOpen ?? requested;
+  // "Get help with this ride" (Your rides) opens a new conversation about that ride.
+  const ride = query.get("ride");
+  const me = useAccount();
+  useEffect(() => {
+    if (ride) remember(CONVERSATION_KEY, null);
+  }, [ride]);
 
   const email = useRemembered<string>(EMAIL_KEY) ?? "";
   const conv = useRemembered<ConversationRef>(CONVERSATION_KEY);
@@ -111,7 +119,15 @@ export function ChatWidget({ lang, t }: { lang: Lang; t: Dict }) {
                 </Link>
               </>
             ) : (
-              <StartForm key={email} email={email} t={t} onStarted={started} />
+              <StartForm
+                key={`${email}|${me?.customer.email ?? ""}|${ride ?? ""}`}
+                email={email}
+                me={me ?? null}
+                ride={ride}
+                lang={lang}
+                t={t}
+                onStarted={started}
+              />
             )}
           </div>
         </section>
@@ -120,9 +136,25 @@ export function ChatWidget({ lang, t }: { lang: Lang; t: Dict }) {
   );
 }
 
-function StartForm({ email, t, onStarted }: { email: string; t: Dict; onStarted: (ref: ConversationRef, email: string) => void }) {
+interface StartProps {
+  email: string;
+  me: Account | null;
+  ride: string | null;
+  lang: Lang;
+  t: Dict;
+  onStarted: (ref: ConversationRef, email: string) => void;
+}
+
+// The first message. Signed in: the account's email, and the ride to attach (its ID links the
+// complaint to the exact ride). Otherwise: an email address; ride problems are then asked their ID.
+function StartForm({ email, me, ride, lang, t, onStarted }: StartProps) {
   const c = t.chat;
-  const [address, setAddress] = useState(email);
+  const [address, setAddress] = useState(me?.customer.email ?? email);
+  const [rides, setRides] = useState<Ride[]>([]);
+  const [chosen, setChosen] = useState(ride ?? "");
+  useEffect(() => {
+    if (me) api.myRides().then(setRides).catch(() => setRides([]));
+  }, [me]);
   const [text, setText] = useState("");
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -134,7 +166,7 @@ function StartForm({ email, t, onStarted }: { email: string; t: Dict; onStarted:
     setSending(true);
     setError(null);
     try {
-      const r = await api.submit({ email: address.trim(), body, channel: "chat" });
+      const r = await api.submit({ email: address.trim(), body, channel: "chat", ride: chosen || undefined });
       onStarted({ id: r.id, key: r.track_key, number: r.number }, address.trim());
     } catch (err) {
       setError(
@@ -150,18 +182,42 @@ function StartForm({ email, t, onStarted }: { email: string; t: Dict; onStarted:
 
   return (
     <form onSubmit={send} className="space-y-2.5">
-      <label className="block text-sm">
-        <span className="font-semibold text-night">{c.email}</span>
-        <input
-          type="email"
-          required
-          autoComplete="email"
-          autoFocus={!address}
-          value={address}
-          onChange={(e) => setAddress(e.target.value)}
-          className="mt-1 w-full rounded-xl border border-lilac px-3 py-2 text-night focus:border-night"
-        />
-      </label>
+      {me ? (
+        <>
+          <p className="truncate text-sm text-slate/80">
+            {c.signedInAs} {me.customer.email}
+          </p>
+          <label className="block text-sm">
+            <span className="font-semibold text-night">{c.ride}</span>
+            <select
+              value={chosen}
+              onChange={(e) => setChosen(e.target.value)}
+              className="mt-1 w-full rounded-xl border border-lilac bg-white px-3 py-2 text-night focus:border-night"
+            >
+              <option value="">{t.contact.rideNone}</option>
+              {ride && !rides.some((r) => r.id === ride) && <option value={ride}>{ride}</option>}
+              {rides.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.id} · {r.pickup} → {r.dropoff} · {dateTime(r.started_at, lang)}
+                </option>
+              ))}
+            </select>
+          </label>
+        </>
+      ) : (
+        <label className="block text-sm">
+          <span className="font-semibold text-night">{c.email}</span>
+          <input
+            type="email"
+            required
+            autoComplete="email"
+            autoFocus={!address}
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            className="mt-1 w-full rounded-xl border border-lilac px-3 py-2 text-night focus:border-night"
+          />
+        </label>
+      )}
       <label className="block">
         <span className="sr-only">{t.conversation.placeholder}</span>
         <textarea

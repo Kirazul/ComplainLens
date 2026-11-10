@@ -33,7 +33,7 @@ class _Batch(BaseModel):
 
 
 SYSTEM = (
-    "You label customer messages sent to a ride-hailing app that also delivers food. Apply these "
+    "You label customer messages sent to a ride-hailing app. Apply these "
     "annotation guidelines exactly, as the human annotators do:\n\n{guidelines}\n\n"
     "For EACH message return its id and labels: message_type, response_required (bool), urgency "
     "(immediate|24h|standard, null when no response is required), categories (1-3, main first), "

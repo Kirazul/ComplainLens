@@ -45,12 +45,11 @@ Pilot: 50 items, both annotators independently. Then compute Cohen's κ per fiel
 | `safety_incident` | dangerous driving, assault, harassment, threats, impaired driver, accident, feeling unsafe |
 | `lost_item` | items left in a vehicle |
 | `cancellation_no_show` | driver or rider cancellations, no-shows, long waits, no cars available |
-| `delivery_order` | food-delivery orders: late, missing or wrong items, cold food, order given to someone else, courier behaviour, restaurant problems |
 | `app_technical` | crashes, bugs, GPS/map errors, payment-screen failures, updates |
 | `account_access` | login, verification, hacked or locked accounts, deactivation |
 | `promotions_credits` | promo codes, referral credits, gift cards, subscriptions |
 | `accessibility` | wheelchair, service animals, assistance needs, discrimination tied to a disability |
-| `other` | none of the above (e.g. brand-level opinions, news, company politics) |
+| `other` | none of the above (e.g. brand-level opinions, news, company politics, services LunaGo does not offer) |
 
 **Rules:**
 - When safety is involved, `safety_incident` is **always** first, even if fare is also mentioned.

@@ -18,6 +18,7 @@ Usage:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 from datetime import UTC, datetime
 from pathlib import Path
@@ -34,7 +35,7 @@ from complaintlens.topics import ctfidf_top_terms, npmi_coherence, topic_diversi
 from complaintlens.trends import doc_terms
 
 DATA = Path("data/interim/uber_first_contacts.parquet")
-CACHE = Path("data/interim/uber_minilm.npy")
+CACHE_DIR = Path("data/interim")
 K = 30
 SEEDS = [0, 1, 2]
 
@@ -47,16 +48,21 @@ def load() -> list[str]:
     return df["text"].to_list()
 
 
+def cache_path(texts: list[str]) -> Path:
+    """One cache file per exact list of texts: a changed dataset never reuses old vectors."""
+    digest = hashlib.sha256("".join(texts).encode()).hexdigest()[:12]
+    return CACHE_DIR / f"uber_minilm_{digest}.npy"
+
+
 def embeddings(texts: list[str]) -> np.ndarray:
-    if CACHE.exists():
-        vectors = np.load(CACHE).astype(np.float32)
-        if len(vectors) == len(texts):
-            return vectors
+    cache = cache_path(texts)
+    if cache.exists():
+        return np.load(cache).astype(np.float32)
     s = get_settings()
     embedder = FastEmbedder(s.embedding_model, cache_dir=str(s.models_dir / "fastembed"))
     vectors = embedder.embed_documents(texts)
     vectors /= np.linalg.norm(vectors, axis=1, keepdims=True)
-    np.save(CACHE, vectors.astype(np.float16))  # half precision: 32 MB instead of 64
+    np.save(cache, vectors.astype(np.float16))  # half precision: 32 MB instead of 64
     return vectors
 
 

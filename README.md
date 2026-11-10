@@ -3,7 +3,7 @@
 Multilingual (English/French) complaint understanding, routing and verified response, with guaranteed-risk automation.
 NLP semester project 2026–2027, by Mohamed Aziz Mansour and Rimel Zouari.
 
-The live demo runs as the support desk of **LunaGo**, a fictional ride and food-delivery app in Montréal. A customer writes from any channel. ComplaintLens cleans the message, masks personal data, detects the language and understands it. It then links the message to the customer's trip, retrieves the relevant policy and drafts a cited reply. The reply is verified, and the system decides whether to send it, wait for an agent, or escalate. Every step is visible live in the console.
+The live demo runs as the support desk of **LunaGo**, a fictional ride-hailing app. Customers have an account, book rides and write in from any channel (no account is needed to write). ComplaintLens cleans the message, masks personal data, detects the language and understands it. A ride problem is linked to the ride through its ID on the customer's account (asked for when missing, never guessed); the system then retrieves the relevant policy and drafts a cited reply. The reply is verified, and the system decides whether to send it, wait for an agent, or escalate. Every step is visible live in the console.
 
 ## Live demo
 
@@ -18,13 +18,23 @@ Send a complaint from any of these channels and watch it appear in the console w
 | Channel | How | Where the reply goes |
 |---|---|---|
 | Email | write to `lunagocare@fldubai.com` | console (this free inbox receives only) |
-| Contact form | website, "Contact support" | the ticket's tracking page |
+| Contact form | website, "Contact" (optional ride ID) | the ticket's tracking page |
 | Live chat | website, "Chat with us" (every page) | the chat itself; the conversation continues there |
-| Trip rating | website, "Rate a trip" (stars + comment) | the ticket's tracking page |
+| Ride rating | website, "Rate a ride" (stars + comment) | the ticket's tracking page |
 | Community forum | [GitHub Discussions](https://github.com/Kirazul/ComplainLens/discussions) of this repository | a comment in the thread |
 
-Every ticket is a conversation: a customer can keep writing in the chat or on the ticket page, and
-the AI reads the whole conversation again. Once an agent has replied, the AI only drafts.
+On the website a customer creates an account (it comes with a few past demo rides), books rides
+(upfront price; the ride is scheduled, on its way, then completed by the clock; some rides go
+wrong, as in real life) and sees them in **Your rides**, each with its ride ID and receipt.
+
+How a message is handled:
+- **Not about one ride** (a question, feedback, an app or login problem): answered from the policy
+  knowledge base; no account or ride needed.
+- **About a ride**: linked only through its ride ID, and only if the ride is on the sender's account.
+  Signed in, the customer picks the ride in the chat or the form; otherwise the reply asks for the
+  ride ID ("or sign in and choose the ride"). Nothing is guessed from "last night" or an amount.
+- Every ticket is a conversation: the customer keeps writing in the chat or on the ticket page and
+  the AI reads the whole conversation again. Once an agent has replied, the AI only drafts.
 
 The console is for staff only: sign in with a username and password. The first administrator is
 created at startup from `ADMIN_USERNAME` / `ADMIN_PASSWORD` (locally, without a password:
@@ -32,8 +42,8 @@ created at startup from `ADMIN_USERNAME` / `ADMIN_PASSWORD` (locally, without a 
 password from the account menu. Lost password: `uv run complaintlens set-password admin`.
 
 In a conversation the agent sees the AI's suggestion in the reply box (send it, edit it, or write
-their own), why the AI decided what it did, and the **Trip check**: which ride or order the message
-was linked to, why, and the facts from the record that the reply may state (every number in a reply
+their own), why the AI decided what it did, and the **Ride check**: the ride the message is about, what the
+customer says checked against its record, and the facts the reply may state (every number in a reply
 is checked against them). The API sleeps when idle to stay within the free plan: the first request
 after a pause can take about 20 seconds.
 
@@ -47,7 +57,7 @@ after a pause can take about 20 seconds.
 |---|---|
 | `src/complaintlens/` | Python package: pipeline stages, RAG, store, channels (email, forum), API, CLI |
 | `apps/web/` | Next.js app: LunaGo public site (`/en`, `/fr`) and ComplaintLens console (`/console`) |
-| `company/help_center/` | LunaGo Help Center (EN/FR), the RAG knowledge base |
+| `company/help_center/` | LunaGo policies (EN/FR): the private RAG knowledge base the replies cite (not shown to customers) |
 | `ml/scripts/` | Data preparation, EDA, baselines, training |
 | `reports/results/` | Every reported number, as JSON |
 | `tests/` | Python tests (`uv run pytest`) |

@@ -1,51 +1,51 @@
 {
-  "questions": 70,
+  "questions": 62,
   "retrievers": {
     "bm25": {
-      "recall@1": 0.4,
-      "recall@3": 0.529,
-      "mrr@10": 0.492,
+      "recall@1": 0.403,
+      "recall@3": 0.581,
+      "mrr@10": 0.503,
       "mrr@10_ci95": [
-        0.391,
-        0.591
+        0.396,
+        0.607
       ],
       "median_ms": 0.04,
-      "mrr@10_en": 0.469,
-      "mrr@10_fr": 0.515
+      "mrr@10_en": 0.495,
+      "mrr@10_fr": 0.511
     },
     "dense:sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2": {
-      "recall@1": 0.486,
-      "recall@3": 0.7,
-      "mrr@10": 0.613,
+      "recall@1": 0.468,
+      "recall@3": 0.661,
+      "mrr@10": 0.595,
       "mrr@10_ci95": [
-        0.518,
-        0.706
+        0.492,
+        0.693
       ],
-      "median_ms": 3.91,
-      "mrr@10_en": 0.598,
-      "mrr@10_fr": 0.628
+      "median_ms": 4.21,
+      "mrr@10_en": 0.589,
+      "mrr@10_fr": 0.6
     },
     "hybrid(bm25+dense:sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2)": {
-      "recall@1": 0.4,
+      "recall@1": 0.387,
       "recall@3": 0.629,
-      "mrr@10": 0.536,
+      "mrr@10": 0.533,
       "mrr@10_ci95": [
-        0.442,
-        0.633
+        0.43,
+        0.629
       ],
-      "median_ms": 4.1,
-      "mrr@10_en": 0.512,
-      "mrr@10_fr": 0.56
+      "median_ms": 4.24,
+      "mrr@10_en": 0.519,
+      "mrr@10_fr": 0.546
     }
   },
   "paired_vs_bm25_mrr": {
     "dense:sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2": {
-      "delta": 0.121,
-      "p_one_sided": 0.0222
+      "delta": 0.092,
+      "p_one_sided": 0.067
     },
     "hybrid(bm25+dense:sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2)": {
-      "delta": 0.044,
-      "p_one_sided": 0.0606
+      "delta": 0.03,
+      "p_one_sided": 0.1604
     }
   },
   "bm25_failures": [
@@ -90,6 +90,11 @@
       "gold": "HC-LOST#3"
     },
     {
+      "id": "q18",
+      "q": "the man driving was swerving and seemed drunk, I want to report it",
+      "gold": "HC-SAFETY#2"
+    },
+    {
       "id": "q19",
       "q": "after I report something dangerous, when will someone call me back",
       "gold": "HC-SAFETY#3"
@@ -113,26 +118,6 @@
       "id": "q23",
       "q": "can the driver see the stars I gave him",
       "gold": "HC-DRIVER#3"
-    },
-    {
-      "id": "q24",
-      "q": "half my meal was not in the bag",
-      "gold": "HC-DELIVERY#1"
-    },
-    {
-      "id": "q25",
-      "q": "dinner showed up 40 minutes after the time they promised",
-      "gold": "HC-DELIVERY#2"
-    },
-    {
-      "id": "q26",
-      "q": "app says my food was dropped off but nothing is at my door",
-      "gold": "HC-DELIVERY#3"
-    },
-    {
-      "id": "q27",
-      "q": "the burger was raw inside",
-      "gold": "HC-DELIVERY#4"
     },
     {
       "id": "q28",
@@ -233,16 +218,6 @@
       "id": "q58",
       "q": "le chauffeur peut-il voir les étoiles que je lui ai données",
       "gold": "HC-DRIVER#3"
-    },
-    {
-      "id": "q59",
-      "q": "la moitié de mon repas n'était pas dans le sac",
-      "gold": "HC-DELIVERY#1"
-    },
-    {
-      "id": "q62",
-      "q": "le burger était cru à l'intérieur",
-      "gold": "HC-DELIVERY#4"
     },
     {
       "id": "q63",

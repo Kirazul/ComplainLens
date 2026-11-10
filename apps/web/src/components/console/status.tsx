@@ -22,6 +22,11 @@ export const STATUS: Record<string, { label: string; help: string; className: st
     help: "Safety or legal risk. The customer was told our Safety team will contact them.",
     className: "bg-red-50 text-escalated ring-red-200",
   },
+  needs_info: {
+    label: "Waiting for customer",
+    help: "A ride problem without a valid ride ID: the AI asked the customer for it.",
+    className: "bg-indigo-50 text-indigo-800 ring-indigo-200",
+  },
   answered: {
     label: "Answered",
     help: "An agent replied. It comes back here if the customer writes again.",

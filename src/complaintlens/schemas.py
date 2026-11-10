@@ -46,7 +46,6 @@ class Category(StrEnum):
     SAFETY_INCIDENT = "safety_incident"
     LOST_ITEM = "lost_item"
     CANCELLATION_NO_SHOW = "cancellation_no_show"
-    DELIVERY_ORDER = "delivery_order"
     APP_TECHNICAL = "app_technical"
     ACCOUNT_ACCESS = "account_access"
     PROMOTIONS_CREDITS = "promotions_credits"
@@ -69,6 +68,7 @@ class Action(StrEnum):
     AWAITING_APPROVAL = "awaiting_approval"
     ESCALATED = "escalated"
     NO_REPLY = "no_reply"
+    NEEDS_INFO = "needs_info"  # a ride problem without a valid ride ID: we asked for it
 
 
 class InboundMessage(BaseModel):

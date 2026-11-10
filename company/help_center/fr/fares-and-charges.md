@@ -12,7 +12,7 @@ Quand la demande est forte, les prix sont multipliés par un facteur de majorati
 Le prix final ne peut changer que si vous ajoutez un arrêt, modifiez la destination, si la course dure plus de 25 % plus longtemps à cause d'un trajet que vous avez demandé, ou s'il y a des péages. Votre reçu indique la raison de tout changement.
 
 ## Facturé deux fois ou montant inattendu
-Une deuxième ligne sur votre relevé bancaire est souvent une pré-autorisation temporaire, pas un débit. Les pré-autorisations disparaissent automatiquement sous 3 à 5 jours ouvrables. Si vous avez réellement été débité deux fois pour une même course ou commande, nous remboursons le doublon sur votre moyen de paiement d'origine ; le remboursement apparaît sous 5 à 10 jours ouvrables, selon votre banque.
+Une deuxième ligne sur votre relevé bancaire est souvent une pré-autorisation temporaire, pas un débit. Les pré-autorisations disparaissent automatiquement sous 3 à 5 jours ouvrables. Si vous avez réellement été débité deux fois pour une même course, nous remboursons le doublon sur votre moyen de paiement d'origine ; le remboursement apparaît sous 5 à 10 jours ouvrables, selon votre banque.
 
 ## Reçus
-Un reçu est envoyé par courriel après chaque course et commande, et il est disponible dans l'application sous Compte → Courses.
+Un reçu est envoyé par courriel après chaque course, et il est disponible dans l'application sous Compte → Courses.

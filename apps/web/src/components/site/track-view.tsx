@@ -23,6 +23,7 @@ function TrackView({ id, trackKey, lang, t }: { id: number; trackKey: string; la
       processing: t.track.waiting,
       escalated: t.track.escalated,
       awaiting_approval: t.track.review,
+      needs_info: t.track.needsInfo,
       no_reply: t.track.noReply,
       closed: t.track.closed,
     }[ticket.status as string] ?? t.phases.answered;

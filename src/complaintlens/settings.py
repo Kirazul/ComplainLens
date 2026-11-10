@@ -17,7 +17,6 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ROOT / ".env", extra="ignore")
 
     company_name: str = "LunaGo"
-    company_city: str = "Montréal"
 
     # LLM: any OpenAI-compatible endpoint (Groq by default, or local Ollama).
     llm_base_url: str = "https://api.groq.com/openai/v1"

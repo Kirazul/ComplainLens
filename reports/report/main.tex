@@ -27,13 +27,14 @@ reply. We present ComplaintLens, an English/French system that turns one incomin
 structured, traced decision: message type, category, severity and risk flags, the linked customer
 record, a reply grounded in company policy and in facts computed from the record, a deterministic
 verification of that reply, and an automation decision with a statistical error bound. We train and
-evaluate on real data (expert-labelled complaint tweets, 41{,}855 real Uber support conversations)
-and deploy the system as the live support desk of a fictional ride and food-delivery company.
+evaluate on real data (expert-labelled complaint tweets, 37{,}065 real Uber ride-support conversations)
+and deploy the system as the live support desk of a fictional ride-hailing company.
 A TF-IDF baseline already exceeds every published non-neural result on complaint identification
-(macro-F1 81.5 vs.\ 79.0); dense multilingual retrieval beats BM25 on customer-worded queries
-(MRR 0.61 vs.\ 0.49, $p=0.022$) while equal-weight rank fusion does not; a rate-based burst detector
-recovers 94\% of injected 20-message bursts where a count threshold recovers none, and flags a real
-app outage one hour after onset; and a Learn-then-Test gate automates 37\% of messages at a
+(macro-F1 81.5 vs.\ 79.0); on customer-worded queries, dense multilingual retrieval ranks above
+BM25 (MRR 0.60 vs.\ 0.50, $p=0.07$, not significant on 62 questions) and reaches 0.65 when it also
+searches with the LLM's summary; a rate-based burst detector
+recovers 96\% of injected 20-message bursts where a count threshold recovers none, and flags a real
+app outage within its first hour; and a Learn-then-Test gate automates 37\% of messages at a
 guaranteed 10\% error bound, refusing to automate when the evidence cannot support a stricter bound.
 \todo{headline numbers for the fine-tuned encoder (RQ1) and grounded generation (RQ3)}
 \end{abstract}
@@ -44,7 +45,7 @@ guaranteed 10\% error bound, refusing to automate when the evidence cannot suppo
 (EN/FR/other); message type (complaint, request, feedback, praise, spam) and whether a response is
 required; category (11 classes); expressed severity (4 levels, following \citet{trosborg1995pragmatics}
 as operationalised by \citet{jin2021severity}); risk flags (safety, injury, harassment, legal, fraud,
-media, vulnerable person); entities linked to the customer's trip or order; an explainable priority
+media, vulnerable person); entities linked to the customer's ride; an explainable priority
 and team; a reply grounded in cited policy and record facts; and an automation decision
 (send / await approval / escalate / no reply).
 
@@ -83,11 +84,11 @@ grounded on retrieved text follows \citet{lewis2020rag}. Burst detection in stre
 Dataset & Content & Size & Licence \\
 \midrule
 Customer Support on Twitter & Real customer/company tweets, 108 brands, with timestamps and agent replies & 2.81M tweets & CC BY-NC-SA 4.0 \\
-\quad Uber subset & First contacts to @Uber\_Support, Oct--Dec 2017 & 41{,}855 conversations & (same) \\
+\quad Uber subset & First contacts to @Uber\_Support, Oct--Dec 2017, rides only & 37{,}065 conversations & (same) \\
 Complaints on Twitter & Complaint vs.\ not, 9 domains \citep{preotiuc2019complaints} & 3{,}449 tweets & research use \\
 \quad severity & 4 levels on the 1{,}232 complaints \citep{jin2021severity} & 1{,}232 & research use \\
-LunaGo Help Center & 9 bilingual policy articles (ours, fictional) & 35 sections $\times$ 2 & ours \\
-LunaGo records & Synthetic riders, trips, orders, charges (demo only) & generated & ours \\
+LunaGo Help Center & 8 bilingual policy articles (ours, fictional; the replies' sources) & 30 sections $\times$ 2 & ours \\
+LunaGo records & Synthetic accounts, rides, charges and bookings (demo only) & generated & ours \\
 Gold sets & Human annotation, EN + FR \todo{sizes, $\kappa$ per field} & \todo{} & ours \\
 \bottomrule
 \end{tabularx}
@@ -96,12 +97,15 @@ Gold sets & Human annotation, EN + FR \todo{sizes, $\kappa$ per field} & \todo{}
 
 \paragraph{What exploration changed in the design.}
 (i) 95\% of Uber first contacts are one tweet (median 22 words): short-text methods matter.
-(ii) About 49\% mention rides and 16\% food delivery, so the fictional company offers both.
+(ii) About 11\% of first contacts concern food delivery (Uber Eats). LunaGo offers rides only, so
+these are removed by an explicit keyword rule when the dataset is built (\texttt{FOOD\_DELIVERY} in
+\texttt{data/twcs.py}); 37{,}065 conversations remain.
 (iii) The corpus was collected around company replies: only 19 of 19{,}762 customer-started threads
 tagging @Uber\_Support went unanswered, so ``did the company reply?'' cannot label ``response
 required''; that label comes only from human annotation.
-(iv) The busiest day, 14 Nov 2017 (1{,}333 conversations), is a real incident: a free-doughnut
-promotion that crashed the food-delivery app, our real-event test for RQ4.
+(iv) The busiest day, 14 Nov 2017 (1{,}101 conversations), is a real incident: a free-doughnut
+promotion in the app that made it crash, our real-event test for RQ4 (the messages about the
+promotion stay; only those about delivering the doughnuts are removed by the rule above).
 (v) The severity release cannot be joined by ID (IDs corrupted to floats such as \texttt{2.26E+16})
 nor by exact text (lower-cased, re-tokenised, \texttt{<user>}/\texttt{<url>} placeholders, one row
 replaced by the spreadsheet error \texttt{\#NAME?}). Both releases share row order and complaint
@@ -180,19 +184,20 @@ favours the papers). Grouping duplicates changed scores by less than the seed va
 \toprule
 Retriever & R@1 & R@3 & MRR@10 [95\% CI] & Latency \\
 \midrule
-BM25 (implemented from scratch) & 0.40 & 0.53 & 0.49 [0.39, 0.59] & 0.04 ms \\
-\textbf{Dense, multilingual MiniLM} & \textbf{0.49} & \textbf{0.70} & \textbf{0.61 [0.52, 0.71]} & 4 ms \\
-Hybrid BM25 + dense (RRF) & 0.40 & 0.63 & 0.54 [0.44, 0.63] & 4 ms \\
+BM25 (implemented from scratch) & 0.40 & 0.58 & 0.50 [0.40, 0.61] & 0.04 ms \\
+\textbf{Dense, multilingual MiniLM} & \textbf{0.47} & \textbf{0.66} & \textbf{0.60 [0.49, 0.69]} & 4 ms \\
+Hybrid BM25 + dense (RRF) & 0.39 & 0.63 & 0.53 [0.43, 0.63] & 4 ms \\
 \bottomrule
 \end{tabular}
-\caption{70 customer-worded questions (35 EN, 35 FR). Dense vs.\ BM25: $+0.121$ MRR, $p=0.022$;
-hybrid vs.\ BM25: $+0.044$, $p=0.06$. Source: \res{retrieval\_helpcenter.json}.}
+\caption{62 customer-worded questions (31 EN, 31 FR) on the rides-only Help Center. Dense vs.\
+BM25: $+0.092$ MRR, one-sided paired bootstrap $p=0.067$ (not significant at 5\%); hybrid vs.\
+BM25: $+0.030$, $p=0.16$. Source: \res{retrieval\_helpcenter.json}.}
 \end{table}
 Equal-weight fusion \emph{hurt} because BM25 is much weaker on customer wording. Searching with the
-LLM's one-line English summary as well (sections share IDs across languages) raised MRR to 0.66
+LLM's one-line English summary as well (sections share IDs across languages) raised MRR to 0.65
 (\res{retrieval\_summary.json}). To fit the free host's 1\,GB container we deploy the model's
-official int8 file: MRR 0.59 vs.\ 0.61 on the text alone (paired bootstrap $p=0.13$), same top
-section for 89\% of questions, 0.64 with the summary (\res{retrieval\_int8.json}). This set was
+official int8 file: MRR 0.59 vs.\ 0.60 on the text alone (paired bootstrap $p=0.75$), same top
+section for 89\% of questions, 0.66 with the summary (\res{retrieval\_int8.json}). This set was
 used to choose the retriever, so it is a development set; \todo{final numbers on the held-out
 question set written by the team; reranker; larger embedding models}.
 
@@ -203,16 +208,17 @@ question set written by the team; reranker; larger embedding models}.
 \toprule
 Method & +10 msgs & +20 & +40 & Incidents/day (Oct / Nov) \\
 \midrule
-\textbf{Rate-based bursting terms (Poisson $z$)} & \textbf{0.73} & \textbf{0.94} & \textbf{1.00} & 2.08 / 4.94 \\
-Fixed count threshold & 0.00 & 0.00 & 0.00 & 1.12 / 2.19 \\
+\textbf{Rate-based bursting terms (Poisson $z$)} & \textbf{0.72} & \textbf{0.96} & \textbf{0.99} & 2.00 / 4.09 \\
+Fixed count threshold & 0.00 & 0.00 & 0.00 & 1.04 / 1.75 \\
 \bottomrule
 \end{tabular}
 \caption{Recall on injected bursts of real messages (3 seeds $\times$ 60 trials); thresholds chosen on
 October under an equal alarm budget ($\leq 3$ incidents/day) and applied unchanged to November.
 Source: \res{trends\_uber.json}.}
 \end{table}
-On 14 Nov 2017 the top incident is ``krispy, kreme'' (102 messages, $z=101$); hour by hour, the
-problem starts at 13:00 UTC and the first alert fires at 14:00, one hour after onset. November
+On 14 Nov 2017 the top incident is ``doughnuts'' (82 messages, $z=70$), with ``krispy, kreme'' next;
+hour by hour, the problem starts at 14:00 UTC (151 messages that hour, against 0--2 before) and the
+first alert fires in that same hour. November
 exceeds the alarm budget partly because of genuine incidents that cannot be told apart from false
 alarms without labels.
 
@@ -223,18 +229,18 @@ alarms without labels.
 \toprule
 Method ($k=30$, 3 seeds) & NPMI coherence & Diversity & Largest cluster \\
 \midrule
-TF-IDF + $k$-means & 0.097 $\pm$ 0.011 & 0.78 & 18.6\% \\
-LDA & 0.000 $\pm$ 0.010 & 0.95 & 8.7\% \\
-Multilingual embeddings + $k$-means & 0.088 $\pm$ 0.009 & 0.78 & 5.4\% \\
+TF-IDF + $k$-means & 0.081 $\pm$ 0.035 & 0.75 & 30.8\% \\
+LDA & 0.000 $\pm$ 0.020 & 0.95 & 10.7\% \\
+Multilingual embeddings + $k$-means & 0.079 $\pm$ 0.011 & 0.77 & 5.0\% \\
 \bottomrule
 \end{tabular}
-\caption{41{,}690 Uber first contacts; every method's clusters are described with the same c-TF-IDF
-function. Source: \res{topics\_uber.json}.}
+\caption{36{,}254 Uber ride first contacts (Oct--Dec 2017); every method's clusters are described
+with the same c-TF-IDF function. Source: \res{topics\_uber.json}.}
 \end{table}
-Coherence does not separate TF-IDF from embeddings (difference $\approx$ one standard deviation),
-and it ignores cluster sizes: TF-IDF puts 18.6\% of messages in one generic cluster (``pass ride
-guys thanks please''), whereas embedding clusters are balanced and name concrete problems
-(accidents, waiting and cancellations, cold food orders, iOS app crashes, surge pricing). LDA fails
+Coherence does not separate TF-IDF from embeddings (difference well within one standard deviation),
+and it ignores cluster sizes: TF-IDF puts 30.8\% of messages in one generic cluster (``drivers app
+why how not ride''), whereas embedding clusters are balanced and name concrete problems
+(cancellation charges, accidents, waiting and cancellations, double charges, driver ratings). LDA fails
 on short texts. \todo{human word-intrusion test to settle the comparison}.
 
 \subsection{Probable causes (controlled simulation)}
@@ -242,8 +248,8 @@ For an incident, each metadata value (OS, app version, zone, vehicle, payment, t
 one-sided Fisher exact test of over-representation against baseline traffic, Benjamini--Hochberg
 correction, and a lift ranking. Real data has no metadata with known causes, so 1--2 causes are
 planted in simulated tickets (200 trials per condition; \res{rootcause\_simulation.json}).
-With 50\% purity, precision@$k$ is 0.66 / 0.86 / 0.98 for incidents of 20 / 50 / 100 tickets, against
-0.35 / 0.42 / 0.33 for ranking the most frequent values. With 80\% purity both rankings exceed 0.92 (the
+With 50\% purity, precision@$k$ is 0.65 / 0.85 / 0.98 for incidents of 20 / 50 / 100 tickets, against
+0.34 / 0.41 / 0.33 for ranking the most frequent values. With 80\% purity both rankings exceed 0.91 (the
 frequency ranking is slightly better on small incidents, where the significance requirement costs
 power). On incidents without any cause, only 1.5\% report one, whereas the frequency ranking always
 reports something.
@@ -287,7 +293,7 @@ complaint ``J'ai été facturé deux fois\dots'' as a request (complaint probabi
 data is English only (motivates RQ1).
 (2) \emph{Verifier blind spot}: number matching accepts a wrong number that happens to appear in a
 cited source (``charged 2 times'' makes ``2 days'' pass); claim-level entailment checking is needed.
-(3) \emph{Retrieval}: BM25 misses paraphrases (42 of 70 questions not ranked first).
+(3) \emph{Retrieval}: BM25 misses paraphrases (37 of 62 questions not ranked first).
 (4) \emph{Incidents}: spelling variants (\#krispykreme vs.\ ``krispy kreme'') form separate incidents.
 \todo{error categories with examples for each classifier on the gold sets: sarcasm, multi-issue,
 too short, label ambiguity, translationese}.

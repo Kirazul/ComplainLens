@@ -1,7 +1,9 @@
-"""The console's research pages (signed in): Insights and Annotate.
+"""The console's research pages (signed in): Insights, Annotate and the knowledge base.
 
 - Insights: daily volume, detected incidents and problem clusters of the real Uber stream, and
   the report's headline numbers, each traced to the results file that produced it.
+- Knowledge base: LunaGo's policies (company/help_center/), the private sources the AI's replies
+  quote; customers never see them as pages.
 - Annotate: the gold sets. Labels are saved under the signed-in account, so two team members
   labelling the pilot set give the inter-annotator agreement.
 """
@@ -16,6 +18,7 @@ from pydantic import BaseModel, Field
 from sqlmodel import col, func, select
 
 from complaintlens import annotation
+from complaintlens.api.state import state
 from complaintlens.auth import CurrentUser, current_user
 from complaintlens.settings import ROOT
 from complaintlens.store import AnnotationItem, new_session
@@ -170,3 +173,18 @@ def experiments() -> list[dict[str, Any]]:
             "rootcause_simulation.json",
         )
     return rows
+
+
+@router.get("/knowledge")
+def knowledge(lang: str = "en") -> list[dict[str, Any]]:
+    """The policy sections the replies cite, by article (for the console's citation pop-ups)."""
+    lang = lang if lang in ("en", "fr") else "en"
+    articles: dict[str, dict[str, Any]] = {}
+    for c in state.processor.kb.chunks:
+        if c.lang != lang:
+            continue
+        art = articles.setdefault(
+            c.article_id, {"id": c.article_id, "title": c.title, "sections": []}
+        )
+        art["sections"].append({"id": c.id, "heading": c.heading, "text": c.text})
+    return list(articles.values())

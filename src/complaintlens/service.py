@@ -284,7 +284,10 @@ class Processor:
         """What the conversation so far allows, whatever this message alone would get."""
         if any(r.kind == "escalation" for r in delivered):
             status, reason = Action.ESCALATED, "already escalated: stays with a human"
-        elif any(r.author for r in delivered) and ticket.status == Action.AUTO_SEND:
+        elif any(r.author for r in delivered) and ticket.status in (
+            Action.AUTO_SEND,
+            Action.NEEDS_INFO,
+        ):
             status, reason = Action.AWAITING_APPROVAL, "an agent is handling this conversation"
         else:
             return
@@ -316,6 +319,13 @@ class Processor:
             session.add(draft)
             if action == Action.AUTO_SEND:
                 return [draft]
+        elif reply and reply["kind"] == "question":  # "which ride?": asked by the template
+            if action == Action.NEEDS_INFO:
+                msg = Reply(ticket_id=ticket.id, kind="question", body=reply["body"])
+                session.add(msg)
+                return [msg]
+            # An agent is handling the conversation: the question becomes their draft.
+            session.add(Reply(ticket_id=ticket.id, kind="answer", body=reply["body"]))
         elif reply:  # escalation / acknowledgement templates
             if reply["kind"] in already_sent:
                 return to_send
@@ -328,11 +338,12 @@ class Processor:
             ticket_id=ticket.id,
             kind="acknowledgement",
             body=render(
-                "review",
+                "review_ride" if ctx.get("trip") else "review",  # say which ride was checked
                 lang,
                 name=customer.name if customer else "",
                 ticket=ticket.number,
                 team=ticket.team or "Support",
+                ride=ctx["trip"].id if ctx.get("trip") else "",
             ),
         )
         session.add(ack)

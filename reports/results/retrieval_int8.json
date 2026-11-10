@@ -1,35 +1,35 @@
 {
-  "questions": 70,
+  "questions": 62,
   "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
   "default": {
     "file": "Qdrant export used by fastembed (16-bit weights)",
-    "recall@1": 0.486,
-    "recall@3": 0.7,
-    "mrr@10": 0.613,
+    "recall@1": 0.468,
+    "recall@3": 0.661,
+    "mrr@10": 0.595,
     "mrr@10_ci95": [
-      0.518,
-      0.706
+      0.492,
+      0.693
     ],
-    "median_ms": 4.03,
-    "mrr@10_en": 0.598,
-    "mrr@10_fr": 0.628,
+    "median_ms": 4.25,
+    "mrr@10_en": 0.589,
+    "mrr@10_fr": 0.6,
     "model_mb": 235
   },
   "int8": {
     "file": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/onnx/model_quint8_avx2.onnx (official)",
-    "recall@1": 0.443,
-    "recall@3": 0.671,
-    "mrr@10": 0.589,
+    "recall@1": 0.452,
+    "recall@3": 0.677,
+    "mrr@10": 0.59,
     "mrr@10_ci95": [
-      0.495,
-      0.682
+      0.487,
+      0.688
     ],
-    "median_ms": 42.5,
-    "mrr@10_en": 0.599,
-    "mrr@10_fr": 0.58,
+    "median_ms": 3.53,
+    "mrr@10_en": 0.587,
+    "mrr@10_fr": 0.592,
     "model_mb": 118
   },
-  "mrr_delta_int8_minus_default": -0.024,
-  "p_two_sided": 0.133,
-  "same_top1_share": 0.886
+  "mrr_delta_int8_minus_default": -0.005,
+  "p_two_sided": 0.7489,
+  "same_top1_share": 0.887
 }

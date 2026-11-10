@@ -1,18 +1,16 @@
-"""Stage 5: link the message to the customer and to the ride/order it is about (plan §6.5).
+"""Stage 5: link the message to the customer and, for a ride problem, to the ride (plan §6.5).
 
-Customer: exact match on the sender (email address / chat ID). Demo mode creates a profile for a
-first-time sender (demo_data.py).
+Customer: exact match on the sender (email address or forum login). No account is needed to write
+in; a first-time sender becomes a guest customer (demo_data.py).
 
-Trip: a transparent score, so every link can be explained in the console:
-  +10 trip number quoted · +4 amount matches a charge (-2 if the amount quoted matches none)
-  +3 date matches ("yesterday", "hier soir")
-  +3 kind matches the category (food -> delivery, driver -> ride; -3 if clearly the other kind)
-  +3 the problem described is
-  visible in the record ("charged twice" and two charges) · + up to 1 for recency.
-Below ``MIN_SCORE``, or without specific evidence (the kind of trip alone is not evidence), we do
-not guess: the reply will ask which trip the customer means.
+Ride: only a complaint about a ride (a charge, a driver, a lost item, a cancellation, safety,
+accessibility), or a message that quotes a ride ID, needs one. The ride is identified by its ID
+(LG-12345) and only if that ride is on the customer's own account: never guessed from "last
+night" or an amount. Without a valid ID the reply asks for it (respond.py). Questions, feedback
+and app or account problems need no ride.
 
-Facts given to the reply writer are computed here by code from the record, never by the LLM.
+Once the ride is known, its record is checked against what the customer says (amount, date,
+problem), and the facts given to the reply writer are computed here by code, never by the LLM.
 """
 
 from __future__ import annotations
@@ -22,10 +20,19 @@ from datetime import datetime, timedelta
 
 from complaintlens.demo_data import customer_trips, get_or_create_customer
 from complaintlens.pipeline.base import Context
-from complaintlens.schemas import Category, StageResult, as_utc
+from complaintlens.schemas import Category, MessageType, StageResult, as_utc
 from complaintlens.store import Trip
 
-MIN_SCORE = 3.0
+# Complaint topics that concern one particular ride.
+RIDE_TOPICS = {
+    Category.FARE_BILLING,
+    Category.DRIVER_BEHAVIOUR,
+    Category.SAFETY_INCIDENT,
+    Category.LOST_ITEM,
+    Category.CANCELLATION_NO_SHOW,
+    Category.ACCESSIBILITY,
+}
+
 _TRIP_REF = re.compile(r"\bLG-?(\d{4,6})\b", re.IGNORECASE)
 _MONEY = re.compile(r"(\d+(?:[.,]\d{1,2})?)\s?\$|\$\s?(\d+(?:[.,]\d{1,2})?)|(\d+[.,]\d{2})")
 _RELATIVE_DAYS = [
@@ -45,15 +52,9 @@ _SIGNALS = {
     ),
     "cancel": re.compile(r"cancel|annul", re.I),
     "late": re.compile(r"\blate\b|took (forever|ages)|retard", re.I),
-    "missing": re.compile(r"missing|forgot|never (got|received)|manqu|oubli|pas re[çc]u", re.I),
-}
-_DELIVERY_CATEGORIES = {Category.DELIVERY_ORDER}
-_RIDE_CATEGORIES = {
-    Category.DRIVER_BEHAVIOUR,
-    Category.SAFETY_INCIDENT,
-    Category.LOST_ITEM,
-    Category.CANCELLATION_NO_SHOW,
-    Category.ACCESSIBILITY,
+    "route": re.compile(
+        r"detour|longer route|long way|wrong way|d[ée]tour|plus long|mauvais chemin", re.I
+    ),
 }
 
 
@@ -70,51 +71,42 @@ def _charge_amounts(trip: Trip) -> set[float]:
     return {round(c["amount"], 2) for c in trip.charges} | {round(trip.total, 2)}
 
 
-def score_trip(
-    trip: Trip, text: str, categories: list[Category], now: datetime
-) -> tuple[float, list[str]]:
-    score, why = 0.0, []
+def ride_refs(text: str) -> list[str]:
+    """Ride IDs quoted in the text, normalised ("lg12345" -> "LG-12345"), in order."""
+    return list(dict.fromkeys(f"LG-{m}" for m in _TRIP_REF.findall(text)))
+
+
+def checks(trip: Trip, text: str, now: datetime) -> list[dict[str, object]]:
+    """What the customer says, checked against the ride's record (shown to the agent)."""
+    out: list[dict[str, object]] = []
     now, started = as_utc(now), as_utc(trip.started_at)
-    refs = {f"LG-{m}" for m in _TRIP_REF.findall(text)}
-    if trip.id.upper() in refs:
-        score += 10
-        why.append("trip number quoted (+10)")
     quoted = _amounts(text)
     if quoted & _charge_amounts(trip):
-        score += 4
-        why.append("amount matches a charge (+4)")
-    elif quoted:  # an amount that is on no payment line is evidence against this trip
-        score -= 2
-        why.append("amount quoted matches no charge (-2)")
+        out.append({"ok": True, "text": "the amount quoted matches a charge"})
+    elif quoted:
+        out.append({"ok": False, "text": "the amount quoted matches no charge"})
     for pattern, days in _RELATIVE_DAYS:
-        if pattern.search(text) and started.date() == (now - timedelta(days=days)).date():
-            score += 3
-            why.append(f"date matches '{pattern.search(text).group()}' (+3)")
+        if match := pattern.search(text):
+            same = started.date() == (now - timedelta(days=days)).date()
+            verdict = "matches" if same else "does not match"
+            out.append({"ok": same, "text": f"'{match.group()}' {verdict} the ride's date"})
             break
-    cats = set(categories)
-    about_delivery, about_ride = bool(cats & _DELIVERY_CATEGORIES), bool(cats & _RIDE_CATEGORIES)
-    if (about_delivery and trip.kind == "delivery") or (about_ride and trip.kind == "ride"):
-        score += 3
-        why.append(f"{trip.kind} matches the category (+3)")
-    elif about_delivery != about_ride:  # clearly about the other kind of trip
-        score -= 3
-        topic = "food order" if about_delivery else "ride"
-        why.append(f"a {trip.kind}, but the message is about a {topic} (-3)")
-    if _SIGNALS["double"].search(text) and len(trip.charges) > 1:
-        score += 3
-        why.append("two charge lines on record, as described (+3)")
-    if _SIGNALS["cancel"].search(text) and trip.status == "cancelled":
-        score += 3
-        why.append("cancelled trip, as described (+3)")
-    if trip.kind == "delivery" and (
-        (_SIGNALS["late"].search(text) and trip.details.get("late_min", 0) > 0)
-        or (_SIGNALS["missing"].search(text) and trip.details.get("missing_items"))
-    ):
-        score += 3
-        why.append("delivery problem visible in the record (+3)")
-    age_days = max((now - started).total_seconds() / 86400, 0)
-    score += round(1 / (1 + age_days), 2)
-    return round(score, 2), why
+    d = trip.details
+    described = [
+        ("double", len(trip.charges) > 1, "two charge lines on record"),
+        ("cancel", trip.status == "cancelled", "the ride was cancelled"),
+        ("late", d.get("driver_late_min", 0) > 0, "the driver was late"),
+        ("route", bool(d.get("suggested_km")), "a longer route than suggested"),
+    ]
+    for signal, on_record, label in described:
+        if _SIGNALS[signal].search(text):
+            out.append(
+                {
+                    "ok": on_record,
+                    "text": f"{label}: {'on record' if on_record else 'not on record'}",
+                }
+            )
+    return out
 
 
 def _money(x: float) -> str:
@@ -124,22 +116,13 @@ def _money(x: float) -> str:
 def trip_facts(trip: Trip) -> list[dict[str, str]]:
     """Plain-language facts about the record, numbered F1, F2... for citation."""
     when = trip.started_at.strftime("%Y-%m-%d at %H:%M")
-    facts: list[str] = []
-    if trip.kind == "ride":
-        facts.append(
-            f"Ride {trip.id} on {when} from {trip.pickup} to {trip.dropoff}, "
-            f"driver {trip.driver_name} ({trip.vehicle}); status: {trip.status}."
-        )
-        if trip.status == "completed":
-            surge = f" with surge x{trip.surge:g}" if trip.surge > 1 else ""
-            facts.append(f"Fare charged for the ride: {_money(trip.total)}{surge}.")
-    else:
-        d = trip.details
-        items = ", ".join(f"{i['name']} ({_money(i['price'])})" for i in d.get("items", []))
-        facts.append(
-            f"Food order {trip.id} on {when} from {d.get('restaurant')}: {items}; "
-            f"delivery fee {_money(d.get('delivery_fee', 0))}; total {_money(trip.total)}."
-        )
+    facts: list[str] = [
+        f"Ride {trip.id} on {when} from {trip.pickup} to {trip.dropoff}, "
+        f"driver {trip.driver_name} ({trip.vehicle}); status: {trip.status}."
+    ]
+    if trip.status == "completed":
+        surge = f" with surge x{trip.surge:g}" if trip.surge > 1 else ""
+        facts.append(f"Fare charged for the ride: {_money(trip.total)}{surge}.")
     lines = ", ".join(
         f"{_money(c['amount'])} ({c['type'].replace('_', ' ')}"
         + (f": {c['note']}" if c.get("note") else "")
@@ -163,23 +146,12 @@ def trip_facts(trip: Trip) -> list[dict[str, str]]:
             f"the driver was {d.get('driver_late_min')} minutes later than the promised arrival "
             "time."
         )
-    if trip.kind == "delivery":
-        if d.get("late_min"):
-            facts.append(
-                f"The order arrived {d['late_min']} minutes after the latest estimated time."
-            )
-        missing = d.get("missing_items") or []
-        prices = {i["name"]: i["price"] for i in d.get("items", [])}
-        for m in missing:
-            facts.append(
-                f"Item reported missing by the restaurant check: {m} ({_money(prices.get(m, 0))})."
-            )
+    if d.get("suggested_km"):
+        facts.append(
+            f"Route driven: {trip.distance_km:g} km; suggested route: {d['suggested_km']:g} km. "
+            f"The fare for the suggested route would have been {_money(d['suggested_fare'])}."
+        )
     return [{"id": f"F{i}", "text": t} for i, t in enumerate(facts, start=1)]
-
-
-def _is_weak(reason: str) -> bool:
-    """'ride matches the category' is a tie-breaker, not evidence that this is the trip."""
-    return "matches the category" in reason
 
 
 def link_stage(ctx: Context) -> StageResult:
@@ -188,25 +160,21 @@ def link_stage(ctx: Context) -> StageResult:
     customer, created = get_or_create_customer(
         session, msg.sender, msg.sender_name, ctx.get("language", "en")
     )
-    trips = customer_trips(session, customer.id)
     text = ctx["text"]
-    categories = list(analysis.categories) if analysis else []
-    entity_text = " ".join(e.text for e in analysis.entities) if analysis else ""
-    scored = sorted(
-        ((t, *score_trip(t, f"{text} {entity_text}", categories, msg.received_at)) for t in trips),
-        key=lambda x: -x[1],
+    refs = ride_refs(text)
+    complaint = analysis is not None and analysis.message_type == MessageType.COMPLAINT
+    about_ride = bool(refs) or (complaint and bool(set(analysis.categories) & RIDE_TOPICS))
+    rides = {t.id: t for t in customer_trips(session, customer.id)} if about_ride else {}
+    trip = next((rides[r] for r in refs if r in rides), None)
+    not_theirs = [r for r in refs if r not in rides]
+    ctx.update(
+        customer=customer,
+        trip=trip,
+        about_ride=about_ride,
+        ride_not_found=not_theirs[0] if about_ride and trip is None and not_theirs else None,
+        facts=trip_facts(trip) if trip else [],
     )
-    # A link needs specific evidence (trip number, amount, date or a matching problem in the
-    # record); the trip kind and recency only break ties. Otherwise we ask instead of guessing.
-    best = (
-        scored[0]
-        if scored and scored[0][1] >= MIN_SCORE and any(not _is_weak(w) for w in scored[0][2])
-        else None
-    )
-    ctx["customer"] = customer
-    ctx["trip"] = best[0] if best else None
-    ctx["facts"] = trip_facts(best[0]) if best else []
-    if best and (unmatched := sorted(_amounts(text) - _charge_amounts(best[0]))):
+    if trip and (unmatched := sorted(_amounts(text) - _charge_amounts(trip))):
         # Never let the reply state the record's amount as if the customer had agreed with it.
         ctx["facts"].append(
             {
@@ -216,17 +184,30 @@ def link_stage(ctx: Context) -> StageResult:
                 "before promising anything about it.",
             }
         )
+    if trip is not None or not about_ride:
+        note = None
+    elif ctx["ride_not_found"]:
+        note = f"{ctx['ride_not_found']} is not on this customer's account: the reply asks again"
+    else:
+        note = "no ride ID given: the reply asks for it"
     return StageResult(
         name="link",
         output={
-            "customer": {"id": customer.id, "name": customer.name, "new_demo_profile": created},
-            "trip": best[0].id if best else None,
-            "why": best[2] if best else [],
-            "candidates": [{"trip": t.id, "kind": t.kind, "score": s} for t, s, _ in scored[:4]],
+            "customer": {
+                "id": customer.id,
+                "name": customer.name,
+                "new_demo_profile": created,
+                "has_account": bool(customer.password_hash),
+                "rides": len(rides),
+            },
+            "about_ride": about_ride,
+            "ride_ids_quoted": refs,
+            "trip": trip.id if trip else None,
+            "checks": checks(trip, text, msg.received_at) if trip else [],
             "facts": ctx["facts"],
         },
-        confidence=min(best[1] / 10, 1.0) if best else 0.0,
-        note=None if best else "no trip matched with confidence: the reply will ask which one",
+        confidence=1.0 if trip else None,
+        note=note,
     )
 
 

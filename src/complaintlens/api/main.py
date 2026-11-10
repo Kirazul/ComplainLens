@@ -12,7 +12,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 
 from complaintlens import annotation, auth
-from complaintlens.api import inbox, public, relay, research, staff
+from complaintlens.api import account, inbox, public, relay, research, staff
 from complaintlens.api.state import state
 from complaintlens.channels.email import EmailSender
 from complaintlens.events import EventBus
@@ -91,10 +91,10 @@ async def track_activity(request: Request, call_next):
     state.last_activity = time.monotonic()  # keeps the email poller running (see inbox.py)
     response = await call_next(request)
     response.headers.update(SECURITY_HEADERS)
-    if request.url.path.startswith("/api/") and request.url.path != "/api/help":
+    if request.url.path.startswith("/api/"):
         response.headers.setdefault("Cache-Control", "no-store")
     return response
 
 
-for module in (public, staff, research, relay):
+for module in (public, account, staff, research, relay):
     app.include_router(module.router)

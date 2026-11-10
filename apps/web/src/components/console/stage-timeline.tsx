@@ -10,7 +10,7 @@ const TITLES: Record<string, string> = {
   pii_masking: "Mask personal data",
   language: "Detect the language",
   understand: "Understand",
-  link: "Find the customer and the trip",
+  link: "Find the customer and the ride",
   respond: "Retrieve, draft, verify, decide",
 };
 const EXPECTED = Object.keys(TITLES);
@@ -109,18 +109,22 @@ function StageBody({ stage }: { stage: StageRecord }) {
     }
     case "link": {
       const customer = (o.customer as Out) ?? {};
+      const ride = o.trip ? String(o.trip) : null;
       return (
         <dl>
           <Row label="Customer">
             {String(customer.name || "unnamed")}
-            {customer.new_demo_profile ? <span className="text-muted"> · new demo profile created</span> : null}
+            <span className="text-muted"> · {customer.has_account ? "account" : "guest"}, {String(customer.rides ?? 0)} rides</span>
           </Row>
-          <Row label="Trip">{o.trip ? String(o.trip) : <span className="text-muted">no confident match: the reply asks</span>}</Row>
-          {Array.isArray(o.why) && o.why.length > 0 && (
-            <Row label="Why">
-              <ul className="list-disc pl-4">{(o.why as string[]).map((w) => <li key={w}>{w}</li>)}</ul>
-            </Row>
-          )}
+          <Row label="Ride">
+            {!o.about_ride ? (
+              <span className="text-muted">not about a specific ride</span>
+            ) : ride ? (
+              `${ride}, on the account`
+            ) : (
+              <span className="text-muted">no valid ride ID: the reply asks for it</span>
+            )}
+          </Row>
         </dl>
       );
     }

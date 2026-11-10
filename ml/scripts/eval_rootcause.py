@@ -29,7 +29,7 @@ FIELDS = {
         ["plateau", "mile_end", "old_port", "verdun", "griffintown", "airport", "cdn", "rosemont"],
         [0.18, 0.12, 0.15, 0.1, 0.1, 0.12, 0.13, 0.1],
     ),
-    "vehicle": (["standard", "xl", "access", "eats_courier"], [0.55, 0.15, 0.05, 0.25]),
+    "vehicle": (["standard", "comfort", "xl", "access"], [0.55, 0.25, 0.15, 0.05]),
     "payment": (["card", "paypal", "cash"], [0.7, 0.2, 0.1]),
     "hour": (["night", "morning", "afternoon", "evening"], [0.2, 0.25, 0.25, 0.3]),
 }

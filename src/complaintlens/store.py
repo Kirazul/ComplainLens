@@ -1,9 +1,10 @@
 """Database tables (SQLModel). SQLite locally, Postgres in production: same code, ``DATABASE_URL``.
 
-Company side (LunaGo, fictional, synthetic): Customer, Trip (rides and food orders).
+Company side (LunaGo, fictional, synthetic): Customer, Trip (a ride).
 ComplaintLens side: Ticket, CustomerMessage (the customer's follow-ups in the same conversation),
 StageRecord (one per pipeline stage: the X-ray trace), Reply (what LunaGo sent or drafted).
-Staff side: User, LoginSession (console sign-in).
+Staff side: User, LoginSession (console sign-in). Customer accounts: Customer.password_hash,
+CustomerSession (website sign-in).
 
 New columns on existing tables are added at startup (``_add_missing_columns``): the deployed
 database keeps its data across releases without a migration tool.
@@ -30,14 +31,16 @@ class Customer(SQLModel, table=True):
     language: str = "en"
     is_demo: bool = True  # profile generated automatically for a first-time sender
     created_at: datetime = Field(default_factory=utcnow)
+    # Set when the customer creates an account on the website; None for a guest who only wrote in.
+    password_hash: str | None = None
 
 
 class Trip(SQLModel, table=True):
-    """A ride or a food order, with its charges (synthetic demo data)."""
+    """A ride, with its charges (synthetic demo data)."""
 
     id: str = Field(primary_key=True)  # e.g. "LG-48213"
     customer_id: int = Field(foreign_key="customer.id", index=True)
-    kind: str  # ride | delivery
+    kind: str = "ride"  # always "ride" (older databases may hold food orders: ignored)
     started_at: datetime
     status: str = "completed"  # completed | cancelled
     pickup: str = ""
@@ -52,7 +55,7 @@ class Trip(SQLModel, table=True):
     # [{"amount": 18.4, "type": "capture" | "authorization_hold", "note": "..."}]
     charges: list[dict[str, Any]] = Field(default_factory=list, sa_column=Column(JSON))
     # Ride: {"eta_promised_min": 4, "driver_late_min": 7, "cancellation_fee": 5.0, ...}
-    # Delivery: {"restaurant": "...", "items": [...], "missing_items": [...], "late_min": 26}
+    # Longer route: {"suggested_km": 6.2, "suggested_fare": 14.1}
     details: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
 
 
@@ -139,6 +142,14 @@ class LoginSession(SQLModel, table=True):
     token_hash: str = Field(primary_key=True)
     user_id: int = Field(foreign_key="user.id", index=True)
     created_at: datetime = Field(default_factory=utcnow)
+    expires_at: datetime
+
+
+class CustomerSession(SQLModel, table=True):
+    """A browser signed in to a customer account on the website (separate from staff)."""
+
+    token_hash: str = Field(primary_key=True)
+    customer_id: int = Field(foreign_key="customer.id", index=True)
     expires_at: datetime
 
 

@@ -21,10 +21,6 @@
 {"id": "q21", "lang": "en", "gold": "HC-DRIVER#1", "q": "my driver was really rude and the car smelled awful"}
 {"id": "q22", "lang": "en", "gold": "HC-DRIVER#2", "q": "he drove around in circles to make the fare bigger"}
 {"id": "q23", "lang": "en", "gold": "HC-DRIVER#3", "q": "can the driver see the stars I gave him"}
-{"id": "q24", "lang": "en", "gold": "HC-DELIVERY#1", "q": "half my meal was not in the bag"}
-{"id": "q25", "lang": "en", "gold": "HC-DELIVERY#2", "q": "dinner showed up 40 minutes after the time they promised"}
-{"id": "q26", "lang": "en", "gold": "HC-DELIVERY#3", "q": "app says my food was dropped off but nothing is at my door"}
-{"id": "q27", "lang": "en", "gold": "HC-DELIVERY#4", "q": "the burger was raw inside"}
 {"id": "q28", "lang": "en", "gold": "HC-APP#1", "q": "the application keeps freezing when I try to book"}
 {"id": "q29", "lang": "en", "gold": "HC-APP#2", "q": "I changed phone number and can't get into my profile anymore"}
 {"id": "q30", "lang": "en", "gold": "HC-APP#3", "q": "there are trips in my history in another city that I never took"}
@@ -56,10 +52,6 @@
 {"id": "q56", "lang": "fr", "gold": "HC-DRIVER#1", "q": "mon chauffeur était très impoli et la voiture sentait mauvais"}
 {"id": "q57", "lang": "fr", "gold": "HC-DRIVER#2", "q": "il a tourné en rond pour gonfler le prix"}
 {"id": "q58", "lang": "fr", "gold": "HC-DRIVER#3", "q": "le chauffeur peut-il voir les étoiles que je lui ai données"}
-{"id": "q59", "lang": "fr", "gold": "HC-DELIVERY#1", "q": "la moitié de mon repas n'était pas dans le sac"}
-{"id": "q60", "lang": "fr", "gold": "HC-DELIVERY#2", "q": "le souper est arrivé 40 minutes après l'heure promise"}
-{"id": "q61", "lang": "fr", "gold": "HC-DELIVERY#3", "q": "l'appli dit que ma commande a été déposée mais il n'y a rien devant ma porte"}
-{"id": "q62", "lang": "fr", "gold": "HC-DELIVERY#4", "q": "le burger était cru à l'intérieur"}
 {"id": "q63", "lang": "fr", "gold": "HC-APP#1", "q": "l'application se fige quand j'essaie de réserver"}
 {"id": "q64", "lang": "fr", "gold": "HC-APP#2", "q": "j'ai changé de numéro et je n'arrive plus à entrer dans mon profil"}
 {"id": "q65", "lang": "fr", "gold": "HC-APP#3", "q": "il y a des courses dans mon historique dans une autre ville que je n'ai jamais faites"}

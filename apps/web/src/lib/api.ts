@@ -14,6 +14,7 @@ export type TicketStatus =
   | "escalated"
   | "no_reply"
   | "answered"
+  | "needs_info"
   | "closed";
 
 export interface TicketSummary {
@@ -48,7 +49,7 @@ export interface StageRecord {
   note: string | null;
 }
 
-export type ReplyKind = "answer" | "acknowledgement" | "escalation";
+export type ReplyKind = "answer" | "acknowledgement" | "escalation" | "question";
 
 /** One message of a conversation, as the console sees it. */
 export interface ThreadItem {
@@ -188,37 +189,82 @@ export interface Session {
   user: User;
 }
 
-const SESSION_KEY = "complaintlens.session";
-const listeners = new Set<() => void>();
-let cached: Session | null | undefined; // undefined: not read from storage yet
+/** A customer signed in on the LunaGo website. */
+export interface Account {
+  token: string;
+  customer: { email: string; name: string; language: string };
+}
 
-export const session = {
-  get(): Session | null {
-    if (cached === undefined) {
-      try {
-        const raw = typeof window === "undefined" ? null : window.localStorage.getItem(SESSION_KEY);
-        cached = raw ? (JSON.parse(raw) as Session) : null;
-      } catch {
-        cached = null; // storage unavailable (private mode): sign in again each visit
+export type RideState = "scheduled" | "in_progress" | "completed" | "cancelled";
+
+export interface Ride {
+  id: string;
+  state: RideState;
+  started_at: string;
+  pickup: string;
+  dropoff: string;
+  driver: string;
+  vehicle: string;
+  distance_km: number | null;
+  upfront_price: number;
+  total: number | null;
+  card: string;
+  charges: { amount: number; pending: boolean }[];
+}
+
+export interface Quote {
+  distance_km: number;
+  duration_min: number;
+  price: number;
+}
+
+export interface MyConversation {
+  id: number;
+  number: string;
+  key: string;
+  status: TicketStatus;
+  channel: Channel;
+  received_at: string;
+  preview: string;
+}
+
+// A signed-in session kept in this browser only (localStorage).
+function storedSession<T>(key: string) {
+  const listeners = new Set<() => void>();
+  let cached: T | null | undefined; // undefined: not read from storage yet
+  return {
+    get(): T | null {
+      if (cached === undefined) {
+        try {
+          const raw = typeof window === "undefined" ? null : window.localStorage.getItem(key);
+          cached = raw ? (JSON.parse(raw) as T) : null;
+        } catch {
+          cached = null; // storage unavailable (private mode): sign in again each visit
+        }
       }
-    }
-    return cached;
-  },
-  set(next: Session | null) {
-    cached = next;
-    try {
-      if (next) window.localStorage.setItem(SESSION_KEY, JSON.stringify(next));
-      else window.localStorage.removeItem(SESSION_KEY);
-    } catch {
-      // not persisted: the session lasts until the tab is closed
-    }
-    listeners.forEach((listener) => listener());
-  },
-  subscribe(listener: () => void): () => void {
-    listeners.add(listener);
-    return () => listeners.delete(listener);
-  },
-};
+      return cached;
+    },
+    set(next: T | null) {
+      cached = next;
+      try {
+        if (next) window.localStorage.setItem(key, JSON.stringify(next));
+        else window.localStorage.removeItem(key);
+      } catch {
+        // not persisted: the session lasts until the tab is closed
+      }
+      listeners.forEach((listener) => listener());
+    },
+    subscribe(listener: () => void): () => void {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+  };
+}
+
+/** Staff signed in to the console. */
+export const session = storedSession<Session>("complaintlens.session");
+/** A customer signed in to the website (a different account type, never mixed with staff). */
+export const account = storedSession<Account>("lunago.account");
 
 export class ApiError extends Error {
   constructor(
@@ -229,8 +275,11 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const token = session.get()?.token;
+type Who = "staff" | "customer" | null;
+
+async function request<T>(path: string, init?: RequestInit, who: Who = null): Promise<T> {
+  const store = who === "staff" ? session : who === "customer" ? account : null;
+  const token = store?.get()?.token;
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
     headers: {
@@ -248,55 +297,79 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       // not JSON
     }
     // An expired or revoked session: back to the sign-in screen.
-    if (res.status === 401 && token && !path.startsWith("/api/auth/login")) session.set(null);
+    if (res.status === 401 && token) store?.set(null);
     throw new ApiError(res.status, detail || res.statusText);
   }
   return res.json() as Promise<T>;
 }
 
-const post = <T>(path: string, body: unknown) => request<T>(path, { method: "POST", body: JSON.stringify(body) });
+const post = <T>(path: string, body: unknown, who: Who = null) =>
+  request<T>(path, { method: "POST", body: JSON.stringify(body) }, who);
+const staff = <T>(path: string, init?: RequestInit) => request<T>(path, init, "staff");
+const staffPost = <T>(path: string, body: unknown) => post<T>(path, body, "staff");
+const mine = <T>(path: string) => request<T>(path, undefined, "customer");
+const minePost = <T>(path: string, body: unknown) => post<T>(path, body, "customer");
 
 export const api = {
-  // public
+  // anyone
   health: () => request<Health>("/api/health"),
-  help: (lang: Lang) => request<HelpArticle[]>(`/api/help?lang=${lang}`),
-  submit: (payload: { email: string; name?: string; subject?: string; body: string; channel?: "web" | "chat" | "review" }) =>
-    post<{ id: number; number: string; track_key: string }>("/api/messages", payload),
+  submit: (payload: {
+    email: string;
+    name?: string;
+    subject?: string;
+    body: string;
+    channel?: "web" | "chat" | "review";
+    ride?: string;
+  }) => post<{ id: number; number: string; track_key: string }>("/api/messages", payload),
   publicTicket: (id: number, key: string) =>
     request<PublicTicket>(`/api/public/tickets/${id}?k=${encodeURIComponent(key)}`),
   followUp: (id: number, key: string, body: string) =>
     post<{ accepted: boolean }>(`/api/public/tickets/${id}/messages`, { k: key, body }),
+  places: () => request<string[]>("/api/rides/places"),
+  quote: (pickup: string, dropoff: string) => post<Quote>("/api/rides/quote", { pickup, dropoff }),
 
-  // sign-in
+  // customer accounts (website)
+  signup: (email: string, name: string, password: string, lang: Lang) =>
+    post<Account>("/api/account/signup", { email, name, password, lang }),
+  signin: (email: string, password: string) => post<Account>("/api/account/signin", { email, password }),
+  signout: () => minePost<{ signed_out: boolean }>("/api/account/signout", {}),
+  myRides: () => mine<Ride[]>("/api/account/rides"),
+  book: (pickup: string, dropoff: string, at: string) => minePost<Ride>("/api/account/rides", { pickup, dropoff, at }),
+  cancelRide: (id: string) => minePost<Ride>(`/api/account/rides/${id}/cancel`, {}),
+  myConversations: () => mine<MyConversation[]>("/api/account/conversations"),
+
+  // staff sign-in
   login: (username: string, password: string) => post<Session>("/api/auth/login", { username, password }),
-  logout: () => post<{ signed_out: boolean }>("/api/auth/logout", {}),
-  me: () => request<User>("/api/auth/me"),
+  logout: () => staffPost<{ signed_out: boolean }>("/api/auth/logout", {}),
+  me: () => staff<User>("/api/auth/me"),
   changePassword: (current: string, next: string) =>
-    post<{ token: string }>("/api/auth/password", { current, new: next }),
+    staffPost<{ token: string }>("/api/auth/password", { current, new: next }),
 
   // team (administrators)
-  users: () => request<Member[]>("/api/users"),
+  users: () => staff<Member[]>("/api/users"),
   addUser: (user: { username: string; name: string; password: string; role: "agent" | "admin" }) =>
-    post<Member>("/api/users", user),
-  resetPassword: (id: number, password: string) => post<{ reset: boolean }>(`/api/users/${id}/password`, { password }),
-  removeUser: (id: number) => request<{ removed: boolean }>(`/api/users/${id}`, { method: "DELETE" }),
+    staffPost<Member>("/api/users", user),
+  resetPassword: (id: number, password: string) => staffPost<{ reset: boolean }>(`/api/users/${id}/password`, { password }),
+  removeUser: (id: number) => staff<{ removed: boolean }>(`/api/users/${id}`, { method: "DELETE" }),
 
   // inbox and conversations
-  stats: () => request<Stats>("/api/stats"),
-  tickets: () => request<TicketSummary[]>("/api/tickets"),
-  ticket: (id: number) => request<TicketDetail>(`/api/tickets/${id}`),
-  reply: (id: number, body: string) => post<{ status: string; error: string | null }>(`/api/tickets/${id}/reply`, { body }),
-  setResolved: (id: number, resolved: boolean) => post<{ status: string }>(`/api/tickets/${id}/status`, { resolved }),
+  stats: () => staff<Stats>("/api/stats"),
+  tickets: () => staff<TicketSummary[]>("/api/tickets"),
+  ticket: (id: number) => staff<TicketDetail>(`/api/tickets/${id}`),
+  reply: (id: number, body: string) =>
+    staffPost<{ status: string; error: string | null }>(`/api/tickets/${id}/reply`, { body }),
+  setResolved: (id: number, resolved: boolean) => staffPost<{ status: string }>(`/api/tickets/${id}/status`, { resolved }),
+  knowledge: (lang: Lang) => staff<HelpArticle[]>(`/api/knowledge?lang=${lang}`),
 
   // research
-  insights: () => request<Insights>("/api/insights"),
-  experiments: () => request<ExperimentRow[]>("/api/experiments"),
+  insights: () => staff<Insights>("/api/insights"),
+  experiments: () => staff<ExperimentRow[]>("/api/experiments"),
   annotateNext: (set: string) =>
-    request<{ item: AnnotationItem | null; progress: AnnotationProgress }>(`/api/annotate/next?set=${set}`),
+    staff<{ item: AnnotationItem | null; progress: AnnotationProgress }>(`/api/annotate/next?set=${set}`),
   annotateSave: (item_id: string, labels: GoldLabels) =>
-    post<{ saved: boolean; progress: AnnotationProgress }>("/api/annotate", { item_id, labels }),
-  annotateAddItem: (text: string, lang: "en" | "fr") => post<AnnotationItem>("/api/annotate/items", { text, lang }),
-  agreement: (set: string) => request<Agreement>(`/api/annotate/agreement?set=${set}`),
+    staffPost<{ saved: boolean; progress: AnnotationProgress }>("/api/annotate", { item_id, labels }),
+  annotateAddItem: (text: string, lang: "en" | "fr") => staffPost<AnnotationItem>("/api/annotate/items", { text, lang }),
+  agreement: (set: string) => staff<Agreement>(`/api/annotate/agreement?set=${set}`),
 };
 
 /**

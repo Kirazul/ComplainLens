@@ -8,7 +8,7 @@
 
 ## 0. The plan in one screen
 
-We create a **fictional ride-hailing and food-delivery company** ("LunaGo": one app for rides and food delivery), operating in **Montréal**. It covers both because 49% of real Uber support conversations are about rides and 16% about food delivery (§5.1). Montréal is a naturally bilingual English/French city. The company is real in every way that matters for the demo:
+We create a **fictional ride-hailing company** ("LunaGo", rides only), bilingual English/French. Food-delivery (Uber Eats) conversations, about 11% of the real Uber data, are out of scope and removed when the dataset is built (§5.1). Customers have an account with their rides, book new rides on the website, and give a ride ID when they write about a ride. The company is real in every way that matters for the demo:
 - a public website (Help Center, contact form, live chat, trip ratings);
 - a real email address (`lunagocare@fldubai.com`, a free mail.tm inbox);
 - a public community forum (the repository's GitHub Discussions, answered by the pipeline);
@@ -83,7 +83,7 @@ Spec §7.3 says the professor may ask us to *run the system on a new input* and 
 | `language` | `en`, `fr`, `other` → `other` is routed to a human |
 | `message_type` | `complaint`, `request` (question or demand), `feedback` (suggestion), `praise`, `spam_or_irrelevant` |
 | `response_required` | yes/no + urgency: `immediate`, `24h`, `standard` |
-| `category` | fare & billing · driver behaviour · **safety incident** · lost item · cancellation & no-show · **delivery order** · app & technical · account & access · promotions & credits · accessibility · other |
+| `category` | fare & billing · driver behaviour · **safety incident** · lost item · cancellation & no-show · app & technical · account & access · promotions & credits · accessibility · other |
 | `severity` | 1–4 (no explicit reproach → disapproval → accusation → blame; Trosborg, as used by Jin & Aletras 2021) |
 | `risk_flags` | `safety`, `injury`, `harassment_discrimination`, `legal_threat`, `fraud_account_takeover`, `media_threat`, `vulnerable_person` |
 | `sentiment`, `emotion` | negative/neutral/positive; anger, frustration, anxiety, disappointment, gratitude |
@@ -126,7 +126,7 @@ The **annotation guidelines** (definitions, decision rules, borderline examples)
 | **D2** | **Complaints on Twitter** (Preoțiuc-Pietro et al., ACL 2019; GitHub `danielpreotiuc/complaints-social-media`) + **severity labels** (Jin & Aletras, NAACL 2021) | Expert-labelled tweets across 9 domains: complaint vs. not, 4 severity levels | EN | ~3.4k | research use (verify) | Published labelled benchmark for `message_type` and `severity`; lets us compare with **published results** (spec §4E) |
 | **D3** | **Customer Support Tickets** (Bueck; Kaggle/HF `Tobi-Bueck/customer-support-tickets`) | Tickets in email form (subject + body) with department, priority and the agent's answer | EN (+DE unused) | ~62k | CC BY-NC 4.0 | Email-style text for robustness; priority labels. **Likely synthetic** → auxiliary only, never headline |
 | **D4** | **ComplaintLens Gold-EN** (ours) | ~1,000 real `@Uber_Support` customer tweets/threads, annotated with the full schema | EN | ~1,000 | CC BY-NC-SA (inherits D1) | **Test set** for all classification tasks |
-| **D5** | **ComplaintLens Gold-FR** (ours) | French rider messages: written natively by French speakers in the Montréal setting, plus human post-edited translations of a D4 sample (kept separate, because translated text is easier) | FR | 400–600 | CC BY 4.0 | **French test set** (cross-lingual transfer) |
+| **D5** | **ComplaintLens Gold-FR** (ours) | French rider messages: written natively by French speakers, plus human post-edited translations of a D4 sample (kept separate, because translated text is easier) | FR | 400–600 | CC BY 4.0 | **French test set** (cross-lingual transfer) |
 | **D6** | **LunaGo Help Center** (ours, labelled fictional) | ~40 bilingual policy articles: fares and surge, cancellation fees, refunds, lost items, safety procedures, account security, accessibility, promotions | EN/FR | ~40 docs | ours | RAG knowledge base. Because we wrote it, faithfulness is checkable fact by fact |
 | **D7** | **LunaGo operations DB** (synthetic, generated with a seeded script) | Riders, drivers, vehicles, trips (route, fare breakdown, surge, payment), refunds, lost-item reports, app versions, city zones | — | ~5k riders, ~100k trips | ours | Lets replies *verify* facts; gives the metadata for root-cause analysis. Demo only, no NLP claims |
 
@@ -136,13 +136,13 @@ The **annotation guidelines** (definitions, decision rules, borderline examples)
     - 2,811,774 tweets, 108 brands. Licence CC BY-NC-SA 4.0 (confirmed by Kaggle).
     - `@Uber_Support` is the 3rd-largest brand (56,270 replies). `@AskLyft` (11,809 replies) gives a second ride-hailing company for a **train-on-Uber, test-on-Lyft** generalisation check.
   - **Shape of the Uber data:**
-    - **41,855 Uber first contacts**, almost all from Oct–Dec 2017; a few date back to 2014 and are filtered out.
+    - **41,855 Uber first contacts** in the raw build, almost all from Oct–Dec 2017; a few date back to 2014 and are filtered out. **37,065 after removing food delivery** (2026-11-10, below).
     - 95% are a single tweet; median 22 words (p90 39).
     - Uber's median first reply is 8.2 minutes.
     - 242 exact-duplicate texts.
-  - **Ride vs. food (keyword estimate):** ~49% mention rides, ~16% food delivery. → **Decision:** the fictional company's single app offers rides *and* food delivery, with a `delivery_order` category.
+  - **Ride vs. food:** ~11% of first contacts are about food delivery (explicit keyword rule `FOOD_DELIVERY` in `data/twcs.py`). → **Decision (2026-11-10):** LunaGo offers rides only; these conversations are dropped when the dataset is built, and the `delivery_order` category, the delivery team and the food Help Center article are removed. Every Uber-derived result was regenerated.
   - **Collection bias:** the dataset was built around company replies. Only 19 of 19,762 customer-started threads tagging `@Uber_Support` went unanswered. → "Did the company reply?" **cannot** be used as a "response required" label; that label comes only from human annotation. This is a limitation for the report.
-  - **Real incident found in EDA:** the busiest day, **14 Nov 2017 (1,333 conversations vs. ~800 on typical busy days)**, was a **free Krispy Kreme doughnut promotion on Uber Eats that crashed the app**. The top lifted words that day were *doughnuts, krispy, kreme, crashed, promotion, free*. This is our headline real event for trend detection and for the Replay demo.
+  - **Real incident found in EDA:** the busiest day, **14 Nov 2017 (1,101 ride conversations vs. ~800 on typical busy days)**, was a **free Krispy Kreme doughnut promotion that crashed the app** (messages about the promotion stay; those about delivering the doughnuts are removed). The top lifted words that day were *doughnuts, krispy, kreme, crashed, promotion, free*. This is our headline real event for trend detection and for the Replay demo.
   - **Data breach:** the 21 Nov 2017 disclosure leaves only a weak trace (at most 16 breach/hack mentions in a day), because customers write to support about their own problems rather than about news.
 - **D1 downloaded via the Kaggle CLI:** a single `twcs/twcs.csv` (516 MB uncompressed).
 - **D2 downloaded from GitHub:**
@@ -213,33 +213,33 @@ Source: `reports/results/trends_uber.json` (code: `src/complaintlens/trends.py`,
 
 | Method | Recall +10 | +20 | +40 | Incidents/day Oct / Nov |
 |---|---|---|---|---|
-| **Bursting terms, rate-based Poisson z-score** | **0.73** | **0.94** | **1.00** | 2.08 / 4.94 |
-| Fixed count threshold (baseline) | 0.00 | 0.00 | 0.00 | 1.12 / 2.19 |
+| **Bursting terms, rate-based Poisson z-score** | **0.72** | **0.96** | **0.99** | 2.00 / 4.09 |
+| Fixed count threshold (baseline) | 0.00 | 0.00 | 0.00 | 1.04 / 1.75 |
 
-- **Real event (14 Nov 2017, Uber Eats × Krispy Kreme promotion crash):**
-  - Top incident of the day: "krispy, kreme" (102 messages, z = 101).
-  - Hourly replay: onset 13:00 UTC (5 messages), surge at 14:00 (195 messages), **first alert at 14:00, a 1-hour delay**.
+- **Real event (14 Nov 2017, Krispy Kreme promotion crash):**
+  - Top incident of the day: "doughnuts" (82 messages, z = 70), then "krispy, kreme".
+  - Hourly replay: onset 14:00 UTC (151 messages that hour, 0–2 before), **first alert in the same hour**.
 - **Interpretation:** at a comparable alarm budget, a fixed threshold cannot see emerging niche problems; rates (not raw counts) make busy days harmless (unit-tested).
 - **Limitations:**
-  - November exceeds the budget (4.94/day), partly because of genuine incidents (promotion crash, breach disclosure, Black Friday); these cannot be separated from false alarms without labels.
+  - November exceeds the budget (4.09/day), partly because of genuine incidents (promotion crash, breach disclosure, Black Friday); these cannot be separated from false alarms without labels.
   - Spelling variants (`#krispykreme` vs "krispy kreme") form separate incidents → **improvement:** merge near-duplicate terms.
   - The term-level method does not yet use embeddings (BERTopic comes next and will be compared on the same protocol).
 
 ### 5.6 First retrieval results (RQ3 retrieval part, 2026-11-07; re-run 2026-11-10)
 Source: `reports/results/retrieval_helpcenter.json`.
 
-Set: `eval/retrieval_questions.jsonl`, 70 customer-style questions (35 EN + 35 FR, one per Help Center section), written before any comparison. Re-run on 2026-11-10 after the "Contacting support" section changed (it now lists the real channels); first-run numbers were within 0.01.
+Set: `eval/retrieval_questions.jsonl`, written before any comparison. Re-run on 2026-11-10 after LunaGo became rides-only: the food-delivery article and its 8 questions were removed, leaving **62 questions (31 EN + 31 FR)** on 30 sections per language.
 
 | Retriever | Recall@1 | Recall@3 | MRR@10 [95% CI] | Median latency |
 |---|---|---|---|---|
-| BM25 (from scratch) | 0.40 | 0.53 | 0.49 [0.39, 0.59] | 0.04 ms |
-| **Dense: paraphrase-multilingual-MiniLM-L12-v2 (ONNX)** | **0.49** | **0.70** | **0.61 [0.52, 0.71]** | 4 ms |
-| Hybrid BM25 + dense (RRF, k = 60) | 0.40 | 0.63 | 0.54 [0.44, 0.63] | 4 ms |
+| BM25 (from scratch) | 0.40 | 0.58 | 0.50 [0.40, 0.61] | 0.04 ms |
+| **Dense: paraphrase-multilingual-MiniLM-L12-v2 (ONNX)** | **0.47** | **0.66** | **0.60 [0.49, 0.69]** | 4 ms |
+| Hybrid BM25 + dense (RRF, k = 60) | 0.39 | 0.63 | 0.53 [0.43, 0.63] | 4 ms |
 
-- **Dense vs. BM25:** +0.121 MRR, paired bootstrap p = 0.022. **Hybrid vs. BM25:** +0.044, p = 0.06 (not significant).
+- **Dense vs. BM25:** +0.092 MRR, one-sided paired bootstrap p = 0.067: **no longer significant at 5%** on the smaller set (it was, p = 0.022, on the 70 questions). **Hybrid vs. BM25:** +0.030, p = 0.16.
 - **Finding that contradicts our prior assumption:** equal-weight RRF *hurts* when one retriever is much weaker. On customer wording, BM25 adds noise to the dense ranking. **Decision:** dense by default; hybrid kept as an option for exact-match queries (amounts, codes).
-- **Searching with the LLM's English summary too** (`retrieval_summary.json`): fusing the customer's words with the summary (same section IDs in both languages) gives MRR 0.66 vs 0.61 for the text alone. Motivated by polite French messages whose greetings diluted the query. Deployed.
-- **Deployment: int8 model** (`retrieval_int8.json`, `retrieval_summary_int8.json`). The default export needs ~640 MB of RAM once loaded, so the whole service did not fit the host's 1 GB container. The model's official int8 ONNX file does. Measured cost on the same questions: text-only MRR 0.59 vs 0.61 (paired bootstrap, p = 0.13, not significant), same top section for 89% of questions; with summary fusion, 0.64 vs 0.66. Queries take ~40 ms instead of ~4 ms on a laptop CPU, negligible next to the LLM call.
+- **Searching with the LLM's English summary too** (`retrieval_summary.json`): fusing the customer's words with the summary (same section IDs in both languages) gives MRR 0.65 vs 0.60 for the text alone. Motivated by polite French messages whose greetings diluted the query. Deployed.
+- **Deployment: int8 model** (`retrieval_int8.json`, `retrieval_summary_int8.json`). The default export needs ~640 MB of RAM once loaded, so the whole service did not fit the host's 1 GB container. The model's official int8 ONNX file does. Measured cost on the same questions: text-only MRR 0.59 vs 0.60 (paired bootstrap, p = 0.75, not significant), same top section for 89% of questions; with summary fusion, 0.66 vs 0.65. Queries take ~40 ms instead of ~4 ms on a laptop CPU, negligible next to the LLM call.
 - **Protocol caveat:** this set has now been used to *select* the retriever, so it is a **development set**. Final retrieval numbers must come from a **second held-out set written by the team** (planned, together with the reranker and the larger embedding models: Qwen3-Embedding-0.6B, EmbeddingGemma-300M, multilingual-e5-large, bge-reranker-v2-m3).
 
 ### 5.7 First automation-gate results (RQ2, 2026-11-07)
@@ -271,16 +271,16 @@ Source: `reports/results/gate_complaints2019.json` (code: `src/complaintlens/gat
 ### 5.8 First problem-discovery results (2026-11-08)
 Source: `reports/results/topics_uber.json` (code: `src/complaintlens/topics.py`, `ml/scripts/eval_topics.py`).
 
-**Protocol:** 41,690 Uber first contacts (Oct–Dec 2017), k = 30 for every method, 3 seeds. The same c-TF-IDF labelling is applied to every method's clusters.
+**Protocol:** 36,254 Uber ride first contacts (Oct–Dec 2017), k = 30 for every method, 3 seeds. The same c-TF-IDF labelling is applied to every method's clusters.
 
 | Method | NPMI coherence | Topic diversity | Largest cluster |
 |---|---|---|---|
-| TF-IDF + k-means | 0.097 ± 0.011 | 0.78 | 18.6% (junk cluster: "pass ride guys thanks please") |
-| LDA | 0.000 ± 0.010 | 0.95 | 8.7% |
-| Multilingual MiniLM embeddings + k-means | 0.088 ± 0.009 | 0.78 | **5.4%** |
+| TF-IDF + k-means | 0.081 ± 0.035 | 0.75 | 30.8% (junk cluster: "drivers app why how not ride") |
+| LDA | 0.000 ± 0.020 | 0.95 | 10.7% |
+| Multilingual MiniLM embeddings + k-means | 0.079 ± 0.011 | 0.77 | **5.0%** |
 
 - **Coherence:** TF-IDF and embeddings are within about one standard deviation, so the automatic metric cannot separate them. LDA fails on short texts (coherence ≈ 0).
-- **Cluster balance:** NPMI ignores cluster size and so misses TF-IDF's junk cluster. The embedding clusters are balanced and readable: accidents ("his car hit driver driving"), waiting/cancellations, cold food orders, iOS app crashes, surge pricing.
+- **Cluster balance:** NPMI ignores cluster size and so misses TF-IDF's junk cluster. The embedding clusters are balanced and readable: cancellation charges, accidents ("his car hit driving accident"), waiting/cancellations, double charges, driver ratings.
 - **Verdict pending** a human word-intrusion test.
 - **Performance:** batch embedding ran at ≈ 12 messages/s on CPU (55 min for 41.7k). That is acceptable live (65 ms/message) but slow in bulk → use fastembed's data-parallel mode.
 
@@ -591,7 +591,7 @@ RAG appears in three places only. In each, a model without retrieval fails in a 
    
    The gate holds it for approval (money is involved), we click approve, and the professor's phone receives the reply in French with a ticket number.
 3. The professor writes in the chat: *"The driver was driving dangerously and I felt unsafe"*. It is instantly escalated to Safety, with no automatic reply beyond the safe acknowledgement. This shows the system knows when **not** to automate.
-4. Open Trends: replay 14 Nov 2017; the alert fires within hours; the explanation reads "free-doughnut promotion → app crashes on food orders".
+4. Open Trends: replay 14 Nov 2017; the alert fires within hours; the explanation reads "free-doughnut promotion → app crashes".
 5. Open Experiments: "every number in our report is here, with the run that produced it."
 
 ### 10.3 Defence safety net
@@ -701,7 +701,7 @@ Each person owns at least one research question end to end.
 ## 16. Decisions still needed from you
 1. **Defence date** and **proposal deadline**.
 2. **Team:** just the two of you? (The spec allows 1–3.)
-3. **Company name:** decided: **LunaGo**, one app for rides and food delivery (no separate "Eats" brand). A web search on 2026-11-07 found no ride or delivery company with this name.
+3. **Company name:** decided: **LunaGo**, rides only (food delivery dropped on 2026-11-10). A web search on 2026-11-07 found no ride or delivery company with this name.
 4. **Student verification:** does your school email qualify for the GitHub Student Developer Pack? It gives us the free domain.
 5. **Kaggle account:** create one (free) for the D1 download.
 
