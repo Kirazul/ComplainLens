@@ -13,6 +13,7 @@ const plex = IBM_Plex_Sans({
 
 export const metadata: Metadata = {
   title: { default: "ComplaintLens console", template: "%s · ComplaintLens" },
+  description: "Live support console of LunaGo: every customer message, how it was understood, routed and answered.",
   robots: { index: false },
 };
 

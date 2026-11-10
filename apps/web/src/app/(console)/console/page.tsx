@@ -194,7 +194,8 @@ export default function InboxPage() {
           <div key={label as string} className="bg-white px-4 py-3">
             <dt className="text-sm text-muted">{label}</dt>
             <dd className="mt-1 text-2xl font-semibold">{stats ? value : "…"}</dd>
-            {hint && <dd className="text-xs text-muted">{hint}</dd>}
+            {/* Always present (a no-break space until the numbers load) so nothing shifts. */}
+            <dd className="text-xs text-muted">{(stats && hint) || " "}</dd>
           </div>
         ))}
       </dl>
