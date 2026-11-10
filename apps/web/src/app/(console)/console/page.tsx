@@ -166,11 +166,11 @@ export default function InboxPage() {
           />
           {connected ? "Live. New messages appear here as they arrive." : "Connecting to live updates…"}
         </span>
-        {health && (
-          <span className="text-sm text-muted md:ml-auto">
-            {health.llm.enabled ? `Language model ${health.llm.model}` : "No language model (classical fallback)"}
-          </span>
-        )}
+        {/* Rendered before the health check answers (empty) so the page does not shift. */}
+        <span className="min-h-5 text-sm text-muted md:ml-auto">
+          {health &&
+            (health.llm.enabled ? `Language model ${health.llm.model}` : "No language model (classical fallback)")}
+        </span>
       </div>
 
       {error && (
