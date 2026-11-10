@@ -32,6 +32,8 @@ from complaintlens.store import Customer, Reply, StageRecord, Ticket, new_sessio
 log = logging.getLogger(__name__)
 STAGES = [normalize_stage, pii_stage, language_stage, understand_stage, link_stage, respond_stage]
 Publish = Callable[[dict[str, Any]], None]
+READ_ON_SITE = {"web", "chat", "review"}  # replies are shown on our website
+RELAYED = {"forum"}  # replies wait in an outbox for the forum relay (GitHub Actions)
 
 
 class ReplySender(Protocol):
@@ -196,9 +198,15 @@ class Processor:
 
     def _send(self, session, ticket: Ticket, reply: Reply) -> None:
         sender = self.senders.get(ticket.channel)
-        if sender is None:  # web chat replies are read from the API; nothing to push
-            reply.status = "sent" if ticket.channel in ("web", "chat") else "draft"
-            reply.sent_at = utcnow() if reply.status == "sent" else None
+        if sender is None:
+            if ticket.channel in READ_ON_SITE:  # the customer reads it on the tracking page / chat
+                reply.status, reply.sent_at = "sent", utcnow()
+            elif ticket.channel in RELAYED:  # the forum relay posts it, then marks it sent
+                reply.status = "queued"
+            else:  # e.g. a receive-only inbox: visible in the console, not delivered
+                reply.status, reply.error = "failed", "no outbound delivery for this channel"
+            session.add(reply)
+            self.publish({"type": "reply", "ticket_id": ticket.id, "status": reply.status})
             return
         try:
             sender.send(ticket, reply)
@@ -229,7 +237,7 @@ class Processor:
                 draft.verification = {**draft.verification, "edited_by_agent": True}
             session.add(draft)
             self._send(session, ticket, draft)
-            ticket.status = "answered" if draft.status == "sent" else ticket.status
+            ticket.status = "answered" if draft.status in ("sent", "queued") else ticket.status
             session.add(ticket)
             session.commit()
             self.publish(

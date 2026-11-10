@@ -9,29 +9,45 @@ import asyncio
 import json
 import logging
 import secrets
+import time
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Any
+from typing import Any, Literal
 
-from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, EmailStr, Field
 from sqlmodel import col, func, select
 
 from complaintlens import annotation
-from complaintlens.channels.email import EmailSender, fetch_new_messages
+from complaintlens.channels import email as imap_inbox
+from complaintlens.channels import mailtm as mailtm_inbox
+from complaintlens.channels.email import EmailSender
 from complaintlens.events import EventBus
 from complaintlens.llm import default_client
 from complaintlens.rag.knowledge import KnowledgeBase
 from complaintlens.rag.retrieval import build_retriever
-from complaintlens.schemas import Channel, InboundMessage
+from complaintlens.schemas import Channel, InboundMessage, utcnow
+from complaintlens.security import (
+    RateLimiter,
+    client_ip,
+    is_operator,
+    mask_contact,
+    require_channel_token,
+    require_operator,
+)
 from complaintlens.service import Processor
 from complaintlens.settings import ROOT, get_settings
 from complaintlens.store import Customer, Reply, StageRecord, Ticket, Trip, new_session
 
 log = logging.getLogger(__name__)
 EMAIL_POLL_SECONDS = 15
+# The host puts the service to sleep after 10 idle minutes (no network traffic) and wakes it on
+# the next request. Polling the inbox forever would keep it awake (and spend the free credit), so
+# the inbox is polled only while the API has been used recently; a scheduled relay
+# (.github/workflows/relay.yml) wakes it every hour to collect mail even when nobody visits.
+ACTIVE_WINDOW_SECONDS = 600
 
 
 class State:
@@ -42,22 +58,33 @@ class State:
         self.bus: EventBus
         self.email_task: asyncio.Task[None] | None = None
         self.email_status: dict[str, Any] = {"enabled": False}
+        self.limiter: RateLimiter
+        self.last_activity = time.monotonic()
 
 
 state = State()
 
 
+async def poll_inbox_once() -> int:
+    """Fetch new emails and process each one in a worker thread; returns how many."""
+    inbox = mailtm_inbox if get_settings().email_inbox == "mailtm" else imap_inbox
+    try:
+        messages = await asyncio.to_thread(inbox.fetch_new_messages)
+        state.email_status.update(last_poll_ok=True, last_error=None)
+    except Exception as exc:
+        log.exception("email poll failed")
+        state.email_status.update(last_poll_ok=False, last_error=f"{type(exc).__name__}: {exc}")
+        return 0
+    for message in messages:
+        await asyncio.to_thread(state.processor.process, message)
+    return len(messages)
+
+
 async def email_loop() -> None:
-    """Poll the support inbox; process each new email in a worker thread."""
+    """Poll the support inbox every few seconds while the API is in use."""
     while True:
-        try:
-            messages = await asyncio.to_thread(fetch_new_messages)
-            state.email_status.update(last_poll_ok=True, last_error=None)
-            for message in messages:
-                await asyncio.to_thread(state.processor.process, message)
-        except Exception as exc:
-            log.exception("email poll failed")
-            state.email_status.update(last_poll_ok=False, last_error=f"{type(exc).__name__}: {exc}")
+        if time.monotonic() - state.last_activity < ACTIVE_WINDOW_SECONDS:
+            await poll_inbox_once()
         await asyncio.sleep(EMAIL_POLL_SECONDS)
 
 
@@ -73,8 +100,11 @@ def warm_up() -> None:
 async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     settings = get_settings()
     state.bus = EventBus()
+    state.limiter = RateLimiter(
+        per_key=settings.messages_per_ip_per_hour, window=3600, total=settings.messages_per_day
+    )
     state.bus.bind(asyncio.get_running_loop())
-    senders = {Channel.EMAIL.value: EmailSender(settings)} if settings.email_enabled else {}
+    senders = {Channel.EMAIL.value: EmailSender(settings)} if settings.email_can_send else {}
     kb = KnowledgeBase.load(settings.help_center_dir)
     retriever = await asyncio.to_thread(build_retriever, kb)
     state.processor = Processor(
@@ -89,7 +119,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         for path in sorted(GOLD_DIR.glob("*.jsonl")):
             annotation.load_items(s, path)
     if settings.email_enabled:
-        state.email_status = {"enabled": True, "address": settings.email_address}
+        state.email_status = {
+            "enabled": True,
+            "address": settings.email_address,
+            "sends_replies": settings.email_can_send,
+        }
         state.email_task = asyncio.create_task(email_loop())
     yield
     if state.email_task:
@@ -104,14 +138,21 @@ app.add_middleware(
         "http://127.0.0.1:3000",
         *[o.strip() for o in get_settings().cors_origins.split(",") if o.strip()],
     ],
-    allow_origin_regex=r"https://.*\.vercel\.app",
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 
+@app.middleware("http")
+async def track_activity(request: Request, call_next):
+    state.last_activity = time.monotonic()
+    return await call_next(request)
+
+
 class MessageIn(BaseModel):
-    channel: Channel = Channel.WEB
+    """A message from the website: the contact form, the live chat or a trip rating."""
+
+    channel: Literal[Channel.WEB, Channel.CHAT, Channel.REVIEW] = Channel.WEB
     email: EmailStr
     name: str | None = Field(default=None, max_length=80)
     subject: str | None = Field(default=None, max_length=200)
@@ -122,13 +163,13 @@ class ApproveIn(BaseModel):
     body: str | None = Field(default=None, max_length=5000)
 
 
-def _ticket_summary(t: Ticket) -> dict[str, Any]:
+def _ticket_summary(t: Ticket, operator: bool) -> dict[str, Any]:
     analysis = t.analysis or {}
     return {
         "id": t.id,
         "number": t.number,
         "channel": t.channel,
-        "sender": t.sender,
+        "sender": t.sender if operator else mask_contact(t.sender),
         "sender_name": t.sender_name,
         "subject": t.subject,
         "status": t.status,
@@ -153,12 +194,22 @@ def health() -> dict[str, Any]:
         "llm": {"enabled": s.llm_enabled, "model": s.llm_model if s.llm_enabled else None},
         "retriever": state.processor.retriever.name,
         "email": state.email_status,
+        "forum": {"enabled": bool(s.channel_token)},
     }
 
 
+@app.get("/api/operator")
+def operator_check(request: Request) -> dict[str, bool]:
+    """Lets the console know whether its saved operator token is valid."""
+    return {"operator": is_operator(request)}
+
+
 @app.post("/api/messages", status_code=202)
-def submit_message(payload: MessageIn, background: BackgroundTasks) -> dict[str, Any]:
-    """Website form / chat: accept the message now, process it in the background."""
+def submit_message(
+    payload: MessageIn, request: Request, background: BackgroundTasks
+) -> dict[str, Any]:
+    """Website form, chat or trip rating: accept now, process in the background."""
+    state.limiter.check(client_ip(request))
     inbound = InboundMessage(
         channel=payload.channel,
         sender=str(payload.email).lower(),
@@ -214,6 +265,97 @@ def public_ticket(ticket_id: int, k: str) -> dict[str, Any]:
         }
 
 
+# Community forum (GitHub Discussions). A GitHub Actions workflow relays each new post here and
+# posts our replies back as comments; replies approved later wait in the outbox.
+class ForumPostIn(BaseModel):
+    post_id: str = Field(min_length=1, max_length=100)  # GitHub's discussion node ID
+    number: int  # discussion number, used to build links
+    author: str = Field(min_length=1, max_length=100)
+    title: str = Field(default="", max_length=300)
+    body: str = Field(min_length=1, max_length=8000)
+
+
+class DeliveredIn(BaseModel):
+    reply_ids: list[int]
+
+
+def _forum_outbox(s, ticket_id: int | None = None) -> list[dict[str, Any]]:
+    q = (
+        select(Reply, Ticket)
+        .join(Ticket, col(Ticket.id) == col(Reply.ticket_id))
+        .where(Reply.status == "queued", Ticket.channel == Channel.FORUM.value)
+        .order_by(col(Reply.id))
+    )
+    if ticket_id is not None:
+        q = q.where(Ticket.id == ticket_id)
+    return [
+        {
+            "reply_id": r.id,
+            "post_id": t.external_id,
+            "ticket": t.number,
+            "language": t.language,
+            "kind": r.kind,
+            "body": r.body,
+        }
+        for r, t in s.exec(q).all()
+    ]
+
+
+@app.post("/api/channels/forum/posts", dependencies=[Depends(require_channel_token)])
+async def forum_post(payload: ForumPostIn) -> dict[str, Any]:
+    """Process a new forum post now (about 5-15 s) and return what to post back."""
+    inbound = InboundMessage(
+        channel=Channel.FORUM,
+        sender=f"forum:{payload.author.lower()}",
+        sender_name=payload.author,
+        subject=payload.title or None,
+        body=payload.body,
+        external_id=payload.post_id,
+    )
+    ticket = await asyncio.to_thread(state.processor.process, inbound)
+    analysis = ticket.analysis or {}
+    with new_session() as s:
+        return {
+            "ticket": ticket.number,
+            "status": ticket.status,
+            "team": ticket.team,
+            "message_type": analysis.get("message_type"),
+            "categories": analysis.get("categories", []),
+            "language": ticket.language,
+            "outbox": _forum_outbox(s, ticket.id),
+        }
+
+
+@app.post("/api/channels/poll", dependencies=[Depends(require_channel_token)])
+async def relay_poll() -> dict[str, Any]:
+    """Called by the scheduled relay: collect new email now (the service may have slept)."""
+    if not get_settings().email_enabled:
+        return {"emails": 0, "email_enabled": False}
+    return {"emails": await poll_inbox_once(), "email_enabled": True}
+
+
+@app.get("/api/channels/forum/outbox", dependencies=[Depends(require_channel_token)])
+def forum_outbox() -> list[dict[str, Any]]:
+    """Replies waiting to be posted (e.g. approved by an agent after the post was answered)."""
+    with new_session() as s:
+        return _forum_outbox(s)
+
+
+@app.post("/api/channels/forum/delivered", dependencies=[Depends(require_channel_token)])
+def forum_delivered(payload: DeliveredIn) -> dict[str, int]:
+    with new_session() as s:
+        done = 0
+        for reply_id in payload.reply_ids:
+            reply = s.get(Reply, reply_id)
+            if reply is not None and reply.status == "queued":
+                reply.status, reply.sent_at = "sent", utcnow()
+                s.add(reply)
+                done += 1
+        s.commit()
+    state.bus.publish({"type": "reply", "status": "sent", "count": done})
+    return {"delivered": done}
+
+
 GOLD_DIR = ROOT / "eval" / "gold"
 
 
@@ -240,7 +382,7 @@ def annotate_next(annotator: str, set: str = "pilot") -> dict[str, Any]:
         }
 
 
-@app.post("/api/annotate")
+@app.post("/api/annotate", dependencies=[Depends(require_operator)])
 def annotate_save(payload: AnnotateIn) -> dict[str, Any]:
     with new_session() as s:
         from complaintlens.store import AnnotationItem
@@ -251,7 +393,7 @@ def annotate_save(payload: AnnotateIn) -> dict[str, Any]:
         return {"saved": True, "progress": annotation.progress(s)}
 
 
-@app.post("/api/annotate/items", status_code=201)
+@app.post("/api/annotate/items", status_code=201, dependencies=[Depends(require_operator)])
 def annotate_add_item(payload: NewItemIn) -> dict[str, Any]:
     """Author a gold message (used for the French set: no licensed French data exists)."""
     from complaintlens.store import AnnotationItem
@@ -385,16 +527,20 @@ def help_center(lang: str = "en") -> list[dict[str, Any]]:
 
 
 @app.get("/api/tickets")
-def list_tickets(limit: int = 100, status: str | None = None) -> list[dict[str, Any]]:
+def list_tickets(
+    request: Request, limit: int = 100, status: str | None = None
+) -> list[dict[str, Any]]:
+    operator = is_operator(request)
     with new_session() as s:
         q = select(Ticket).order_by(col(Ticket.id).desc()).limit(min(limit, 500))
         if status:
             q = q.where(Ticket.status == status)
-        return [_ticket_summary(t) for t in s.exec(q)]
+        return [_ticket_summary(t, operator) for t in s.exec(q)]
 
 
 @app.get("/api/tickets/{ticket_id}")
-def get_ticket(ticket_id: int) -> dict[str, Any]:
+def get_ticket(ticket_id: int, request: Request) -> dict[str, Any]:
+    operator = is_operator(request)
     with new_session() as s:
         t = s.get(Ticket, ticket_id)
         if t is None:
@@ -407,19 +553,22 @@ def get_ticket(ticket_id: int) -> dict[str, Any]:
         ).all()
         customer = s.get(Customer, t.customer_id) if t.customer_id else None
         trip = s.get(Trip, t.trip_id) if t.trip_id else None
+        customer_view = customer.model_dump() if customer else None
+        if customer_view and not operator:
+            customer_view["contact"] = mask_contact(customer_view["contact"])
         return {
-            **_ticket_summary(t),
+            **_ticket_summary(t, operator),
             "body": t.body,
             "analysis": t.analysis,
             "decision": t.decision,
             "stages": [r.model_dump() for r in stages],
             "replies": [r.model_dump() for r in replies],
-            "customer": customer.model_dump() if customer else None,
+            "customer": customer_view,
             "trip": trip.model_dump() if trip else None,
         }
 
 
-@app.post("/api/tickets/{ticket_id}/approve")
+@app.post("/api/tickets/{ticket_id}/approve", dependencies=[Depends(require_operator)])
 async def approve(ticket_id: int, payload: ApproveIn) -> dict[str, Any]:
     try:
         reply = await asyncio.to_thread(state.processor.approve, ticket_id, payload.body)

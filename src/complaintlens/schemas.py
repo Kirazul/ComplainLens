@@ -14,10 +14,11 @@ def utcnow() -> datetime:
 
 
 class Channel(StrEnum):
-    EMAIL = "email"
-    WEB = "web"
-    CHAT = "chat"
-    TELEGRAM = "telegram"
+    EMAIL = "email"  # the support inbox
+    WEB = "web"  # the contact form on the website
+    CHAT = "chat"  # the live chat on the website
+    REVIEW = "review"  # an in-app trip rating with a comment
+    FORUM = "forum"  # a public post on the community forum (GitHub Discussions)
 
 
 class MessageType(StrEnum):
@@ -69,12 +70,12 @@ class InboundMessage(BaseModel):
     """A customer message as received, whatever the channel."""
 
     channel: Channel
-    sender: str  # email address, chat session ID or Telegram user ID
+    sender: str  # email address, or "forum:<login>" for forum posts
     sender_name: str | None = None
     subject: str | None = None
     body: str
     received_at: datetime = Field(default_factory=utcnow)
-    external_id: str | None = None  # e.g. the email Message-ID
+    external_id: str | None = None  # e.g. the email Message-ID or the forum post ID
     in_reply_to: str | None = None  # e.g. the email In-Reply-To header
 
 

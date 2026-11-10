@@ -34,21 +34,37 @@ class Settings(BaseSettings):
     # (p = 0.018); RRF hybrid 0.54 (not significant): BM25 is too weak on customer wording.
     retrieval: str = "dense"
     embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+    # Use the int8 copy of the embedding model when it has been built (quantize_embedder.py):
+    # ~4x less memory, quality measured in reports/results/retrieval_int8.json.
+    embedding_int8: bool = True
 
     database_url: str = f"sqlite:///{(ROOT / 'data' / 'app.db').as_posix()}"
     models_dir: Path = ROOT / "models"
     help_center_dir: Path = ROOT / "company" / "help_center"
 
-    # Email channel (Gmail with an app password, or any IMAP/SMTP provider).
+    # Email channel. "imap": any IMAP/SMTP mailbox (e.g. Gmail with an app password), which
+    # receives and sends. "mailtm": a free mail.tm inbox (no sign-up), which receives only:
+    # replies are then read on the tracking page and in the console.
+    email_inbox: str = "imap"
     email_address: str = ""
     email_password: str = ""
     imap_host: str = "imap.gmail.com"
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 465
+    mailtm_api: str = "https://api.mail.tm"
+
+    # Console actions (approve a reply, save an annotation) need this token; without it the
+    # console is read-only and customer contacts are masked. Empty = open (local development).
+    operator_token: str = ""
+    # Shared secret of the forum relay (GitHub Actions). Empty = forum channel disabled.
+    channel_token: str = ""
+    # Abuse and quota protection for public message submission (each message costs LLM calls).
+    messages_per_ip_per_hour: int = 12
+    messages_per_day: int = 300
 
     public_base_url: str = "http://localhost:3000"
-    # Extra browser origins allowed to call the API (comma-separated), e.g. a custom domain.
-    # localhost:3000 and *.vercel.app are always allowed.
+    # Extra browser origins allowed to call the API (comma-separated), e.g. the website's origin.
+    # localhost:3000 is always allowed.
     cors_origins: str = ""
 
     @property
@@ -58,6 +74,10 @@ class Settings(BaseSettings):
     @property
     def email_enabled(self) -> bool:
         return bool(self.email_address and self.email_password)
+
+    @property
+    def email_can_send(self) -> bool:
+        return self.email_enabled and self.email_inbox == "imap"
 
 
 @cache

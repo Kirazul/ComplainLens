@@ -9,4 +9,4 @@ Drivers must accept service animals; this is required by law. A refusal is a ser
 Choose "LunaGo Access" in the app to request a wheelchair-accessible vehicle. Availability varies by time and area.
 
 ## Contacting support
-You can reach us by email, by the chat on our website or on Telegram. Safety issues receive a response within 1 hour; all other messages receive a first response within 24 hours. Every message gets a ticket number so you can follow its progress.
+You can reach us by email, through the contact form or the live chat on our website, by rating your trip, or on our community forum. Safety issues receive a response within 1 hour; all other messages receive a first response within 24 hours. Every message gets a ticket number so you can follow its progress.

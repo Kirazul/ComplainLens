@@ -3,6 +3,7 @@
 serve                 start the API (and the email poller if email is configured)
 send "text" [...]     process one message locally and print its trace (no email sent)
 check                 verify the LLM key and the mailbox credentials work
+inbox-create NAME     create a free mail.tm support inbox (no sign-up) and print its settings
 """
 
 from __future__ import annotations
@@ -71,7 +72,16 @@ def cmd_check(args: argparse.Namespace) -> None:
             print(f"LLM: FAILED ({type(exc).__name__}: {exc})")
     else:
         print("LLM: not configured (set LLM_API_KEY in .env); classical fallback will be used")
-    if s.email_enabled:
+    if s.email_enabled and s.email_inbox == "mailtm":
+        try:
+            from complaintlens.channels import mailtm
+
+            mailtm.check_login(s)
+            print(f"Email (mail.tm, receive only): OK ({s.email_address})")
+        except Exception as exc:
+            ok = False
+            print(f"Email (mail.tm): FAILED ({type(exc).__name__}: {exc})")
+    elif s.email_enabled:
         try:
             from imap_tools import MailBox
 
@@ -90,6 +100,16 @@ def cmd_check(args: argparse.Namespace) -> None:
     sys.exit(0 if ok else 1)
 
 
+def cmd_inbox_create(args: argparse.Namespace) -> None:
+    from complaintlens.channels.mailtm import create_inbox
+
+    address, password = create_inbox(args.name)
+    print("Inbox created. Put these in .env (and in the hosting service's variables):")
+    print("EMAIL_INBOX=mailtm")
+    print(f"EMAIL_ADDRESS={address}")
+    print(f"EMAIL_PASSWORD={password}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="complaintlens")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -105,6 +125,9 @@ def main() -> None:
     p.set_defaults(func=cmd_send)
     p = sub.add_parser("check", help="verify LLM and email credentials")
     p.set_defaults(func=cmd_check)
+    p = sub.add_parser("inbox-create", help="create a free mail.tm support inbox")
+    p.add_argument("name", help="the part before @, e.g. lunagocare")
+    p.set_defaults(func=cmd_inbox_create)
     args = parser.parse_args()
     args.func(args)
 

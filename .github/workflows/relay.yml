@@ -1,0 +1,80 @@
+# Customer channels relay for the ComplaintLens API (hosted on Railway).
+# - Community forum: each new post in this repository's Discussions (any category except
+#   Announcements) goes through the pipeline; the reply is posted back as a comment.
+# - Every hour: wakes the API (it sleeps when idle), collects new support email, and posts
+#   replies that agents approved since (they wait in the API's forum outbox).
+# Needs the repository variable API_URL and the secret CHANNEL_TOKEN (same value as on the API).
+name: Channels relay
+
+on:
+  discussion:
+    types: [created]
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  discussions: write
+
+concurrency:
+  group: relay
+  cancel-in-progress: false
+
+jobs:
+  relay:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      API: ${{ vars.API_URL }}
+      TOKEN: ${{ secrets.CHANNEL_TOKEN }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Wake the API
+        run: |
+          for attempt in $(seq 1 20); do
+            if curl -fsS --max-time 30 "$API/api/health" > /dev/null; then exit 0; fi
+            sleep 6
+          done
+          echo "::error::the API did not answer" && exit 1
+
+      - name: Send the new forum post through the pipeline
+        if: github.event_name == 'discussion' && github.event.discussion.category.name != 'Announcements'
+        env:
+          POST: ${{ toJSON(github.event.discussion) }}
+        run: |
+          jq '{post_id: .node_id, number: .number, author: .user.login, title: .title,
+               body: (if (.body // "") == "" then .title else .body end)}' <<< "$POST" \
+            | curl -fsS --max-time 180 -X POST "$API/api/channels/forum/posts" \
+                -H "X-Channel-Token: $TOKEN" -H "Content-Type: application/json" --data @- \
+            | jq '{ticket, status, team, message_type, categories, language}'
+
+      - name: Collect new support email
+        if: github.event_name != 'discussion'
+        run: |
+          curl -fsS --max-time 300 -X POST "$API/api/channels/poll" -H "X-Channel-Token: $TOKEN"
+
+      - name: Post queued replies on the forum
+        run: |
+          curl -fsS --max-time 60 "$API/api/channels/forum/outbox" -H "X-Channel-Token: $TOKEN" \
+            > outbox.json
+          echo "$(jq length outbox.json) reply(ies) to post"
+          : > delivered.txt
+          jq -c '.[]' outbox.json | while read -r item; do
+            post=$(jq -r .post_id <<< "$item")
+            body=$(jq -r 'if .language == "fr" then
+              "\(.body)\n\n---\n<sub>Support LunaGo · ticket \(.ticket) · LunaGo est une entreprise fictive créée pour un projet universitaire de TALN (ComplaintLens) ; les réponses sont rédigées par un système d’IA sous supervision humaine.</sub>"
+            else
+              "\(.body)\n\n---\n<sub>LunaGo Support · ticket \(.ticket) · LunaGo is a fictional company created for a university NLP project (ComplaintLens); replies are written by an AI system under human supervision.</sub>"
+            end' <<< "$item")
+            if gh api graphql \
+                 -f query='mutation($id: ID!, $body: String!) { addDiscussionComment(input: {discussionId: $id, body: $body}) { comment { url } } }' \
+                 -f id="$post" -f body="$body" --jq .data.addDiscussionComment.comment.url; then
+              jq -r .reply_id <<< "$item" >> delivered.txt
+            fi
+          done
+          if [ -s delivered.txt ]; then
+            jq -R -s '{reply_ids: (split("\n") | map(select(length > 0) | tonumber))}' delivered.txt \
+              | curl -fsS --max-time 60 -X POST "$API/api/channels/forum/delivered" \
+                  -H "X-Channel-Token: $TOKEN" -H "Content-Type: application/json" --data @-
+          fi

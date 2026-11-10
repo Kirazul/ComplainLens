@@ -35,17 +35,51 @@ class Embedder(Protocol):
     def embed_queries(self, texts: list[str]) -> np.ndarray: ...
 
 
-class FastEmbedder:
-    """fastembed (ONNX Runtime, no PyTorch) model; handles query/passage prefixes (e.g. e5)."""
+EMBED_BATCH = 8  # small batches keep the peak memory low (activations grow with the batch)
+# Official int8 ONNX files published with some sentence-transformers models (dynamic
+# quantization, AVX2 kernels: any modern x86 server). ~4x less memory than the default export;
+# the effect on retrieval is measured in reports/results/retrieval_int8.json.
+INT8_FILES = {
+    "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2": "onnx/model_quint8_avx2.onnx",
+}
 
-    def __init__(self, model_name: str, cache_dir: str | None = None) -> None:
+
+def _register_int8(model_name: str) -> str:
+    from fastembed import TextEmbedding
+    from fastembed.common.model_description import ModelSource, PoolingType
+
+    name = f"{model_name}-int8"
+    if all(m.model != name for m in TextEmbedding._list_supported_models()):
+        base = next(m for m in TextEmbedding._list_supported_models() if m.model == model_name)
+        TextEmbedding.add_custom_model(
+            model=name,
+            pooling=PoolingType.MEAN,  # as fastembed's built-in entry for these models
+            normalization=False,  # we normalise ourselves (cosine similarity)
+            sources=ModelSource(hf=model_name),
+            dim=base.dim,
+            model_file=INT8_FILES[model_name],
+        )
+    return name
+
+
+class FastEmbedder:
+    """fastembed (ONNX Runtime, no PyTorch) model; handles query/passage prefixes (e.g. e5).
+
+    ``int8``: use the model's official int8 ONNX file when one exists (see INT8_FILES).
+    """
+
+    def __init__(self, model_name: str, cache_dir: str | None = None, int8: bool = False) -> None:
         from fastembed import TextEmbedding
 
         self.model_name = model_name
-        self._model = TextEmbedding(model_name, cache_dir=cache_dir)
+        self.quantized = int8 and model_name in INT8_FILES
+        load_name = _register_int8(model_name) if self.quantized else model_name
+        self._model = TextEmbedding(load_name, cache_dir=cache_dir)
 
     def embed_documents(self, texts: list[str]) -> np.ndarray:
-        return np.array(list(self._model.passage_embed(texts)), dtype=np.float32)
+        return np.array(
+            list(self._model.passage_embed(texts, batch_size=EMBED_BATCH)), dtype=np.float32
+        )
 
     def embed_queries(self, texts: list[str]) -> np.ndarray:
         return np.array(list(self._model.query_embed(texts)), dtype=np.float32)
@@ -67,7 +101,8 @@ class BM25Retriever:
 
 class DenseRetriever:
     def __init__(self, kb: KnowledgeBase, embedder: Embedder) -> None:
-        self.name = f"dense:{embedder.model_name}"
+        int8 = "+int8" if getattr(embedder, "quantized", False) else ""
+        self.name = f"dense:{embedder.model_name}{int8}"
         self.embedder = embedder
         self._index: dict[str, tuple[list[Chunk], np.ndarray]] = {}
         for lang in sorted({c.lang for c in kb.chunks}):
@@ -131,7 +166,11 @@ def build_retriever(kb: KnowledgeBase) -> Retriever:
     if s.retrieval not in ("dense", "hybrid"):
         return bm25
     try:
-        embedder = FastEmbedder(s.embedding_model, cache_dir=str(s.models_dir / "fastembed"))
+        embedder = FastEmbedder(
+            s.embedding_model,
+            cache_dir=str(s.models_dir / "fastembed"),
+            int8=s.embedding_int8,
+        )
         dense = DenseRetriever(kb, embedder)
         return dense if s.retrieval == "dense" else HybridRetriever(bm25, dense)
     except Exception:

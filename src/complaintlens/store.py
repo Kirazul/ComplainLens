@@ -20,7 +20,7 @@ from complaintlens.settings import get_settings
 
 class Customer(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True)
-    contact: str = Field(index=True, unique=True)  # email address or chat/Telegram ID
+    contact: str = Field(index=True, unique=True)  # email address, or "forum:<login>"
     name: str
     language: str = "en"
     is_demo: bool = True  # profile generated automatically for a first-time sender

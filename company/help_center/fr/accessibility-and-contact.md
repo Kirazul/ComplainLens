@@ -9,4 +9,4 @@ Les chauffeurs doivent accepter les animaux d'assistance ; c'est une obligation 
 Choisissez « LunaGo Access » dans l'application pour demander un véhicule accessible en fauteuil roulant. La disponibilité varie selon l'heure et le secteur.
 
 ## Contacter le support
-Vous pouvez nous joindre par courriel, par le clavardage sur notre site ou sur Telegram. Les problèmes de sécurité reçoivent une réponse dans l'heure ; tous les autres messages reçoivent une première réponse sous 24 heures. Chaque message reçoit un numéro de ticket pour suivre son avancement.
+Vous pouvez nous joindre par courriel, par le formulaire ou le clavardage de notre site, en évaluant votre course, ou sur notre forum communautaire. Les problèmes de sécurité reçoivent une réponse dans l'heure ; tous les autres messages reçoivent une première réponse sous 24 heures. Chaque message reçoit un numéro de ticket pour suivre son avancement.
