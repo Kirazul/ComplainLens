@@ -3,9 +3,9 @@
 
 const STATUS: Record<string, { label: string; className: string }> = {
   processing: { label: "Processing", className: "bg-blue-50 text-blue-800 ring-blue-200" },
-  auto_send: { label: "Sent automatically", className: "bg-teal-50 text-sent ring-teal-200" },
-  answered: { label: "Answered by agent", className: "bg-teal-50 text-sent ring-teal-200" },
-  awaiting_approval: { label: "Awaiting approval", className: "bg-amber-50 text-review ring-amber-200" },
+  auto_send: { label: "Answered automatically", className: "bg-teal-50 text-sent ring-teal-200" },
+  answered: { label: "Answered by an agent", className: "bg-teal-50 text-sent ring-teal-200" },
+  awaiting_approval: { label: "Needs an agent", className: "bg-amber-50 text-review ring-amber-200" },
   escalated: { label: "Escalated", className: "bg-red-50 text-escalated ring-red-200" },
   no_reply: { label: "No reply needed", className: "bg-gray-100 text-quiet ring-gray-200" },
   closed: { label: "Closed", className: "bg-gray-100 text-quiet ring-gray-200" },

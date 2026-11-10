@@ -73,12 +73,15 @@ export function Verification({ v }: { v: Record<string, unknown> }) {
 
 export function ReplyCard({ reply, sources }: { reply: ReplyRecord; sources: Sources }) {
   const label = { answer: "Answer", acknowledgement: "Acknowledgement", escalation: "Safety acknowledgement" }[reply.kind];
-  const state =
-    reply.status === "sent"
-      ? `sent ${reply.sent_at ? new Date(reply.sent_at).toLocaleTimeString() : ""}`
-      : reply.status === "failed"
-        ? `failed: ${reply.error ?? ""}`
-        : "draft, not sent";
+  const state = {
+    sent: `Sent ${reply.sent_at ? new Date(reply.sent_at).toLocaleTimeString() : ""}`,
+    queued: "Waiting for the forum relay to post it",
+    failed:
+      reply.error === "no outbound delivery for this channel"
+        ? "Not delivered: the support inbox can only receive"
+        : `Not delivered: ${reply.error ?? "unknown error"}`,
+    draft: "Draft, not sent",
+  }[reply.status];
   return (
     <article className="rounded-xl border border-line bg-white p-4">
       <div className="flex items-baseline justify-between gap-3">

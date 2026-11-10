@@ -44,18 +44,25 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
             <p className="mt-3 text-lilac">{t.home.helpLead}</p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
-                href={`/${lang}/contact`}
+                href={`/${lang}/?chat=open`}
+                scroll={false}
                 className="rounded-full bg-amber px-5 py-2.5 font-semibold text-night hover:bg-paper"
               >
                 {t.home.cta}
               </Link>
               <Link
-                href={`/${lang}/help`}
+                href={`/${lang}/contact`}
                 className="rounded-full px-5 py-2.5 font-semibold text-paper ring-1 ring-lilac/40 hover:ring-amber"
               >
-                {t.home.browse}
+                {t.home.write}
               </Link>
             </div>
+            <Link
+              href={`/${lang}/help`}
+              className="mt-5 inline-block text-lilac underline decoration-lilac/40 underline-offset-4 hover:text-paper"
+            >
+              {t.home.browse}
+            </Link>
           </div>
         </div>
 
@@ -64,7 +71,7 @@ export default async function Home({ params }: PageProps<"/[lang]">) {
             <h2 className="text-sm text-lilac">{t.home.phasesTitle}</h2>
             <ol className="mt-5 grid grid-cols-2 gap-6 sm:grid-cols-4">
               {phases.map((p, i) => (
-                <li key={p} className="flex items-center gap-4">
+                <li key={p} className="wax flex items-center gap-4" style={{ animationDelay: `${300 + i * 450}ms` }}>
                   <Moon phase={(i + 1) as 1 | 2 | 3 | 4} size={52} />
                   <span className="font-display text-lg font-semibold">{t.phases[p]}</span>
                 </li>

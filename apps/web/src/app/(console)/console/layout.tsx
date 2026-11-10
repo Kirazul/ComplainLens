@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Sans } from "next/font/google";
 import Link from "next/link";
 
+import { OperatorControl } from "@/components/console/operator";
 import "../../globals.css";
 
 const plex = IBM_Plex_Sans({
@@ -20,7 +21,10 @@ export default function ConsoleLayout({ children }: LayoutProps<"/console">) {
     <html lang="en" className={plex.variable}>
       <body className="console min-h-screen bg-desk font-plex text-ink [font-variant-numeric:tabular-nums]">
         <header className="border-b border-line bg-white">
-          <nav aria-label="Console" className="mx-auto flex max-w-7xl items-center gap-8 px-5 py-3">
+          <nav
+            aria-label="Console"
+            className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3"
+          >
             <Link href="/console" className="mr-auto text-lg font-semibold tracking-tight">
               ComplaintLens <span className="font-normal text-muted">for LunaGo</span>
             </Link>
@@ -36,6 +40,7 @@ export default function ConsoleLayout({ children }: LayoutProps<"/console">) {
             <Link href="/en" className="text-sm hover:text-sent">
               Customer site
             </Link>
+            <OperatorControl />
           </nav>
         </header>
         {children}

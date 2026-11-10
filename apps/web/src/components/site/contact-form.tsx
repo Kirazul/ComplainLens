@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 
-import { api, type Lang } from "@/lib/api";
+import { api, ApiError, type Lang } from "@/lib/api";
 import type { Dict } from "@/lib/i18n";
 
 export function ContactForm({ lang, t }: { lang: Lang; t: Dict["contact"] }) {
@@ -31,8 +31,8 @@ export function ContactForm({ lang, t }: { lang: Lang; t: Dict["contact"] }) {
         channel: "web",
       });
       router.push(`/${lang}/track/?id=${ticket.id}&k=${encodeURIComponent(ticket.track_key)}`);
-    } catch {
-      setError(t.errorNetwork);
+    } catch (err) {
+      setError(err instanceof ApiError && err.status === 429 ? t.errorBusy : t.errorNetwork);
       setSending(false);
     }
   }

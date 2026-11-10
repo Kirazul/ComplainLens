@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
+import { ChannelMark } from "@/components/console/channel";
+import { useOperator } from "@/components/console/operator";
 import { CitedText, ReplyCard, Verification, type Sources } from "@/components/console/reply-panel";
 import { formatMs, StageTimeline } from "@/components/console/stage-timeline";
 import { humanize, StatusPill } from "@/components/console/status";
@@ -16,6 +18,7 @@ export function TicketView({ ticketId }: Readonly<{ ticketId: number }>) {
   const [editing, setEditing] = useState(false);
   const [edited, setEdited] = useState("");
   const [sending, setSending] = useState(false);
+  const { state: operator } = useOperator();
 
   // Bumped by live events for this ticket and after an approval; each bump reloads the ticket.
   const [version, setVersion] = useState(0);
@@ -97,9 +100,11 @@ export function TicketView({ ticketId }: Readonly<{ ticketId: number }>) {
       <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
         <h1 className="text-2xl font-semibold">{ticket.number}</h1>
         <StatusPill status={ticket.status} />
-        <span className="text-sm text-muted">
-          {ticket.channel} · {ticket.language ?? "…"} · {ticket.team ?? "…"}
-          {ticket.total_ms != null && ` · processed in ${formatMs(ticket.total_ms)}`}
+        <span className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
+          <ChannelMark channel={ticket.channel} />
+          <span>{ticket.language === "fr" ? "French" : ticket.language === "en" ? "English" : "Language …"}</span>
+          <span>{ticket.team ?? "Team …"}</span>
+          {ticket.total_ms != null && <span>Processed in {formatMs(ticket.total_ms)}</span>}
         </span>
       </div>
 
@@ -176,14 +181,21 @@ export function TicketView({ ticketId }: Readonly<{ ticketId: number }>) {
                 <h3 className="text-sm font-semibold">Verification</h3>
                 <div className="mt-1"><Verification v={draft.verification} /></div>
               </div>
-              <button
-                type="button"
-                onClick={approve}
-                disabled={sending}
-                className="mt-4 rounded-lg bg-sent px-4 py-2 font-semibold text-white disabled:opacity-60"
-              >
-                {sending ? "Sending…" : editing ? "Send edited reply" : "Approve and send"}
-              </button>
+              {operator === "agent" ? (
+                <button
+                  type="button"
+                  onClick={approve}
+                  disabled={sending}
+                  className="mt-4 rounded-lg bg-sent px-4 py-2 font-semibold text-white disabled:opacity-60"
+                >
+                  {sending ? "Sending…" : editing ? "Send edited reply" : "Approve and send"}
+                </button>
+              ) : (
+                <p className="mt-4 rounded-lg bg-desk px-3 py-2 text-sm text-muted">
+                  An agent approves or edits this draft before it reaches the customer. Sign in as an
+                  agent (top right) to do it.
+                </p>
+              )}
             </div>
           )}
 

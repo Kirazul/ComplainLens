@@ -63,3 +63,34 @@ html {
 .stage-in {
   animation: stage-in 380ms ease-out both;
 }
+
+/* The inbox's one motion: a message that just arrived glows once, then settles. */
+@keyframes row-arrive {
+  from {
+    background-color: #fdecc8;
+  }
+  to {
+    background-color: transparent;
+  }
+}
+.row-new {
+  animation: row-arrive 3.5s ease-out both;
+}
+
+/* The site's one orchestrated moment: on load, the four moons of "how your request moves" wax in
+   order, received to answered, the way a request does. */
+@keyframes wax {
+  from {
+    opacity: 0;
+    filter: blur(3px);
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+}
+.wax {
+  animation: wax 700ms cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}

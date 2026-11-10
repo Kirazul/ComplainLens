@@ -4,7 +4,9 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 
+import { ChatWidget } from "@/components/site/chat-widget";
 import { LangSwitch } from "@/components/site/lang-switch";
+import { FORUM_URL } from "@/lib/api";
 import { dict, isLang, LANGS } from "@/lib/i18n";
 import "../../globals.css";
 
@@ -39,10 +41,16 @@ export default async function SiteLayout({ children, params }: LayoutProps<"/[la
             >
               Luna<span className="text-amber">Go</span>
             </Link>
-            <div className="col-span-2 row-start-2 flex gap-6 md:order-none md:gap-8">
+            <div className="col-span-2 row-start-2 flex flex-wrap gap-x-6 gap-y-2 md:order-none md:gap-x-8">
               <Link href={`/${lang}/help`} className="hover:text-amber">
                 {t.nav.help}
               </Link>
+              <Link href={`/${lang}/rate`} className="hover:text-amber">
+                {t.nav.rate}
+              </Link>
+              <a href={FORUM_URL} className="hover:text-amber">
+                {t.nav.community}
+              </a>
               <Link href={`/${lang}/contact`} className="hover:text-amber">
                 {t.nav.contact}
               </Link>
@@ -56,8 +64,16 @@ export default async function SiteLayout({ children, params }: LayoutProps<"/[la
         </header>
         <main className="flex-1">{children}</main>
         <footer className="border-t border-lilac/60 bg-paper">
-          <p className="mx-auto max-w-6xl px-5 py-6 text-sm text-slate/80">{t.footer}</p>
+          <div className="mx-auto flex max-w-6xl flex-wrap items-baseline gap-x-8 gap-y-2 px-5 py-6 pb-24 text-sm text-slate/80">
+            <p className="max-w-[80ch]">{t.footer}</p>
+            <Link href="/console" className="underline underline-offset-4 hover:text-night">
+              {lang === "fr" ? "Console du personnel (ComplaintLens)" : "Staff console (ComplaintLens)"}
+            </Link>
+          </div>
         </footer>
+        <Suspense fallback={null}>
+          <ChatWidget lang={lang} t={t.chat} phases={t.phases} />
+        </Suspense>
       </body>
     </html>
   );

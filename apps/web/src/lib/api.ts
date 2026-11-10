@@ -1,8 +1,12 @@
 // Typed client for the ComplaintLens API (FastAPI, see src/complaintlens/api.py).
 
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+export const SUPPORT_EMAIL = process.env.NEXT_PUBLIC_SUPPORT_EMAIL ?? "lunagocare@fldubai.com";
+export const FORUM_URL =
+  process.env.NEXT_PUBLIC_FORUM_URL ?? "https://github.com/Kirazul/ComplainLens/discussions";
 
 export type Lang = "en" | "fr";
+export type Channel = "email" | "web" | "chat" | "review" | "forum";
 export type TicketStatus =
   | "processing"
   | "auto_send"
@@ -15,7 +19,7 @@ export type TicketStatus =
 export interface TicketSummary {
   id: number;
   number: string;
-  channel: string;
+  channel: Channel;
   sender: string;
   sender_name: string | null;
   subject: string | null;
@@ -48,7 +52,7 @@ export interface ReplyRecord {
   body: string;
   citations: string[];
   verification: Record<string, unknown>;
-  status: "draft" | "sent" | "failed";
+  status: "draft" | "queued" | "sent" | "failed";
   created_at: string;
   sent_at: string | null;
   error: string | null;
@@ -100,7 +104,15 @@ export interface Health {
   ok: boolean;
   company: string;
   llm: { enabled: boolean; model: string | null };
-  email: { enabled: boolean; address?: string; last_poll_ok?: boolean; last_error?: string | null };
+  retriever: string;
+  email: {
+    enabled: boolean;
+    address?: string;
+    sends_replies?: boolean;
+    last_poll_ok?: boolean;
+    last_error?: string | null;
+  };
+  forum: { enabled: boolean };
 }
 
 export interface Incident {
@@ -152,20 +164,63 @@ export interface Agreement {
   fields: Record<string, { kappa?: number | null; kappa_quadratic?: number | null; agreement: number }>;
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+// Operators (support agents) sign in to the console with a token; it is kept in this browser
+// only and sent as a Bearer token. Without it the console is read-only and contacts are masked.
+const TOKEN_KEY = "complaintlens.operator";
+
+export const operatorToken = {
+  get(): string | null {
+    try {
+      return typeof window === "undefined" ? null : window.localStorage.getItem(TOKEN_KEY);
+    } catch {
+      return null;
+    }
+  },
+  set(token: string | null) {
+    try {
+      if (token) window.localStorage.setItem(TOKEN_KEY, token);
+      else window.localStorage.removeItem(TOKEN_KEY);
+    } catch {
+      // storage unavailable (private mode): the console stays read-only
+    }
+  },
+};
+
+export class ApiError extends Error {
+  constructor(
+    public status: number,
+    message: string,
+  ) {
+    super(message);
+  }
+}
+
+async function request<T>(path: string, init?: RequestInit, token = operatorToken.get()): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
-    headers: { "Content-Type": "application/json", ...init?.headers },
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...init?.headers,
+    },
   });
   if (!res.ok) {
-    const detail = await res.text().catch(() => "");
-    throw new Error(`${res.status} ${res.statusText}${detail ? `: ${detail}` : ""}`);
+    let detail = "";
+    try {
+      const body = (await res.json()) as { detail?: unknown };
+      detail = typeof body.detail === "string" ? body.detail : JSON.stringify(body.detail ?? "");
+    } catch {
+      // not JSON
+    }
+    throw new ApiError(res.status, detail || res.statusText);
   }
   return res.json() as Promise<T>;
 }
 
 export const api = {
   health: () => request<Health>("/api/health"),
+  operator: (token?: string) =>
+    request<{ operator: boolean }>("/api/operator", undefined, token ?? operatorToken.get()),
   stats: () => request<Stats>("/api/stats"),
   tickets: () => request<TicketSummary[]>("/api/tickets"),
   ticket: (id: number) => request<TicketDetail>(`/api/tickets/${id}`),
@@ -174,7 +229,13 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ body: body ?? null }),
     }),
-  submit: (payload: { email: string; name?: string; subject?: string; body: string; channel?: string }) =>
+  submit: (payload: {
+    email: string;
+    name?: string;
+    subject?: string;
+    body: string;
+    channel?: "web" | "chat" | "review";
+  }) =>
     request<{ id: number; number: string; track_key: string }>("/api/messages", {
       method: "POST",
       body: JSON.stringify(payload),
