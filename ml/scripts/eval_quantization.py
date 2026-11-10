@@ -49,11 +49,14 @@ def main() -> None:
     langs = [q["lang"] for q in questions]
     cache = str(s.models_dir / "fastembed")
 
-    fp32 = DenseRetriever(kb, FastEmbedder(s.embedding_model, cache_dir=cache))
-    int8 = DenseRetriever(kb, FastEmbedder(s.embedding_model, cache_dir=cache, int8=True))
-    evaluate(fp32, questions[:3])  # warm both models before timing
-    evaluate(int8, questions[:3])
-    res32, res8 = evaluate(fp32, questions), evaluate(int8, questions)
+    def run(int8: bool) -> tuple[dict, list[str]]:
+        # One model in memory at a time: two ONNX sessions compete for the CPU threads and
+        # distort the latencies.
+        retriever = DenseRetriever(kb, FastEmbedder(s.embedding_model, cache_dir=cache, int8=int8))
+        evaluate(retriever, questions[:3])  # warm-up before timing
+        return evaluate(retriever, questions), top1(retriever, questions)
+
+    (res32, first32), (res8, first8) = run(int8=False), run(int8=True)
     default_file = next(Path(cache).glob("models--Qdrant--*/snapshots/*/model_optimized.onnx"))
     pattern = f"models--sentence-transformers--*/snapshots/*/{INT8_FILES[s.embedding_model]}"
     int8_file = next(Path(cache).glob(pattern))
@@ -73,9 +76,7 @@ def main() -> None:
         },
         "mrr_delta_int8_minus_default": round(float(res8["rr"].mean() - res32["rr"].mean()), 3),
         "p_two_sided": round(paired_two_sided(res8["rr"], res32["rr"]), 4),
-        "same_top1_share": round(
-            float(np.mean(np.array(top1(fp32, questions)) == np.array(top1(int8, questions)))), 3
-        ),
+        "same_top1_share": round(float(np.mean(np.array(first32) == np.array(first8))), 3),
     }
     print(json.dumps(results, indent=1))
     args.out.write_text(json.dumps(results, indent=2), encoding="utf-8")

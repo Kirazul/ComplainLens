@@ -4,7 +4,8 @@ Customer: exact match on the sender (email address / chat ID). Demo mode creates
 first-time sender (demo_data.py).
 
 Trip: a transparent score, so every link can be explained in the console:
-  +10 trip number quoted · +4 amount matches a charge · +3 date matches ("yesterday", "hier soir")
+  +10 trip number quoted · +4 amount matches a charge (-2 if the amount quoted matches none)
+  +3 date matches ("yesterday", "hier soir")
   +3 kind matches the category (food -> delivery, driver -> ride) · +3 the problem described is
   visible in the record ("charged twice" and two charges) · + up to 1 for recency.
 Below ``MIN_SCORE``, or without specific evidence (the kind of trip alone is not evidence), we do
@@ -64,6 +65,10 @@ def _amounts(text: str) -> set[float]:
     return out
 
 
+def _charge_amounts(trip: Trip) -> set[float]:
+    return {round(c["amount"], 2) for c in trip.charges} | {round(trip.total, 2)}
+
+
 def _utc(dt: datetime) -> datetime:
     """SQLite drops time zones on read; all our datetimes are stored in UTC."""
     return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
@@ -78,10 +83,13 @@ def score_trip(
     if trip.id.upper() in refs:
         score += 10
         why.append("trip number quoted (+10)")
-    charge_amounts = {round(c["amount"], 2) for c in trip.charges} | {round(trip.total, 2)}
-    if _amounts(text) & charge_amounts:
+    quoted = _amounts(text)
+    if quoted & _charge_amounts(trip):
         score += 4
         why.append("amount matches a charge (+4)")
+    elif quoted:  # an amount that is on no payment line is evidence against this trip
+        score -= 2
+        why.append("amount quoted matches no charge (-2)")
     for pattern, days in _RELATIVE_DAYS:
         if pattern.search(text) and started.date() == (now - timedelta(days=days)).date():
             score += 3
@@ -199,6 +207,16 @@ def link_stage(ctx: Context) -> StageResult:
     ctx["customer"] = customer
     ctx["trip"] = best[0] if best else None
     ctx["facts"] = trip_facts(best[0]) if best else []
+    if best and (unmatched := sorted(_amounts(text) - _charge_amounts(best[0]))):
+        # Never let the reply state the record's amount as if the customer had agreed with it.
+        ctx["facts"].append(
+            {
+                "id": f"F{len(ctx['facts']) + 1}",
+                "text": f"The customer mentions {', '.join(_money(a) for a in unmatched)}, which "
+                "matches no payment line on this record: confirm the amount with the customer "
+                "before promising anything about it.",
+            }
+        )
     return StageResult(
         name="link",
         output={

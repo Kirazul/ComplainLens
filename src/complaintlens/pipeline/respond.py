@@ -321,7 +321,7 @@ def respond_stage(ctx: Context) -> StageResult:
         kb: KnowledgeBase = ctx["kb"]
         retriever: Retriever = ctx.get("retriever") or BM25Retriever(kb)
         # Customer's words (their language) fused with the LLM's English summary (same sections,
-        # mapped back to their language): MRR 0.664 vs 0.620 on the development questions
+        # mapped back to their language): MRR 0.657 vs 0.613 on the development questions
         # (reports/results/retrieval_summary.json). Without an LLM, the text alone is used.
         llm_summary = analysis.summary if ctx.get("llm") else None
         hits = search_with_summary(

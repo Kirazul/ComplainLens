@@ -9,20 +9,20 @@
         0.391,
         0.591
       ],
-      "median_ms": 0.05,
+      "median_ms": 0.04,
       "mrr@10_en": 0.469,
       "mrr@10_fr": 0.515
     },
     "dense:sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2": {
-      "recall@1": 0.5,
+      "recall@1": 0.486,
       "recall@3": 0.7,
-      "mrr@10": 0.62,
+      "mrr@10": 0.613,
       "mrr@10_ci95": [
-        0.524,
-        0.716
+        0.518,
+        0.706
       ],
-      "median_ms": 64.62,
-      "mrr@10_en": 0.612,
+      "median_ms": 3.91,
+      "mrr@10_en": 0.598,
       "mrr@10_fr": 0.628
     },
     "hybrid(bm25+dense:sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2)": {
@@ -33,15 +33,15 @@
         0.442,
         0.633
       ],
-      "median_ms": 71.66,
+      "median_ms": 4.1,
       "mrr@10_en": 0.512,
       "mrr@10_fr": 0.56
     }
   },
   "paired_vs_bm25_mrr": {
     "dense:sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2": {
-      "delta": 0.128,
-      "p_one_sided": 0.0176
+      "delta": 0.121,
+      "p_one_sided": 0.0222
     },
     "hybrid(bm25+dense:sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2)": {
       "delta": 0.044,

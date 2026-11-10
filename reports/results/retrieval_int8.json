@@ -3,33 +3,33 @@
   "model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
   "default": {
     "file": "Qdrant export used by fastembed (16-bit weights)",
-    "recall@1": 0.5,
+    "recall@1": 0.486,
     "recall@3": 0.7,
-    "mrr@10": 0.62,
+    "mrr@10": 0.613,
     "mrr@10_ci95": [
-      0.524,
-      0.716
+      0.518,
+      0.706
     ],
-    "median_ms": 60.23,
-    "mrr@10_en": 0.612,
+    "median_ms": 4.03,
+    "mrr@10_en": 0.598,
     "mrr@10_fr": 0.628,
     "model_mb": 235
   },
   "int8": {
     "file": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2/onnx/model_quint8_avx2.onnx (official)",
-    "recall@1": 0.457,
+    "recall@1": 0.443,
     "recall@3": 0.671,
-    "mrr@10": 0.596,
+    "mrr@10": 0.589,
     "mrr@10_ci95": [
-      0.5,
-      0.691
+      0.495,
+      0.682
     ],
-    "median_ms": 55.66,
-    "mrr@10_en": 0.613,
-    "mrr@10_fr": 0.578,
+    "median_ms": 42.5,
+    "mrr@10_en": 0.599,
+    "mrr@10_fr": 0.58,
     "model_mb": 118
   },
   "mrr_delta_int8_minus_default": -0.024,
-  "p_two_sided": 0.1296,
+  "p_two_sided": 0.133,
   "same_top1_share": 0.886
 }

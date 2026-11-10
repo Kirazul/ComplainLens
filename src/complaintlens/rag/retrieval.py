@@ -141,8 +141,9 @@ def search_with_summary(
     """Fuse a search on the customer's own words (their language) with a search on the LLM's
     English summary (English index, mapped back to the same sections in the customer's language).
 
-    Development set (reports/results/retrieval_summary.json): MRR@10 0.664 vs 0.620 for the text
-    alone; it also fixes polite messages whose greetings dilute the query.
+    Development set (reports/results/retrieval_summary.json): MRR@10 0.657 vs 0.613 for the text
+    alone (deployed int8 model: 0.643 vs 0.589); it also fixes polite messages whose greetings
+    dilute the query.
     """
     by_text = retriever.search(text, lang, 10)
     if not summary:

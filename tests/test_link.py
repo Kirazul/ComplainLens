@@ -58,7 +58,22 @@ def test_charged_twice_last_night_links_to_the_duplicate_charge(session):
     assert len([c for c in trip.charges if c["type"] == "capture"]) == 2
     facts = " ".join(f["text"] for f in ctx["facts"])
     assert "really charged 2 times" in facts
+    assert "matches no payment line" not in facts  # no amount quoted: nothing to contradict
     assert result.output["why"]  # the link is explained
+
+
+def test_amount_that_matches_no_charge_is_flagged_not_overwritten(session):
+    # Real case from the live demo: the customer quoted 24,50 $ but the linked ride shows other
+    # amounts; the reply must not state the record's amount as if the customer agreed with it.
+    ctx, result = run(
+        session,
+        "J'ai été facturé deux fois pour ma course d'hier soir (24,50 $)",
+        ["fare_billing"],
+    )
+    assert ctx["trip"] is not None  # the date and the double charge are still real evidence
+    assert "amount quoted matches no charge (-2)" in result.output["why"]
+    assert "The customer mentions $24.50" in ctx["facts"][-1]["text"]
+    assert ctx["facts"][-1]["id"] == f"F{len(ctx['facts'])}"
 
 
 def test_late_food_order_links_to_the_delivery(session):

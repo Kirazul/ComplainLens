@@ -31,7 +31,7 @@ evaluate on real data (expert-labelled complaint tweets, 41{,}855 real Uber supp
 and deploy the system as the live support desk of a fictional ride and food-delivery company.
 A TF-IDF baseline already exceeds every published non-neural result on complaint identification
 (macro-F1 81.5 vs.\ 79.0); dense multilingual retrieval beats BM25 on customer-worded queries
-(MRR 0.62 vs.\ 0.49, $p=0.018$) while equal-weight rank fusion does not; a rate-based burst detector
+(MRR 0.61 vs.\ 0.49, $p=0.022$) while equal-weight rank fusion does not; a rate-based burst detector
 recovers 94\% of injected 20-message bursts where a count threshold recovers none, and flags a real
 app outage one hour after onset; and a Learn-then-Test gate automates 37\% of messages at a
 guaranteed 10\% error bound, refusing to automate when the evidence cannot support a stricter bound.
@@ -180,17 +180,21 @@ favours the papers). Grouping duplicates changed scores by less than the seed va
 \toprule
 Retriever & R@1 & R@3 & MRR@10 [95\% CI] & Latency \\
 \midrule
-BM25 (implemented from scratch) & 0.40 & 0.53 & 0.49 [0.39, 0.59] & 0.05 ms \\
-\textbf{Dense, multilingual MiniLM} & \textbf{0.50} & \textbf{0.70} & \textbf{0.62 [0.52, 0.72]} & 65 ms \\
-Hybrid BM25 + dense (RRF) & 0.40 & 0.63 & 0.54 [0.44, 0.63] & 72 ms \\
+BM25 (implemented from scratch) & 0.40 & 0.53 & 0.49 [0.39, 0.59] & 0.04 ms \\
+\textbf{Dense, multilingual MiniLM} & \textbf{0.49} & \textbf{0.70} & \textbf{0.61 [0.52, 0.71]} & 4 ms \\
+Hybrid BM25 + dense (RRF) & 0.40 & 0.63 & 0.54 [0.44, 0.63] & 4 ms \\
 \bottomrule
 \end{tabular}
-\caption{70 customer-worded questions (35 EN, 35 FR). Dense vs.\ BM25: $+0.128$ MRR, $p=0.018$;
+\caption{70 customer-worded questions (35 EN, 35 FR). Dense vs.\ BM25: $+0.121$ MRR, $p=0.022$;
 hybrid vs.\ BM25: $+0.044$, $p=0.06$. Source: \res{retrieval\_helpcenter.json}.}
 \end{table}
-Equal-weight fusion \emph{hurt} because BM25 is much weaker on customer wording. This set was used
-to choose the retriever, so it is a development set; \todo{final numbers on the held-out question
-set written by the team; reranker; larger embedding models}.
+Equal-weight fusion \emph{hurt} because BM25 is much weaker on customer wording. Searching with the
+LLM's one-line English summary as well (sections share IDs across languages) raised MRR to 0.66
+(\res{retrieval\_summary.json}). To fit the free host's 1\,GB container we deploy the model's
+official int8 file: MRR 0.59 vs.\ 0.61 on the text alone (paired bootstrap $p=0.13$), same top
+section for 89\% of questions, 0.64 with the summary (\res{retrieval\_int8.json}). This set was
+used to choose the retriever, so it is a development set; \todo{final numbers on the held-out
+question set written by the team; reranker; larger embedding models}.
 
 \subsection{Emerging-issue detection (RQ4)}
 \begin{table}[h]

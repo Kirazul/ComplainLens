@@ -30,12 +30,12 @@ class Settings(BaseSettings):
     llm_cache_dir: Path = ROOT / "data" / "cache" / "llm"
 
     # Retrieval: "dense", "hybrid" (BM25 + dense, RRF) or "bm25". Chosen on the development
-    # question set (reports/results/retrieval_helpcenter.json): dense MRR 0.62 vs BM25 0.49
-    # (p = 0.018); RRF hybrid 0.54 (not significant): BM25 is too weak on customer wording.
+    # question set (reports/results/retrieval_helpcenter.json): dense MRR 0.61 vs BM25 0.49
+    # (p = 0.022); RRF hybrid 0.54 (not significant): BM25 is too weak on customer wording.
     retrieval: str = "dense"
     embedding_model: str = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-    # Use the int8 copy of the embedding model when it has been built (quantize_embedder.py):
-    # ~4x less memory, quality measured in reports/results/retrieval_int8.json.
+    # Use the model's official int8 ONNX file: the service then fits a 1 GB container. Cost on
+    # the development questions: MRR 0.59 vs 0.61, not significant (results/retrieval_int8.json).
     embedding_int8: bool = True
 
     database_url: str = f"sqlite:///{(ROOT / 'data' / 'app.db').as_posix()}"

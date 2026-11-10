@@ -1,4 +1,4 @@
-"""Does searching with the LLM's English summary help retrieval? (development set, plan §7)
+r"""Does searching with the LLM's English summary help retrieval? (development set, plan §7)
 
 Observation that motivated it: a polite French message ("Bonjour, j'ai été facturé deux fois...
 Merci de corriger") retrieved the wrong sections with dense search on the raw text. Help Center
@@ -9,8 +9,10 @@ Compared on the 70 development questions (MRR@10, Recall@1/3): dense and BM25 on
 dense and BM25 on the English summary, and Reciprocal Rank Fusion of raw-text and summary rankings.
 Summaries come from the configured LLM and are cached on disk (re-runs are free and identical).
 
-Usage:
+Usage (--int8: the deployed int8 embedding model, see eval_quantization.py):
     uv run python ml/scripts/eval_retrieval_summary.py --out reports/results/retrieval_summary.json
+    uv run python ml/scripts/eval_retrieval_summary.py --int8 --out \
+        reports/results/retrieval_summary_int8.json
 """
 
 from __future__ import annotations
@@ -63,13 +65,16 @@ def rank_of(hits: list[Hit], gold: str) -> int | None:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", type=Path, required=True)
+    parser.add_argument("--int8", action="store_true")
     args = parser.parse_args()
     s = get_settings()
     client = default_client()
     if client is None:
         raise SystemExit("LLM required")
     kb = KnowledgeBase.load(s.help_center_dir)
-    embedder = FastEmbedder(s.embedding_model, cache_dir=str(s.models_dir / "fastembed"))
+    embedder = FastEmbedder(
+        s.embedding_model, cache_dir=str(s.models_dir / "fastembed"), int8=args.int8
+    )
     dense = DenseRetriever(kb, embedder)
     bm25 = BM25Retriever(kb)
     questions = [json.loads(x) for x in QUESTIONS.read_text(encoding="utf-8").splitlines()]
@@ -99,6 +104,7 @@ def main() -> None:
     results = {
         "questions": len(questions),
         "llm": client.model,
+        "embedder": dense.name,
         "variants": {
             name: {
                 "mrr@10": round(float(np.mean(variants[name])), 3),

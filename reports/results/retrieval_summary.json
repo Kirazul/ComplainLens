@@ -1,10 +1,11 @@
 {
   "questions": 70,
   "llm": "openai/gpt-oss-120b",
+  "embedder": "dense:sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
   "variants": {
     "dense_text": {
-      "mrr@10": 0.62,
-      "recall@1": 0.5,
+      "mrr@10": 0.613,
+      "recall@1": 0.486,
       "recall@3": 0.7
     },
     "bm25_text": {
@@ -23,14 +24,14 @@
       "recall@3": 0.571
     },
     "rrf_dense_text+dense_summary": {
-      "mrr@10": 0.664,
-      "recall@1": 0.557,
+      "mrr@10": 0.657,
+      "recall@1": 0.543,
       "recall@3": 0.7
     },
     "rrf_dense_text+dense_summary+bm25_summary": {
-      "mrr@10": 0.631,
+      "mrr@10": 0.629,
       "recall@1": 0.514,
-      "recall@3": 0.686
+      "recall@3": 0.671
     }
   }
 }
