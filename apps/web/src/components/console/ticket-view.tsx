@@ -7,7 +7,7 @@ import { ChannelMark } from "@/components/console/channel";
 import { useOperator } from "@/components/console/operator";
 import { CitedText, ReplyCard, Verification, type Sources } from "@/components/console/reply-panel";
 import { formatMs, StageTimeline } from "@/components/console/stage-timeline";
-import { humanize, StatusPill } from "@/components/console/status";
+import { StatusPill, statusLabel } from "@/components/console/status";
 import { useEvents } from "@/components/console/use-events";
 import { api, type TicketDetail } from "@/lib/api";
 
@@ -125,7 +125,7 @@ export function TicketView({ ticketId }: Readonly<{ ticketId: number }>) {
         <section aria-label="Decision and reply" className="space-y-6">
           {decision && (
             <div className="rounded-xl border border-line bg-white p-4">
-              <h2 className="font-semibold">Decision: {humanize(decision.action)}</h2>
+              <h2 className="font-semibold">Decision: {statusLabel(decision.action)}</h2>
               <ul className="mt-2 list-disc pl-5 text-sm">
                 {decision.reasons.map((r) => <li key={r}>{r}</li>)}
               </ul>

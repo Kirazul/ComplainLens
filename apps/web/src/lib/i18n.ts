@@ -56,7 +56,7 @@ const en = {
     channels: {
       chat: ["Live chat", "Ask on this website and read the answer in the conversation.", "Open the chat"],
       rate: ["Rate your last trip", "Stars and a comment. Low ratings are read by our team.", "Rate a trip"],
-      email: ["Email", "Write to us; your email gets a ticket like any other message.", ""],
+      email: ["Email", "Write to us; your email gets a ticket like any other message. In this demo our inbox receives only, so to read our answer use the form or the chat.", ""],
       forum: ["Community forum", "Ask in public. Our answer is posted in the thread.", "Open the forum"],
     },
   },
@@ -154,7 +154,7 @@ const fr: Dict = {
     channels: {
       chat: ["Clavardage", "Posez votre question sur ce site et lisez la réponse dans la conversation.", "Ouvrir le clavardage"],
       rate: ["Évaluer votre dernière course", "Des étoiles et un commentaire. Notre équipe lit les mauvaises notes.", "Évaluer une course"],
-      email: ["Courriel", "Écrivez-nous ; votre courriel reçoit un ticket comme tout autre message.", ""],
+      email: ["Courriel", "Écrivez-nous ; votre courriel reçoit un ticket comme tout autre message. Dans cette démo, notre boîte ne fait que recevoir : pour lire notre réponse, utilisez le formulaire ou le clavardage.", ""],
       forum: ["Forum communautaire", "Posez votre question en public. Notre réponse est publiée dans la discussion.", "Ouvrir le forum"],
     },
   },

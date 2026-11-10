@@ -20,6 +20,10 @@ export function StatusPill({ status }: { status: string }) {
   );
 }
 
+export function statusLabel(status: string): string {
+  return STATUS[status]?.label ?? humanize(status);
+}
+
 export function humanize(value: string): string {
   return value.replaceAll("_", " ");
 }
