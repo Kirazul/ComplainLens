@@ -81,7 +81,7 @@ def fetch_new_messages(settings: Settings | None = None) -> list[InboundMessage]
 
 def track_url(ticket: Ticket, settings: Settings) -> str:
     lang = ticket.language if ticket.language in ("en", "fr") else "en"
-    return f"{settings.public_base_url}/{lang}/track/{ticket.id}?k={ticket.track_key}"
+    return f"{settings.public_base_url}/{lang}/track/?id={ticket.id}&k={ticket.track_key}"
 
 
 def build_reply_email(ticket: Ticket, reply: Reply, settings: Settings) -> EmailMessage:

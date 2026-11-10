@@ -30,7 +30,7 @@ export function ContactForm({ lang, t }: { lang: Lang; t: Dict["contact"] }) {
         subject: String(data.get("subject") ?? "").trim() || undefined,
         channel: "web",
       });
-      router.push(`/${lang}/track/${ticket.id}?k=${encodeURIComponent(ticket.track_key)}`);
+      router.push(`/${lang}/track/?id=${ticket.id}&k=${encodeURIComponent(ticket.track_key)}`);
     } catch {
       setError(t.errorNetwork);
       setSending(false);

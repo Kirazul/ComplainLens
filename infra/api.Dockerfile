@@ -1,4 +1,4 @@
-# ComplaintLens API image (also used as a Hugging Face Docker Space: port 7860, user 1000).
+# ComplaintLens API image (hosted on Railway; also runs anywhere Docker runs, e.g. docker compose).
 # Models are rebuilt inside the image from public data, so no model weights live in git.
 FROM python:3.12-slim
 
@@ -36,5 +36,6 @@ RUN chown -R user:user /app
 USER user
 EXPOSE 7860
 HEALTHCHECK --interval=30s --timeout=5s --start-period=60s \
-  CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:7860/api/health')"
-CMD ["uv", "run", "--no-sync", "complaintlens", "serve", "--host", "0.0.0.0", "--port", "7860"]
+  CMD python -c "import os, urllib.request; urllib.request.urlopen(f'http://127.0.0.1:{os.environ.get(\"PORT\", \"7860\")}/api/health')"
+# Railway provides $PORT; 7860 is the local default.
+CMD ["sh", "-c", "uv run --no-sync complaintlens serve --host 0.0.0.0 --port ${PORT:-7860}"]

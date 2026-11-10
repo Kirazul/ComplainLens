@@ -58,7 +58,7 @@ export default function InboxPage() {
     try {
       // example.com is reserved for examples (RFC 2606) and accepted by the email validator.
       const t = await api.submit({ email: "console.demo@example.com", body: draft, channel: "web" });
-      router.push(`/console/tickets/${t.id}`);
+      router.push(`/console/ticket/?id=${t.id}`);
     } catch (err) {
       setError((err as Error).message);
       setSending(false);
@@ -109,7 +109,7 @@ export default function InboxPage() {
           <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-white">
             {tickets?.map((t) => (
               <li key={t.id}>
-                <Link href={`/console/tickets/${t.id}`} className="block px-4 py-3 hover:bg-desk">
+                <Link href={`/console/ticket/?id=${t.id}`} className="block px-4 py-3 hover:bg-desk">
                   <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                     <span className="font-semibold">{t.number}</span>
                     <StatusPill status={t.status} />

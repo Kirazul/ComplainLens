@@ -1,5 +1,6 @@
 "use client";
 
+import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Moon } from "@/components/moon";
@@ -102,6 +103,15 @@ export function TrackView({
       <p className="mt-8 text-sm text-slate/70">{t.track.emailNote}</p>
     </div>
   );
+}
+
+/** Reads ?id=…&k=… from the URL (static export: no server-side params). */
+export function TrackFromQuery({ lang, t }: Readonly<{ lang: Lang; t: Dict }>) {
+  const query = useSearchParams();
+  const id = Number(query.get("id"));
+  const key = query.get("k");
+  if (!Number.isInteger(id) || id <= 0 || !key) return <p className="text-lg">{t.track.notFound}</p>;
+  return <TrackView id={id} trackKey={key} lang={lang} t={t} />;
 }
 
 // Citations like [HC-FARES#4] are for the console and the verifier, not for customers.
