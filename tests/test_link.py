@@ -133,3 +133,18 @@ def test_old_trips_are_not_linked_by_relative_dates(session):
     # Sanity: the duplicate-charge ride is dated yesterday evening.
     ctx, _ = run(session, "charged twice yesterday", ["fare_billing"])
     assert ctx["trip"].started_at.date() == (utcnow() - timedelta(days=1)).date()
+
+
+def test_a_ride_is_not_linked_to_a_food_order_complaint(session):
+    # Real case from the live demo: "my food never arrived last night" was linked to last night's
+    # ride on the date alone.
+    ctx, result = run(
+        session,
+        "I ordered food last night and it never arrived, but I was charged.",
+        ["delivery_order", "fare_billing"],
+    )
+    linked = ctx["trip"]
+    assert linked is None or linked.kind == "delivery"
+    for candidate in result.output["candidates"]:
+        if candidate["kind"] == "ride":
+            assert candidate["score"] < 3  # below MIN_SCORE: never linked

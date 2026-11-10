@@ -35,6 +35,7 @@ from complaintlens.security import (
     client_ip,
     is_operator,
     mask_contact,
+    mask_name,
     require_channel_token,
     require_operator,
 )
@@ -209,7 +210,7 @@ def _ticket_summary(t: Ticket, operator: bool) -> dict[str, Any]:
         "number": t.number,
         "channel": t.channel,
         "sender": t.sender if operator else mask_contact(t.sender),
-        "sender_name": t.sender_name,
+        "sender_name": t.sender_name if operator else mask_name(t.sender_name),
         "subject": t.subject,
         "status": t.status,
         "team": t.team,
@@ -595,6 +596,7 @@ def get_ticket(ticket_id: int, request: Request) -> dict[str, Any]:
         customer_view = customer.model_dump() if customer else None
         if customer_view and not operator:
             customer_view["contact"] = mask_contact(customer_view["contact"])
+            customer_view["name"] = mask_name(customer_view["name"])
         return {
             **_ticket_summary(t, operator),
             "body": t.body,

@@ -6,7 +6,8 @@ first-time sender (demo_data.py).
 Trip: a transparent score, so every link can be explained in the console:
   +10 trip number quoted · +4 amount matches a charge (-2 if the amount quoted matches none)
   +3 date matches ("yesterday", "hier soir")
-  +3 kind matches the category (food -> delivery, driver -> ride) · +3 the problem described is
+  +3 kind matches the category (food -> delivery, driver -> ride; -3 if clearly the other kind)
+  +3 the problem described is
   visible in the record ("charged twice" and two charges) · + up to 1 for recency.
 Below ``MIN_SCORE``, or without specific evidence (the kind of trip alone is not evidence), we do
 not guess: the reply will ask which trip the customer means.
@@ -96,11 +97,14 @@ def score_trip(
             why.append(f"date matches '{pattern.search(text).group()}' (+3)")
             break
     cats = set(categories)
-    if (cats & _DELIVERY_CATEGORIES and trip.kind == "delivery") or (
-        cats & _RIDE_CATEGORIES and trip.kind == "ride"
-    ):
+    about_delivery, about_ride = bool(cats & _DELIVERY_CATEGORIES), bool(cats & _RIDE_CATEGORIES)
+    if (about_delivery and trip.kind == "delivery") or (about_ride and trip.kind == "ride"):
         score += 3
         why.append(f"{trip.kind} matches the category (+3)")
+    elif about_delivery != about_ride:  # clearly about the other kind of trip
+        score -= 3
+        topic = "food order" if about_delivery else "ride"
+        why.append(f"a {trip.kind}, but the message is about a {topic} (-3)")
     if _SIGNALS["double"].search(text) and len(trip.charges) > 1:
         score += 3
         why.append("two charge lines on record, as described (+3)")

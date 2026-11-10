@@ -108,6 +108,14 @@ def test_review_channel_is_accepted(client):
     assert r.status_code == 202
 
 
+def test_mask_name():
+    from complaintlens.security import mask_name
+
+    assert mask_name("Rimel Zouari") == "Rimel Z."
+    assert mask_name("Sam") == "Sam"
+    assert mask_name(None) is None
+
+
 def test_mask_contact():
     assert mask_contact("rimel.zouari@example.com") == "r••••@example.com"
     assert mask_contact("forum:rider42") == "forum:rider42"

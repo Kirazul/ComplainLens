@@ -52,6 +52,14 @@ def mask_contact(contact: str | None) -> str | None:
     return f"{local[:1]}••••@{domain}"
 
 
+def mask_name(name: str | None) -> str | None:
+    """``Rimel Zouari`` -> ``Rimel Z.``: enough to tell customers apart, not to identify them."""
+    if not name:
+        return name
+    parts = name.split()
+    return parts[0] if len(parts) == 1 else f"{parts[0]} {parts[-1][0]}."
+
+
 class RateLimiter:
     """Sliding-window limits: ``per_key`` events per ``window`` seconds, ``total`` per day."""
 
