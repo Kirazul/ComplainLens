@@ -63,7 +63,7 @@
           <text class="lbl" x="684" y="218" text-anchor="middle">needs a person</text>
           <rect class="b" x="730" y="58" width="210" height="76" rx="12"/>
           <text class="t" x="835" y="90" text-anchor="middle">Reply to the customer</text>
-          <text class="d" x="835" y="112" text-anchor="middle">chat, ticket page, forum</text>
+          <text class="d" x="835" y="112" text-anchor="middle">chat, email, forum</text>
           <rect class="b" x="730" y="188" width="210" height="76" rx="12"/>
           <text class="t" x="835" y="220" text-anchor="middle">Agent console</text>
           <text class="d" x="835" y="242" text-anchor="middle">a person checks and sends</text>

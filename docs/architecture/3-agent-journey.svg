@@ -44,7 +44,7 @@
           <text class="lbl" x="671" y="193" text-anchor="middle">send reply</text>
           <rect class="b" x="380" y="160" width="220" height="82" rx="12"/>
           <text class="t" x="490" y="186" text-anchor="middle">Customer sees it</text>
-          <text class="d" x="490" y="206" text-anchor="middle">chat and ticket page,</text>
+          <text class="d" x="490" y="206" text-anchor="middle">chat, ticket page, email,</text>
           <text class="d" x="490" y="224" text-anchor="middle">or a forum comment</text>
           <path class="w" d="M380 201H360V108" marker-end="url(#a3)"/>
           <text class="lbl" x="352" y="170" text-anchor="end">writes again:</text>

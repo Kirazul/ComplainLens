@@ -30,7 +30,7 @@
           <rect class="b" x="20" y="168" width="210" height="52" rx="10"/>
           <text class="t" x="34" y="190">Ride rating</text><text class="d" x="34" y="209">stars and a comment</text>
           <rect class="b" x="20" y="228" width="210" height="52" rx="10"/>
-          <text class="t" x="34" y="250">Email</text><text class="d" x="34" y="269">inbox polled every 30 s</text>
+          <text class="t" x="34" y="250">Email</text><text class="d" x="34" y="269">AgentMail, webhook on arrival</text>
           <rect class="b" x="20" y="288" width="210" height="52" rx="10"/>
           <text class="t" x="34" y="310">Community forum</text><text class="d" x="34" y="329">GitHub Discussions relay</text>
           <path class="w" d="M230 74H268" marker-end="url(#a4)"/><path class="w" d="M230 134H268" marker-end="url(#a4)"/><path class="w" d="M230 194H268" marker-end="url(#a4)"/><path class="w" d="M230 254H268" marker-end="url(#a4)"/><path class="w" d="M230 314H268" marker-end="url(#a4)"/>
@@ -127,8 +127,8 @@
           <path class="w" d="M746 590V638" marker-end="url(#a4)"/><path class="w" d="M940 590V638" marker-end="url(#a4)"/><path class="w" d="M1134 590V638" marker-end="url(#a4)"/>
           <rect class="b" x="270" y="640" width="350" height="76" rx="12"/>
           <text class="t" x="286" y="664">Delivered to the customer</text>
-          <text class="d" x="286" y="686">website: chat and ticket page; forum:</text>
-          <text class="d" x="286" y="704">through the relay; email: receive only</text>
+          <text class="d" x="286" y="686">website: chat and ticket page; email:</text>
+          <text class="d" x="286" y="704">in its thread; forum: through the relay</text>
           <rect class="b" x="680" y="640" width="542" height="76" rx="12"/>
           <text class="t" x="696" y="664">Agent console, updated live</text>
           <text class="d" x="696" y="686">inbox, conversation, ride check, reply box; the agent sends,</text>
