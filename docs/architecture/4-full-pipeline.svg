@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="930" viewBox="0 0 1240 930" role="img" aria-label="Five channels feed the intake, which stores a ticket. Six stages follow: normalize, mask personal data, detect the language, understand with an LLM, a TF-IDF model and risk words, link the ride by its ID on the sender's account with record facts, and respond with policy search, a cited draft and a number verifier. A decision then sends automatically, asks for the ride ID, sends to agent review, escalates, or does not reply. Replies are delivered on the website, through the forum relay, or not by email in this demo; the agent console shows everything live. Offline, the Uber support data and a labelled complaint dataset produced the analyses, the classical model and the automation-gate result.">
+          <style>/* Diagram vocabulary (classes, so both themes come from the tokens). */
+.b { fill: #ffffff; stroke: #b9b3e6; stroke-width: 1.5; }
+.key { fill: #fdedd3; stroke: #a85f05; stroke-width: 2; }
+.group { fill: none; stroke: #b9b3e6; stroke-width: 1.5; stroke-dasharray: 6 5; }
+.frame { fill: #eeecfa; stroke: #b9b3e6; stroke-width: 1.5; }
+.t { fill: #1e1b4b; font-size: 14px; font-weight: 600; }
+.d { fill: #59567a; font-size: 12px; }
+.lbl { fill: #59567a; font-size: 11.5px; font-style: italic; }
+.h { fill: #1e1b4b; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; }
+.w { fill: none; stroke: #1e1b4b; stroke-width: 1.6; }
+.wk { fill: none; stroke: #a85f05; stroke-width: 2; }
+.wd { fill: none; stroke: #59567a; stroke-width: 1.4; stroke-dasharray: 5 4; }
+.ah { fill: #1e1b4b; }
+.ahk { fill: #a85f05; }
+.ahd { fill: #59567a; }
+ text { font-family: "IBM Plex Sans", "Segoe UI", Arial, sans-serif; }</style><rect width="100%" height="100%" fill="#eeecfa"/><defs>
+            <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0L10 5L0 10z"/></marker>
+            <marker id="a4k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahk" d="M0 0L10 5L0 10z"/></marker>
+            <marker id="a4d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker>
+          </defs>
+
+          <!-- channels -->
+          <text class="h" x="20" y="34">CHANNELS</text>
+          <rect class="b" x="20" y="48" width="210" height="52" rx="10"/>
+          <text class="t" x="34" y="70">Live chat</text><text class="d" x="34" y="89">website, signed in or not</text>
+          <rect class="b" x="20" y="108" width="210" height="52" rx="10"/>
+          <text class="t" x="34" y="130">Contact form</text><text class="d" x="34" y="149">optional ride ID</text>
+          <rect class="b" x="20" y="168" width="210" height="52" rx="10"/>
+          <text class="t" x="34" y="190">Ride rating</text><text class="d" x="34" y="209">stars and a comment</text>
+          <rect class="b" x="20" y="228" width="210" height="52" rx="10"/>
+          <text class="t" x="34" y="250">Email</text><text class="d" x="34" y="269">inbox polled every 30 s</text>
+          <rect class="b" x="20" y="288" width="210" height="52" rx="10"/>
+          <text class="t" x="34" y="310">Community forum</text><text class="d" x="34" y="329">GitHub Discussions relay</text>
+          <path class="w" d="M230 74H268" marker-end="url(#a4)"/><path class="w" d="M230 134H268" marker-end="url(#a4)"/><path class="w" d="M230 194H268" marker-end="url(#a4)"/><path class="w" d="M230 254H268" marker-end="url(#a4)"/><path class="w" d="M230 314H268" marker-end="url(#a4)"/>
+
+          <!-- intake -->
+          <rect class="b" x="270" y="48" width="160" height="292" rx="12"/>
+          <text class="t" x="350" y="78" text-anchor="middle">Intake</text>
+          <text class="d" x="350" y="106" text-anchor="middle">ticket created</text>
+          <text class="d" x="350" y="124" text-anchor="middle">rate-limited</text>
+          <text class="d" x="350" y="142" text-anchor="middle">30 per hour per IP</text>
+          <text class="d" x="350" y="160" text-anchor="middle">stored in SQLite</text>
+          <text class="d" x="350" y="196" text-anchor="middle">follow-ups join</text>
+          <text class="d" x="350" y="214" text-anchor="middle">the same ticket;</text>
+          <text class="d" x="350" y="232" text-anchor="middle">the stages run again</text>
+          <text class="d" x="350" y="250" text-anchor="middle">on the whole</text>
+          <text class="d" x="350" y="268" text-anchor="middle">conversation</text>
+          <path class="w" d="M430 98H468" marker-end="url(#a4)"/>
+
+          <!-- stages, row A -->
+          <text class="h" x="470" y="34">SIX STAGES, TRACED ONE BY ONE</text>
+          <rect class="b" x="470" y="48" width="230" height="100" rx="12"/>
+          <text class="t" x="486" y="74">1  Normalize</text>
+          <text class="d" x="486" y="98">quoted replies and email</text>
+          <text class="d" x="486" y="116">signatures removed</text>
+          <rect class="b" x="730" y="48" width="230" height="100" rx="12"/>
+          <text class="t" x="746" y="74">2  Mask personal data</text>
+          <text class="d" x="746" y="98">emails, phones, card numbers</text>
+          <text class="d" x="746" y="116">before storage and the LLM</text>
+          <rect class="b" x="990" y="48" width="230" height="100" rx="12"/>
+          <text class="t" x="1006" y="74">3  Language</text>
+          <text class="d" x="1006" y="98">py3langid: English or French</text>
+          <text class="d" x="1006" y="116">other languages: to an agent</text>
+          <path class="w" d="M700 98H728" marker-end="url(#a4)"/><path class="w" d="M960 98H988" marker-end="url(#a4)"/>
+          <path class="w" d="M1105 148V169H585V188" marker-end="url(#a4)"/>
+
+          <!-- stages, row B -->
+          <rect class="b" x="470" y="190" width="230" height="100" rx="12"/>
+          <text class="t" x="486" y="216">4  Understand</text>
+          <text class="d" x="486" y="240">LLM labels type, topic,</text>
+          <text class="d" x="486" y="258">severity, risk, summary;</text>
+          <text class="d" x="486" y="276">TF-IDF model and risk words</text>
+          <rect class="key" x="730" y="190" width="230" height="100" rx="12"/>
+          <text class="t" x="746" y="216">5  Link the ride</text>
+          <text class="d" x="746" y="240">ride ID on the sender's</text>
+          <text class="d" x="746" y="258">account, or none; facts</text>
+          <text class="d" x="746" y="276">F1, F2 computed by code</text>
+          <rect class="b" x="990" y="190" width="230" height="100" rx="12"/>
+          <text class="t" x="1006" y="216">6  Respond</text>
+          <text class="d" x="1006" y="240">policy search (dense, int8)</text>
+          <text class="d" x="1006" y="258">cited draft by the LLM;</text>
+          <text class="d" x="1006" y="276">every number verified</text>
+          <path class="w" d="M700 240H728" marker-end="url(#a4)"/><path class="w" d="M960 240H988" marker-end="url(#a4)"/>
+
+          <!-- data stores -->
+          <rect class="b" x="470" y="330" width="230" height="50" rx="10"/>
+          <text class="t" x="585" y="352" text-anchor="middle">LLM: gpt-oss-120b</text><text class="d" x="585" y="370" text-anchor="middle">Groq, open weights</text>
+          <rect class="b" x="730" y="330" width="230" height="50" rx="10"/>
+          <text class="t" x="845" y="352" text-anchor="middle">Accounts and rides</text><text class="d" x="845" y="370" text-anchor="middle">synthetic company records</text>
+          <rect class="b" x="990" y="330" width="230" height="50" rx="10"/>
+          <text class="t" x="1105" y="352" text-anchor="middle">Policy knowledge base</text><text class="d" x="1105" y="370" text-anchor="middle">30 sections, EN and FR</text>
+          <path class="wd" d="M585 328V293" marker-end="url(#a4d)"/><path class="wd" d="M845 328V293" marker-end="url(#a4d)"/><path class="wd" d="M1105 328V293" marker-end="url(#a4d)"/>
+          <path class="wd" d="M700 355H720V300H1040V293" marker-end="url(#a4d)"/>
+          <text class="lbl" x="880" y="314">the LLM also writes the draft</text>
+
+          <!-- decision -->
+          <path class="w" d="M1220 240H1232V445H1222" marker-end="url(#a4)"/>
+          <rect class="frame" x="270" y="420" width="950" height="50" rx="12"/>
+          <text class="t" x="745" y="451" text-anchor="middle">Decision: fixed rules first, then confidence of at least 0.7</text>
+          <path class="w" d="M358 470V508" marker-end="url(#a4)"/><path class="w" d="M552 470V508" marker-end="url(#a4)"/><path class="w" d="M746 470V508" marker-end="url(#a4)"/><path class="w" d="M940 470V508" marker-end="url(#a4)"/><path class="w" d="M1134 470V508" marker-end="url(#a4)"/>
+
+          <rect class="b" x="270" y="510" width="176" height="80" rx="12"/>
+          <text class="t" x="358" y="536" text-anchor="middle">Send automatically</text>
+          <text class="d" x="358" y="558" text-anchor="middle">verified, low risk,</text>
+          <text class="d" x="358" y="575" text-anchor="middle">confident</text>
+          <rect class="key" x="464" y="510" width="176" height="80" rx="12"/>
+          <text class="t" x="552" y="536" text-anchor="middle">Ask for the ride ID</text>
+          <text class="d" x="552" y="558" text-anchor="middle">ride problem without</text>
+          <text class="d" x="552" y="575" text-anchor="middle">a valid ride ID</text>
+          <rect class="b" x="658" y="510" width="176" height="80" rx="12"/>
+          <text class="t" x="746" y="536" text-anchor="middle">Agent review</text>
+          <text class="d" x="746" y="558" text-anchor="middle">money, a failed check,</text>
+          <text class="d" x="746" y="575" text-anchor="middle">or doubt</text>
+          <rect class="b" x="852" y="510" width="176" height="80" rx="12"/>
+          <text class="t" x="940" y="536" text-anchor="middle">Escalate</text>
+          <text class="d" x="940" y="558" text-anchor="middle">safety, injury, harm,</text>
+          <text class="d" x="940" y="575" text-anchor="middle">legal, severity 4</text>
+          <rect class="b" x="1046" y="510" width="176" height="80" rx="12"/>
+          <text class="t" x="1134" y="536" text-anchor="middle">No reply</text>
+          <text class="d" x="1134" y="558" text-anchor="middle">spam, or nothing</text>
+          <text class="d" x="1134" y="575" text-anchor="middle">to answer</text>
+
+          <!-- delivery -->
+          <path class="w" d="M358 590V638" marker-end="url(#a4)"/><path class="w" d="M552 590V638" marker-end="url(#a4)"/>
+          <path class="w" d="M746 590V638" marker-end="url(#a4)"/><path class="w" d="M940 590V638" marker-end="url(#a4)"/><path class="w" d="M1134 590V638" marker-end="url(#a4)"/>
+          <rect class="b" x="270" y="640" width="350" height="76" rx="12"/>
+          <text class="t" x="286" y="664">Delivered to the customer</text>
+          <text class="d" x="286" y="686">website: chat and ticket page; forum:</text>
+          <text class="d" x="286" y="704">through the relay; email: receive only</text>
+          <rect class="b" x="680" y="640" width="542" height="76" rx="12"/>
+          <text class="t" x="696" y="664">Agent console, updated live</text>
+          <text class="d" x="696" y="686">inbox, conversation, ride check, reply box; the agent sends,</text>
+          <text class="d" x="696" y="704">edits or writes, then resolves; administrators manage the team</text>
+          <path class="w" d="M680 678H622" marker-end="url(#a4)"/>
+          <text class="lbl" x="651" y="670" text-anchor="middle">reply</text>
+          <path class="w" d="M270 690H250V332H268" marker-end="url(#a4)"/>
+          <text class="lbl" x="244" y="520" text-anchor="middle" transform="rotate(-90 244 520)">customer writes again</text>
+
+          <!-- offline research -->
+          <rect class="group" x="20" y="760" width="1202" height="150" rx="16"/>
+          <text class="h" x="40" y="790">OFFLINE RESEARCH, NOT IN THE LIVE PATH</text>
+          <rect class="b" x="40" y="808" width="250" height="80" rx="12"/>
+          <text class="t" x="56" y="834">Customer Support on Twitter</text>
+          <text class="d" x="56" y="856">Uber, rides only: 37,065</text>
+          <text class="d" x="56" y="873">real support conversations</text>
+          <rect class="b" x="330" y="808" width="250" height="80" rx="12"/>
+          <text class="t" x="346" y="834">Analyses</text>
+          <text class="d" x="346" y="856">topics, incidents, the gold</text>
+          <text class="d" x="346" y="873">sample, the Insights page</text>
+          <path class="w" d="M290 848H328" marker-end="url(#a4)"/>
+          <rect class="b" x="640" y="808" width="250" height="80" rx="12"/>
+          <text class="t" x="656" y="834">Complaints on Twitter 2019</text>
+          <text class="d" x="656" y="856">3,449 tweets labelled by</text>
+          <text class="d" x="656" y="873">experts, with severity</text>
+          <rect class="b" x="930" y="808" width="272" height="80" rx="12"/>
+          <text class="t" x="946" y="834">Classical model and gate</text>
+          <text class="d" x="946" y="856">TF-IDF (F1 81.5) runs in stage 4;</text>
+          <text class="d" x="946" y="873">gate: 37% automated at 10% error</text>
+          <path class="w" d="M890 848H928" marker-end="url(#a4)"/>
+        </svg>

@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ComplaintLens Architecture</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+/* Layout: one reading column; each figure gets the full width it needs and scrolls sideways on phones. */
+:root {
+  --bg: #f6f5fb;
+  --fg: #1e1b4b;
+  --muted: #59567a;
+  --line: #b9b3e6;
+  --box: #ffffff;
+  --panel: #eeecfa;
+  --accent: #a85f05;
+  --accent-fill: #fdedd3;
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #13112b; --fg: #ecebff; --muted: #a9a6cc; --line: #4a4590; --box: #1e1b4b;
+    --panel: #19173a; --accent: #f2a33a; --accent-fill: #3b2a10; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #13112b; --fg: #ecebff; --muted: #a9a6cc; --line: #4a4590; --box: #1e1b4b;
+  --panel: #19173a; --accent: #f2a33a; --accent-fill: #3b2a10; color-scheme: dark;
+}
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.6 var(--font-body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.page { max-width: 1240px; margin: 0 auto; padding-block: 40px 64px; display: grid; gap: 56px; }
+header { display: grid; gap: 14px; }
+h1, h2 { font-family: var(--font-display); text-wrap: balance; margin: 0; letter-spacing: -0.01em; }
+h1 { font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 800; line-height: 1.05; }
+h2 { font-size: 1.7rem; font-weight: 800; }
+p { margin: 0; max-width: 68ch; }
+.lead { font-size: 1.15rem; color: var(--muted); }
+nav { display: flex; flex-wrap: wrap; gap: 8px; }
+nav a {
+  color: var(--fg); text-decoration: none; font-weight: 600; font-size: 0.95rem;
+  padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--box);
+}
+nav a:hover, nav a:focus-visible { border-color: var(--accent); }
+a:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+section { display: grid; gap: 14px; scroll-margin-top: 16px; }
+.legend { display: flex; flex-wrap: wrap; gap: 18px; font-size: 0.9rem; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 8px; }
+.swatch { width: 22px; height: 14px; border-radius: 4px; border: 1.5px solid var(--line); background: var(--box); }
+.swatch.key { border-color: var(--accent); background: var(--accent-fill); }
+.swatch.dash { border-style: dashed; background: transparent; }
+figure { margin: 0; display: grid; gap: 10px; }
+.scroll { overflow-x: auto; border-radius: 16px; background: var(--panel); padding: 12px; }
+svg { display: block; width: 100%; height: auto; min-width: 760px; font-family: var(--font-body); }
+figcaption { font-size: 0.95rem; color: var(--muted); max-width: 90ch; }
+footer { font-size: 0.95rem; color: var(--muted); display: grid; gap: 6px; }
+footer a { color: var(--fg); }
+
+/* Diagram vocabulary (classes, so both themes come from the tokens). */
+.b { fill: var(--box); stroke: var(--line); stroke-width: 1.5; }
+.key { fill: var(--accent-fill); stroke: var(--accent); stroke-width: 2; }
+.group { fill: none; stroke: var(--line); stroke-width: 1.5; stroke-dasharray: 6 5; }
+.frame { fill: var(--panel); stroke: var(--line); stroke-width: 1.5; }
+.t { fill: var(--fg); font-size: 14px; font-weight: 600; }
+.d { fill: var(--muted); font-size: 12px; }
+.lbl { fill: var(--muted); font-size: 11.5px; font-style: italic; }
+.h { fill: var(--fg); font-size: 13px; font-weight: 600; letter-spacing: 0.04em; }
+.w { fill: none; stroke: var(--fg); stroke-width: 1.6; }
+.wk { fill: none; stroke: var(--accent); stroke-width: 2; }
+.wd { fill: none; stroke: var(--muted); stroke-width: 1.4; stroke-dasharray: 5 4; }
+.ah { fill: var(--fg); }
+.ahk { fill: var(--accent); }
+.ahd { fill: var(--muted); }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>ComplaintLens architecture</h1>
+    <p class="lead">How a message from a LunaGo customer becomes an answer, which parts read which data, and where a person steps in. LunaGo is a fictional ride company; the language processing is the project.</p>
+    <nav aria-label="Diagrams">
+      <a href="#overview">Overview</a>
+      <a href="#customer">Customer journey</a>
+      <a href="#agent">Agent journey</a>
+      <a href="#full">Full pipeline</a>
+    </nav>
+    <div class="legend" aria-label="Legend">
+      <span><i class="swatch" aria-hidden="true"></i>Step or component</span>
+      <span><i class="swatch key" aria-hidden="true"></i>The ride-ID rule</span>
+      <span><i class="swatch dash" aria-hidden="true"></i>Data that a step reads</span>
+    </div>
+  </header>
+
+  <!-- 1. Overview -->
+  <section id="overview" aria-labelledby="h-overview">
+    <h2 id="h-overview">1. Overview</h2>
+    <p>Every channel feeds one API. It understands the message, checks it against the customer's record, then either answers or hands it to a person.</p>
+    <figure>
+      <div class="scroll">
+        <svg viewBox="0 0 960 384" role="img" aria-label="Five customer channels send messages to the ComplaintLens API, which understands, checks and answers them using an LLM, customer accounts and private policies. Verified answers go to the customer; the rest go to the agent console, where a person sends the reply.">
+          <defs>
+            <marker id="a1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0L10 5L0 10z"/></marker>
+            <marker id="a1d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker>
+          </defs>
+          <text class="h" x="20" y="40">CUSTOMERS WRITE</text>
+          <g>
+            <rect class="b" x="20" y="58" width="170" height="36" rx="18"/><text class="t" x="105" y="81" text-anchor="middle">Live chat</text>
+            <rect class="b" x="20" y="102" width="170" height="36" rx="18"/><text class="t" x="105" y="125" text-anchor="middle">Contact form</text>
+            <rect class="b" x="20" y="146" width="170" height="36" rx="18"/><text class="t" x="105" y="169" text-anchor="middle">Ride rating</text>
+            <rect class="b" x="20" y="190" width="170" height="36" rx="18"/><text class="t" x="105" y="213" text-anchor="middle">Email</text>
+            <rect class="b" x="20" y="234" width="170" height="36" rx="18"/><text class="t" x="105" y="257" text-anchor="middle">Community forum</text>
+          </g>
+          <path class="w" d="M190 76H210M190 120H210M190 164H210M190 208H210M190 252H210M210 76V252"/>
+          <path class="w" d="M210 164H262" marker-end="url(#a1)"/>
+          <text class="lbl" x="236" y="156" text-anchor="middle">message</text>
+
+          <rect class="frame" x="265" y="40" width="375" height="250" rx="16"/>
+          <text class="h" x="285" y="68">COMPLAINTLENS API</text>
+          <rect class="b" x="281" y="92" width="104" height="150" rx="10"/>
+          <text class="t" x="333" y="120" text-anchor="middle">Understand</text>
+          <text class="d" x="333" y="146" text-anchor="middle">type, topic</text>
+          <text class="d" x="333" y="164" text-anchor="middle">severity, risk</text>
+          <text class="d" x="333" y="182" text-anchor="middle">language</text>
+          <rect class="key" x="401" y="92" width="104" height="150" rx="10"/>
+          <text class="t" x="453" y="120" text-anchor="middle">Check</text>
+          <text class="d" x="453" y="146" text-anchor="middle">customer</text>
+          <text class="d" x="453" y="164" text-anchor="middle">ride by its ID</text>
+          <text class="d" x="453" y="182" text-anchor="middle">record facts</text>
+          <rect class="b" x="521" y="92" width="104" height="150" rx="10"/>
+          <text class="t" x="573" y="120" text-anchor="middle">Answer</text>
+          <text class="d" x="573" y="146" text-anchor="middle">policy search</text>
+          <text class="d" x="573" y="164" text-anchor="middle">cited draft</text>
+          <text class="d" x="573" y="182" text-anchor="middle">verify, decide</text>
+          <path class="w" d="M385 167H399" marker-end="url(#a1)"/>
+          <path class="w" d="M505 167H519" marker-end="url(#a1)"/>
+
+          <rect class="b" x="281" y="318" width="104" height="46" rx="10"/><text class="t" x="333" y="346" text-anchor="middle">LLM</text>
+          <rect class="b" x="401" y="318" width="104" height="46" rx="10"/><text class="t" x="453" y="339" text-anchor="middle">Accounts</text><text class="d" x="453" y="355" text-anchor="middle">and rides</text>
+          <rect class="b" x="521" y="318" width="104" height="46" rx="10"/><text class="t" x="573" y="339" text-anchor="middle">Policies</text><text class="d" x="573" y="355" text-anchor="middle">private</text>
+          <path class="wd" d="M333 316V245" marker-end="url(#a1d)"/><path class="wd" d="M453 316V245" marker-end="url(#a1d)"/><path class="wd" d="M573 316V245" marker-end="url(#a1d)"/>
+          <text class="lbl" x="641" y="303">read by the steps</text>
+
+          <path class="w" d="M640 96H728" marker-end="url(#a1)"/>
+          <text class="lbl" x="684" y="88" text-anchor="middle">verified</text>
+          <path class="w" d="M640 226H728" marker-end="url(#a1)"/>
+          <text class="lbl" x="684" y="218" text-anchor="middle">needs a person</text>
+          <rect class="b" x="730" y="58" width="210" height="76" rx="12"/>
+          <text class="t" x="835" y="90" text-anchor="middle">Reply to the customer</text>
+          <text class="d" x="835" y="112" text-anchor="middle">chat, ticket page, forum</text>
+          <rect class="b" x="730" y="188" width="210" height="76" rx="12"/>
+          <text class="t" x="835" y="220" text-anchor="middle">Agent console</text>
+          <text class="d" x="835" y="242" text-anchor="middle">a person checks and sends</text>
+          <path class="w" d="M835 188V137" marker-end="url(#a1)"/>
+          <text class="lbl" x="843" y="167">agent sends</text>
+        </svg>
+      </div>
+      <figcaption>The three middle steps are the NLP system. Each one reads only the data it needs: the LLM to understand and write, the customer's account and rides to check facts, and LunaGo's private policies to answer.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 2. Customer journey -->
+  <section id="customer" aria-labelledby="h-customer">
+    <h2 id="h-customer">2. Customer journey</h2>
+    <p>Anyone can write, with or without an account. A problem with a ride is answered only once we know which ride: the customer gives its ID, or picks the ride while signed in.</p>
+    <figure>
+      <div class="scroll">
+        <svg viewBox="0 0 1000 462" role="img" aria-label="Customers with an account sign in, book rides and open help on a ride, which attaches its ID. Anyone can write a message; the AI reads it. If it is not about one ride, the answer comes from the policies. If it is, the ride ID must be on the customer's account; then the record is checked, otherwise the AI asks for the ride ID. Every outcome is a reply in the chat and on the ticket page, and the customer can write again in the same conversation.">
+          <defs>
+            <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0L10 5L0 10z"/></marker>
+            <marker id="a2k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahk" d="M0 0L10 5L0 10z"/></marker>
+          </defs>
+          <text class="h" x="20" y="28">WITH AN ACCOUNT (OPTIONAL)</text>
+          <rect class="b" x="20" y="40" width="190" height="58" rx="12"/>
+          <text class="t" x="115" y="65" text-anchor="middle">Sign up or sign in</text>
+          <text class="d" x="115" y="85" text-anchor="middle">email and password</text>
+          <rect class="b" x="240" y="40" width="190" height="58" rx="12"/>
+          <text class="t" x="335" y="65" text-anchor="middle">Book a ride</text>
+          <text class="d" x="335" y="85" text-anchor="middle">places, time, upfront price</text>
+          <rect class="b" x="460" y="40" width="190" height="58" rx="12"/>
+          <text class="t" x="555" y="65" text-anchor="middle">Your rides</text>
+          <text class="d" x="555" y="85" text-anchor="middle">ride ID and receipt</text>
+          <rect class="key" x="680" y="40" width="190" height="58" rx="12"/>
+          <text class="t" x="775" y="65" text-anchor="middle">Get help with a ride</text>
+          <text class="d" x="775" y="85" text-anchor="middle">chat opens, ID attached</text>
+          <path class="w" d="M210 69H238" marker-end="url(#a2)"/><path class="w" d="M430 69H458" marker-end="url(#a2)"/><path class="w" d="M650 69H678" marker-end="url(#a2)"/>
+          <path class="wk" d="M775 98V124H115V164" marker-end="url(#a2k)"/>
+          <text class="lbl" x="445" y="117" text-anchor="middle">the ride ID travels with the message</text>
+
+          <text class="h" x="140" y="152">ANYONE, FROM ANY CHANNEL</text>
+          <rect class="b" x="20" y="166" width="190" height="66" rx="12"/>
+          <text class="t" x="115" y="190" text-anchor="middle">Write a message</text>
+          <text class="d" x="115" y="208" text-anchor="middle">chat, form, rating,</text>
+          <text class="d" x="115" y="224" text-anchor="middle">email or forum</text>
+          <rect class="b" x="240" y="166" width="170" height="66" rx="12"/>
+          <text class="t" x="325" y="190" text-anchor="middle">The AI reads it</text>
+          <text class="d" x="325" y="208" text-anchor="middle">type, topic, risk,</text>
+          <text class="d" x="325" y="224" text-anchor="middle">language</text>
+          <path class="w" d="M210 199H238" marker-end="url(#a2)"/><path class="w" d="M410 199H438" marker-end="url(#a2)"/>
+
+          <path class="b" d="M440 199L515 159L590 199L515 239Z"/>
+          <text class="t" x="515" y="196" text-anchor="middle">About</text>
+          <text class="t" x="515" y="213" text-anchor="middle">one ride?</text>
+          <path class="key" d="M660 199L735 159L810 199L735 239Z"/>
+          <text class="t" x="735" y="196" text-anchor="middle">Ride ID on</text>
+          <text class="t" x="735" y="213" text-anchor="middle">the account?</text>
+          <path class="w" d="M590 199H658" marker-end="url(#a2)"/>
+          <text class="lbl" x="624" y="191" text-anchor="middle">yes</text>
+          <path class="w" d="M810 199H838" marker-end="url(#a2)"/>
+          <text class="lbl" x="824" y="190" text-anchor="middle">yes</text>
+          <rect class="b" x="840" y="166" width="140" height="66" rx="12"/>
+          <text class="t" x="910" y="190" text-anchor="middle">Check the record</text>
+          <text class="d" x="910" y="208" text-anchor="middle">facts and numbers</text>
+          <text class="d" x="910" y="224" text-anchor="middle">verified</text>
+
+          <path class="w" d="M515 239V298" marker-end="url(#a2)"/>
+          <text class="lbl" x="523" y="273">no</text>
+          <rect class="b" x="430" y="300" width="170" height="58" rx="12"/>
+          <text class="t" x="515" y="325" text-anchor="middle">Answer from policies</text>
+          <text class="d" x="515" y="345" text-anchor="middle">no ride needed</text>
+          <path class="wk" d="M735 239V298" marker-end="url(#a2k)"/>
+          <text class="lbl" x="743" y="273">no</text>
+          <rect class="key" x="650" y="300" width="170" height="58" rx="12"/>
+          <text class="t" x="735" y="325" text-anchor="middle">Ask for the ride ID</text>
+          <text class="d" x="735" y="345" text-anchor="middle">or sign in and pick it</text>
+
+          <rect class="b" x="240" y="388" width="740" height="50" rx="12"/>
+          <text class="t" x="610" y="418" text-anchor="middle">Reply in the chat and on the ticket page</text>
+          <path class="w" d="M515 358V386" marker-end="url(#a2)"/><path class="w" d="M735 358V386" marker-end="url(#a2)"/><path class="w" d="M910 232V386" marker-end="url(#a2)"/>
+          <path class="w" d="M240 413H115V234" marker-end="url(#a2)"/>
+          <text class="lbl" x="123" y="300">writes again,</text>
+          <text class="lbl" x="123" y="316">same conversation</text>
+        </svg>
+      </div>
+      <figcaption>Nothing is guessed from "last night" or an amount: a ride is linked only through its ID, and only if that ride belongs to the sender. Safety reports skip this check and go straight to the Safety team.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 3. Agent journey -->
+  <section id="agent" aria-labelledby="h-agent">
+    <h2 id="h-agent">3. Agent journey</h2>
+    <p>Agents work in the console. The inbox updates live; a conversation shows the evidence and a reply box that already holds the AI's checked suggestion.</p>
+    <figure>
+      <div class="scroll">
+        <svg viewBox="0 0 1000 382" role="img" aria-label="An agent signs in, sees the live inbox, opens a conversation and reads the evidence: why the AI decided, the ride check and the analysis. In the reply box the agent sends the AI suggestion, edits it or writes their own. The customer sees the reply; the agent can mark the conversation as resolved. If the customer writes again, it returns to the inbox's To do list. Administrators also manage the team.">
+          <defs>
+            <marker id="a3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0L10 5L0 10z"/></marker>
+            <marker id="a3d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker>
+          </defs>
+          <rect class="b" x="20" y="40" width="200" height="66" rx="12"/>
+          <text class="t" x="120" y="66" text-anchor="middle">Sign in</text>
+          <text class="d" x="120" y="86" text-anchor="middle">username and password</text>
+          <rect class="b" x="260" y="40" width="200" height="66" rx="12"/>
+          <text class="t" x="360" y="62" text-anchor="middle">Live inbox</text>
+          <text class="d" x="360" y="81" text-anchor="middle">To do, Solved by AI,</text>
+          <text class="d" x="360" y="97" text-anchor="middle">Waiting, Closed</text>
+          <rect class="b" x="500" y="40" width="200" height="66" rx="12"/>
+          <text class="t" x="600" y="66" text-anchor="middle">Open a conversation</text>
+          <text class="d" x="600" y="86" text-anchor="middle">every message, in order</text>
+          <rect class="key" x="740" y="40" width="240" height="66" rx="12"/>
+          <text class="t" x="860" y="62" text-anchor="middle">Read the evidence</text>
+          <text class="d" x="860" y="81" text-anchor="middle">why the AI decided, ride check,</text>
+          <text class="d" x="860" y="97" text-anchor="middle">what it understood</text>
+          <path class="w" d="M220 73H258" marker-end="url(#a3)"/><path class="w" d="M460 73H498" marker-end="url(#a3)"/><path class="w" d="M700 73H738" marker-end="url(#a3)"/>
+
+          <path class="w" d="M860 106V158" marker-end="url(#a3)"/>
+          <rect class="b" x="740" y="160" width="240" height="82" rx="12"/>
+          <text class="t" x="860" y="186" text-anchor="middle">Reply box</text>
+          <text class="d" x="860" y="206" text-anchor="middle">AI suggestion, sources checked</text>
+          <text class="d" x="860" y="224" text-anchor="middle">send, edit, or write your own</text>
+          <path class="w" d="M740 201H602" marker-end="url(#a3)"/>
+          <text class="lbl" x="671" y="193" text-anchor="middle">send reply</text>
+          <rect class="b" x="380" y="160" width="220" height="82" rx="12"/>
+          <text class="t" x="490" y="186" text-anchor="middle">Customer sees it</text>
+          <text class="d" x="490" y="206" text-anchor="middle">chat and ticket page,</text>
+          <text class="d" x="490" y="224" text-anchor="middle">or a forum comment</text>
+          <path class="w" d="M380 201H360V108" marker-end="url(#a3)"/>
+          <text class="lbl" x="352" y="170" text-anchor="end">writes again:</text>
+          <text class="lbl" x="352" y="186" text-anchor="end">back to To do</text>
+          <path class="w" d="M490 242V298" marker-end="url(#a3)"/>
+          <text class="lbl" x="498" y="275">done</text>
+          <rect class="b" x="380" y="300" width="220" height="62" rx="12"/>
+          <text class="t" x="490" y="326" text-anchor="middle">Mark as resolved</text>
+          <text class="d" x="490" y="346" text-anchor="middle">reopens if they write again</text>
+
+          <path class="wd" d="M120 106V258" marker-end="url(#a3d)"/>
+          <text class="lbl" x="128" y="186">administrators</text>
+          <rect class="group" x="20" y="260" width="200" height="66" rx="12"/>
+          <text class="t" x="120" y="286" text-anchor="middle">Team page</text>
+          <text class="d" x="120" y="306" text-anchor="middle">add agents, reset passwords</text>
+        </svg>
+      </div>
+      <figcaption>The AI decides alone only when its answer is verified, low-risk and confident. Money, failed checks and doubt go to "To do"; safety and legal risk are marked Urgent. Once an agent has replied in a conversation, the AI only drafts.</figcaption>
+    </figure>
+  </section>
+
+  <!-- 4. Full pipeline -->
+  <section id="full" aria-labelledby="h-full">
+    <h2 id="h-full">4. Full pipeline</h2>
+    <p>The complete path, with the six processing stages, the data each one reads, the five possible decisions, where each reply is delivered, and the offline research that trained and chose the models.</p>
+    <figure>
+      <div class="scroll">
+        <svg viewBox="0 0 1240 930" role="img" aria-label="Five channels feed the intake, which stores a ticket. Six stages follow: normalize, mask personal data, detect the language, understand with an LLM, a TF-IDF model and risk words, link the ride by its ID on the sender's account with record facts, and respond with policy search, a cited draft and a number verifier. A decision then sends automatically, asks for the ride ID, sends to agent review, escalates, or does not reply. Replies are delivered on the website, through the forum relay, or not by email in this demo; the agent console shows everything live. Offline, the Uber support data and a labelled complaint dataset produced the analyses, the classical model and the automation-gate result.">
+          <defs>
+            <marker id="a4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0L10 5L0 10z"/></marker>
+            <marker id="a4k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahk" d="M0 0L10 5L0 10z"/></marker>
+            <marker id="a4d" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahd" d="M0 0L10 5L0 10z"/></marker>
+          </defs>
+
+          <!-- channels -->
+          <text class="h" x="20" y="34">CHANNELS</text>
+          <rect class="b" x="20" y="48" width="210" height="52" rx="10"/>
+          <text class="t" x="34" y="70">Live chat</text><text class="d" x="34" y="89">website, signed in or not</text>
+          <rect class="b" x="20" y="108" width="210" height="52" rx="10"/>
+          <text class="t" x="34" y="130">Contact form</text><text class="d" x="34" y="149">optional ride ID</text>
+          <rect class="b" x="20" y="168" width="210" height="52" rx="10"/>
+          <text class="t" x="34" y="190">Ride rating</text><text class="d" x="34" y="209">stars and a comment</text>
+          <rect class="b" x="20" y="228" width="210" height="52" rx="10"/>
+          <text class="t" x="34" y="250">Email</text><text class="d" x="34" y="269">inbox polled every 30 s</text>
+          <rect class="b" x="20" y="288" width="210" height="52" rx="10"/>
+          <text class="t" x="34" y="310">Community forum</text><text class="d" x="34" y="329">GitHub Discussions relay</text>
+          <path class="w" d="M230 74H268" marker-end="url(#a4)"/><path class="w" d="M230 134H268" marker-end="url(#a4)"/><path class="w" d="M230 194H268" marker-end="url(#a4)"/><path class="w" d="M230 254H268" marker-end="url(#a4)"/><path class="w" d="M230 314H268" marker-end="url(#a4)"/>
+
+          <!-- intake -->
+          <rect class="b" x="270" y="48" width="160" height="292" rx="12"/>
+          <text class="t" x="350" y="78" text-anchor="middle">Intake</text>
+          <text class="d" x="350" y="106" text-anchor="middle">ticket created</text>
+          <text class="d" x="350" y="124" text-anchor="middle">rate-limited</text>
+          <text class="d" x="350" y="142" text-anchor="middle">30 per hour per IP</text>
+          <text class="d" x="350" y="160" text-anchor="middle">stored in SQLite</text>
+          <text class="d" x="350" y="196" text-anchor="middle">follow-ups join</text>
+          <text class="d" x="350" y="214" text-anchor="middle">the same ticket;</text>
+          <text class="d" x="350" y="232" text-anchor="middle">the stages run again</text>
+          <text class="d" x="350" y="250" text-anchor="middle">on the whole</text>
+          <text class="d" x="350" y="268" text-anchor="middle">conversation</text>
+          <path class="w" d="M430 98H468" marker-end="url(#a4)"/>
+
+          <!-- stages, row A -->
+          <text class="h" x="470" y="34">SIX STAGES, TRACED ONE BY ONE</text>
+          <rect class="b" x="470" y="48" width="230" height="100" rx="12"/>
+          <text class="t" x="486" y="74">1  Normalize</text>
+          <text class="d" x="486" y="98">quoted replies and email</text>
+          <text class="d" x="486" y="116">signatures removed</text>
+          <rect class="b" x="730" y="48" width="230" height="100" rx="12"/>
+          <text class="t" x="746" y="74">2  Mask personal data</text>
+          <text class="d" x="746" y="98">emails, phones, card numbers</text>
+          <text class="d" x="746" y="116">before storage and the LLM</text>
+          <rect class="b" x="990" y="48" width="230" height="100" rx="12"/>
+          <text class="t" x="1006" y="74">3  Language</text>
+          <text class="d" x="1006" y="98">py3langid: English or French</text>
+          <text class="d" x="1006" y="116">other languages: to an agent</text>
+          <path class="w" d="M700 98H728" marker-end="url(#a4)"/><path class="w" d="M960 98H988" marker-end="url(#a4)"/>
+          <path class="w" d="M1105 148V169H585V188" marker-end="url(#a4)"/>
+
+          <!-- stages, row B -->
+          <rect class="b" x="470" y="190" width="230" height="100" rx="12"/>
+          <text class="t" x="486" y="216">4  Understand</text>
+          <text class="d" x="486" y="240">LLM labels type, topic,</text>
+          <text class="d" x="486" y="258">severity, risk, summary;</text>
+          <text class="d" x="486" y="276">TF-IDF model and risk words</text>
+          <rect class="key" x="730" y="190" width="230" height="100" rx="12"/>
+          <text class="t" x="746" y="216">5  Link the ride</text>
+          <text class="d" x="746" y="240">ride ID on the sender's</text>
+          <text class="d" x="746" y="258">account, or none; facts</text>
+          <text class="d" x="746" y="276">F1, F2 computed by code</text>
+          <rect class="b" x="990" y="190" width="230" height="100" rx="12"/>
+          <text class="t" x="1006" y="216">6  Respond</text>
+          <text class="d" x="1006" y="240">policy search (dense, int8)</text>
+          <text class="d" x="1006" y="258">cited draft by the LLM;</text>
+          <text class="d" x="1006" y="276">every number verified</text>
+          <path class="w" d="M700 240H728" marker-end="url(#a4)"/><path class="w" d="M960 240H988" marker-end="url(#a4)"/>
+
+          <!-- data stores -->
+          <rect class="b" x="470" y="330" width="230" height="50" rx="10"/>
+          <text class="t" x="585" y="352" text-anchor="middle">LLM: gpt-oss-120b</text><text class="d" x="585" y="370" text-anchor="middle">Groq, open weights</text>
+          <rect class="b" x="730" y="330" width="230" height="50" rx="10"/>
+          <text class="t" x="845" y="352" text-anchor="middle">Accounts and rides</text><text class="d" x="845" y="370" text-anchor="middle">synthetic company records</text>
+          <rect class="b" x="990" y="330" width="230" height="50" rx="10"/>
+          <text class="t" x="1105" y="352" text-anchor="middle">Policy knowledge base</text><text class="d" x="1105" y="370" text-anchor="middle">30 sections, EN and FR</text>
+          <path class="wd" d="M585 328V293" marker-end="url(#a4d)"/><path class="wd" d="M845 328V293" marker-end="url(#a4d)"/><path class="wd" d="M1105 328V293" marker-end="url(#a4d)"/>
+          <path class="wd" d="M700 355H720V300H1040V293" marker-end="url(#a4d)"/>
+          <text class="lbl" x="880" y="314">the LLM also writes the draft</text>
+
+          <!-- decision -->
+          <path class="w" d="M1220 240H1232V445H1222" marker-end="url(#a4)"/>
+          <rect class="frame" x="270" y="420" width="950" height="50" rx="12"/>
+          <text class="t" x="745" y="451" text-anchor="middle">Decision: fixed rules first, then confidence of at least 0.7</text>
+          <path class="w" d="M358 470V508" marker-end="url(#a4)"/><path class="w" d="M552 470V508" marker-end="url(#a4)"/><path class="w" d="M746 470V508" marker-end="url(#a4)"/><path class="w" d="M940 470V508" marker-end="url(#a4)"/><path class="w" d="M1134 470V508" marker-end="url(#a4)"/>
+
+          <rect class="b" x="270" y="510" width="176" height="80" rx="12"/>
+          <text class="t" x="358" y="536" text-anchor="middle">Send automatically</text>
+          <text class="d" x="358" y="558" text-anchor="middle">verified, low risk,</text>
+          <text class="d" x="358" y="575" text-anchor="middle">confident</text>
+          <rect class="key" x="464" y="510" width="176" height="80" rx="12"/>
+          <text class="t" x="552" y="536" text-anchor="middle">Ask for the ride ID</text>
+          <text class="d" x="552" y="558" text-anchor="middle">ride problem without</text>
+          <text class="d" x="552" y="575" text-anchor="middle">a valid ride ID</text>
+          <rect class="b" x="658" y="510" width="176" height="80" rx="12"/>
+          <text class="t" x="746" y="536" text-anchor="middle">Agent review</text>
+          <text class="d" x="746" y="558" text-anchor="middle">money, a failed check,</text>
+          <text class="d" x="746" y="575" text-anchor="middle">or doubt</text>
+          <rect class="b" x="852" y="510" width="176" height="80" rx="12"/>
+          <text class="t" x="940" y="536" text-anchor="middle">Escalate</text>
+          <text class="d" x="940" y="558" text-anchor="middle">safety, injury, harm,</text>
+          <text class="d" x="940" y="575" text-anchor="middle">legal, severity 4</text>
+          <rect class="b" x="1046" y="510" width="176" height="80" rx="12"/>
+          <text class="t" x="1134" y="536" text-anchor="middle">No reply</text>
+          <text class="d" x="1134" y="558" text-anchor="middle">spam, or nothing</text>
+          <text class="d" x="1134" y="575" text-anchor="middle">to answer</text>
+
+          <!-- delivery -->
+          <path class="w" d="M358 590V638" marker-end="url(#a4)"/><path class="w" d="M552 590V638" marker-end="url(#a4)"/>
+          <path class="w" d="M746 590V638" marker-end="url(#a4)"/><path class="w" d="M940 590V638" marker-end="url(#a4)"/><path class="w" d="M1134 590V638" marker-end="url(#a4)"/>
+          <rect class="b" x="270" y="640" width="350" height="76" rx="12"/>
+          <text class="t" x="286" y="664">Delivered to the customer</text>
+          <text class="d" x="286" y="686">website: chat and ticket page; forum:</text>
+          <text class="d" x="286" y="704">through the relay; email: receive only</text>
+          <rect class="b" x="680" y="640" width="542" height="76" rx="12"/>
+          <text class="t" x="696" y="664">Agent console, updated live</text>
+          <text class="d" x="696" y="686">inbox, conversation, ride check, reply box; the agent sends,</text>
+          <text class="d" x="696" y="704">edits or writes, then resolves; administrators manage the team</text>
+          <path class="w" d="M680 678H622" marker-end="url(#a4)"/>
+          <text class="lbl" x="651" y="670" text-anchor="middle">reply</text>
+          <path class="w" d="M270 690H250V332H268" marker-end="url(#a4)"/>
+          <text class="lbl" x="244" y="520" text-anchor="middle" transform="rotate(-90 244 520)">customer writes again</text>
+
+          <!-- offline research -->
+          <rect class="group" x="20" y="760" width="1202" height="150" rx="16"/>
+          <text class="h" x="40" y="790">OFFLINE RESEARCH, NOT IN THE LIVE PATH</text>
+          <rect class="b" x="40" y="808" width="250" height="80" rx="12"/>
+          <text class="t" x="56" y="834">Customer Support on Twitter</text>
+          <text class="d" x="56" y="856">Uber, rides only: 37,065</text>
+          <text class="d" x="56" y="873">real support conversations</text>
+          <rect class="b" x="330" y="808" width="250" height="80" rx="12"/>
+          <text class="t" x="346" y="834">Analyses</text>
+          <text class="d" x="346" y="856">topics, incidents, the gold</text>
+          <text class="d" x="346" y="873">sample, the Insights page</text>
+          <path class="w" d="M290 848H328" marker-end="url(#a4)"/>
+          <rect class="b" x="640" y="808" width="250" height="80" rx="12"/>
+          <text class="t" x="656" y="834">Complaints on Twitter 2019</text>
+          <text class="d" x="656" y="856">3,449 tweets labelled by</text>
+          <text class="d" x="656" y="873">experts, with severity</text>
+          <rect class="b" x="930" y="808" width="272" height="80" rx="12"/>
+          <text class="t" x="946" y="834">Classical model and gate</text>
+          <text class="d" x="946" y="856">TF-IDF (F1 81.5) runs in stage 4;</text>
+          <text class="d" x="946" y="873">gate: 37% automated at 10% error</text>
+          <path class="w" d="M890 848H928" marker-end="url(#a4)"/>
+        </svg>
+      </div>
+      <figcaption>Every stage's output, duration and decision is stored and shown in the console, so each answer can be traced. Live, the decision uses fixed rules and a confidence threshold; the statistical automation gate (Learn-then-Test) is evaluated offline on labelled data (37% of messages automated at a guaranteed 10% error bound).</figcaption>
+    </figure>
+  </section>
+
+  <footer>
+    <p>Live: LunaGo website <a href="https://kirazul.github.io/ComplainLens/">kirazul.github.io/ComplainLens</a>, staff console <a href="https://kirazul.github.io/ComplainLens/console/">/console</a>, code <a href="https://github.com/Kirazul/ComplainLens">github.com/Kirazul/ComplainLens</a>.</p>
+    <p>ComplaintLens, a university NLP project by Mohamed Aziz Mansour and Rimel Zouari.</p>
+  </footer>
+</div>
+
+</body>
+</html>

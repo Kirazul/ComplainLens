@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="462" viewBox="0 0 1000 462" role="img" aria-label="Customers with an account sign in, book rides and open help on a ride, which attaches its ID. Anyone can write a message; the AI reads it. If it is not about one ride, the answer comes from the policies. If it is, the ride ID must be on the customer's account; then the record is checked, otherwise the AI asks for the ride ID. Every outcome is a reply in the chat and on the ticket page, and the customer can write again in the same conversation.">
+          <style>/* Diagram vocabulary (classes, so both themes come from the tokens). */
+.b { fill: #ffffff; stroke: #b9b3e6; stroke-width: 1.5; }
+.key { fill: #fdedd3; stroke: #a85f05; stroke-width: 2; }
+.group { fill: none; stroke: #b9b3e6; stroke-width: 1.5; stroke-dasharray: 6 5; }
+.frame { fill: #eeecfa; stroke: #b9b3e6; stroke-width: 1.5; }
+.t { fill: #1e1b4b; font-size: 14px; font-weight: 600; }
+.d { fill: #59567a; font-size: 12px; }
+.lbl { fill: #59567a; font-size: 11.5px; font-style: italic; }
+.h { fill: #1e1b4b; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; }
+.w { fill: none; stroke: #1e1b4b; stroke-width: 1.6; }
+.wk { fill: none; stroke: #a85f05; stroke-width: 2; }
+.wd { fill: none; stroke: #59567a; stroke-width: 1.4; stroke-dasharray: 5 4; }
+.ah { fill: #1e1b4b; }
+.ahk { fill: #a85f05; }
+.ahd { fill: #59567a; }
+ text { font-family: "IBM Plex Sans", "Segoe UI", Arial, sans-serif; }</style><rect width="100%" height="100%" fill="#eeecfa"/><defs>
+            <marker id="a2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0 0L10 5L0 10z"/></marker>
+            <marker id="a2k" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahk" d="M0 0L10 5L0 10z"/></marker>
+          </defs>
+          <text class="h" x="20" y="28">WITH AN ACCOUNT (OPTIONAL)</text>
+          <rect class="b" x="20" y="40" width="190" height="58" rx="12"/>
+          <text class="t" x="115" y="65" text-anchor="middle">Sign up or sign in</text>
+          <text class="d" x="115" y="85" text-anchor="middle">email and password</text>
+          <rect class="b" x="240" y="40" width="190" height="58" rx="12"/>
+          <text class="t" x="335" y="65" text-anchor="middle">Book a ride</text>
+          <text class="d" x="335" y="85" text-anchor="middle">places, time, upfront price</text>
+          <rect class="b" x="460" y="40" width="190" height="58" rx="12"/>
+          <text class="t" x="555" y="65" text-anchor="middle">Your rides</text>
+          <text class="d" x="555" y="85" text-anchor="middle">ride ID and receipt</text>
+          <rect class="key" x="680" y="40" width="190" height="58" rx="12"/>
+          <text class="t" x="775" y="65" text-anchor="middle">Get help with a ride</text>
+          <text class="d" x="775" y="85" text-anchor="middle">chat opens, ID attached</text>
+          <path class="w" d="M210 69H238" marker-end="url(#a2)"/><path class="w" d="M430 69H458" marker-end="url(#a2)"/><path class="w" d="M650 69H678" marker-end="url(#a2)"/>
+          <path class="wk" d="M775 98V124H115V164" marker-end="url(#a2k)"/>
+          <text class="lbl" x="445" y="117" text-anchor="middle">the ride ID travels with the message</text>
+
+          <text class="h" x="140" y="152">ANYONE, FROM ANY CHANNEL</text>
+          <rect class="b" x="20" y="166" width="190" height="66" rx="12"/>
+          <text class="t" x="115" y="190" text-anchor="middle">Write a message</text>
+          <text class="d" x="115" y="208" text-anchor="middle">chat, form, rating,</text>
+          <text class="d" x="115" y="224" text-anchor="middle">email or forum</text>
+          <rect class="b" x="240" y="166" width="170" height="66" rx="12"/>
+          <text class="t" x="325" y="190" text-anchor="middle">The AI reads it</text>
+          <text class="d" x="325" y="208" text-anchor="middle">type, topic, risk,</text>
+          <text class="d" x="325" y="224" text-anchor="middle">language</text>
+          <path class="w" d="M210 199H238" marker-end="url(#a2)"/><path class="w" d="M410 199H438" marker-end="url(#a2)"/>
+
+          <path class="b" d="M440 199L515 159L590 199L515 239Z"/>
+          <text class="t" x="515" y="196" text-anchor="middle">About</text>
+          <text class="t" x="515" y="213" text-anchor="middle">one ride?</text>
+          <path class="key" d="M660 199L735 159L810 199L735 239Z"/>
+          <text class="t" x="735" y="196" text-anchor="middle">Ride ID on</text>
+          <text class="t" x="735" y="213" text-anchor="middle">the account?</text>
+          <path class="w" d="M590 199H658" marker-end="url(#a2)"/>
+          <text class="lbl" x="624" y="191" text-anchor="middle">yes</text>
+          <path class="w" d="M810 199H838" marker-end="url(#a2)"/>
+          <text class="lbl" x="824" y="190" text-anchor="middle">yes</text>
+          <rect class="b" x="840" y="166" width="140" height="66" rx="12"/>
+          <text class="t" x="910" y="190" text-anchor="middle">Check the record</text>
+          <text class="d" x="910" y="208" text-anchor="middle">facts and numbers</text>
+          <text class="d" x="910" y="224" text-anchor="middle">verified</text>
+
+          <path class="w" d="M515 239V298" marker-end="url(#a2)"/>
+          <text class="lbl" x="523" y="273">no</text>
+          <rect class="b" x="430" y="300" width="170" height="58" rx="12"/>
+          <text class="t" x="515" y="325" text-anchor="middle">Answer from policies</text>
+          <text class="d" x="515" y="345" text-anchor="middle">no ride needed</text>
+          <path class="wk" d="M735 239V298" marker-end="url(#a2k)"/>
+          <text class="lbl" x="743" y="273">no</text>
+          <rect class="key" x="650" y="300" width="170" height="58" rx="12"/>
+          <text class="t" x="735" y="325" text-anchor="middle">Ask for the ride ID</text>
+          <text class="d" x="735" y="345" text-anchor="middle">or sign in and pick it</text>
+
+          <rect class="b" x="240" y="388" width="740" height="50" rx="12"/>
+          <text class="t" x="610" y="418" text-anchor="middle">Reply in the chat and on the ticket page</text>
+          <path class="w" d="M515 358V386" marker-end="url(#a2)"/><path class="w" d="M735 358V386" marker-end="url(#a2)"/><path class="w" d="M910 232V386" marker-end="url(#a2)"/>
+          <path class="w" d="M240 413H115V234" marker-end="url(#a2)"/>
+          <text class="lbl" x="123" y="300">writes again,</text>
+          <text class="lbl" x="123" y="316">same conversation</text>
+        </svg>
