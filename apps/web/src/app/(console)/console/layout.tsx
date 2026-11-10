@@ -22,26 +22,32 @@ export default function ConsoleLayout({ children }: LayoutProps<"/console">) {
     <html lang="en" className={plex.variable}>
       <body className="console min-h-screen bg-desk font-plex text-ink [font-variant-numeric:tabular-nums]">
         <header className="border-b border-line bg-white">
+          {/* Phones: brand and sign-in on the first row, links on a second row that never wraps
+              (a fixed height, whatever the font). Desktop: one row. */}
           <nav
             aria-label="Console"
-            className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-6 gap-y-2 px-5 py-3"
+            className="mx-auto grid max-w-7xl grid-cols-[1fr_auto] items-center gap-x-6 gap-y-2 px-5 py-3 md:flex"
           >
-            <Link href="/console" className="mr-auto text-lg font-semibold tracking-tight">
+            <Link href="/console" className="text-lg font-semibold tracking-tight md:mr-auto">
               ComplaintLens <span className="font-normal text-muted">for LunaGo</span>
             </Link>
-            <Link href="/console" className="text-sm hover:text-sent">
-              Inbox
-            </Link>
-            <Link href="/console/insights" className="text-sm hover:text-sent">
-              Insights
-            </Link>
-            <Link href="/console/annotate" className="text-sm hover:text-sent">
-              Annotate
-            </Link>
-            <Link href="/en" className="text-sm hover:text-sent">
-              Customer site
-            </Link>
-            <OperatorControl />
+            <div className="col-span-2 row-start-2 flex gap-6 overflow-x-auto whitespace-nowrap text-sm md:order-none">
+              <Link href="/console" className="hover:text-sent">
+                Inbox
+              </Link>
+              <Link href="/console/insights" className="hover:text-sent">
+                Insights
+              </Link>
+              <Link href="/console/annotate" className="hover:text-sent">
+                Annotate
+              </Link>
+              <Link href="/en" className="hover:text-sent">
+                Customer site
+              </Link>
+            </div>
+            <div className="col-start-2 row-start-1">
+              <OperatorControl />
+            </div>
           </nav>
         </header>
         {children}

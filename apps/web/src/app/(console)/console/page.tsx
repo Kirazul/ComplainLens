@@ -7,7 +7,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { ChannelMark } from "@/components/console/channel";
 import { humanize, StatusPill } from "@/components/console/status";
 import { useEvents } from "@/components/console/use-events";
-import { api, FORUM_URL, type Health, type Stats, type TicketSummary } from "@/lib/api";
+import { api, FORUM_URL, SUPPORT_EMAIL, type Health, type Stats, type TicketSummary } from "@/lib/api";
 
 const EXAMPLES = [
   "J'ai été facturé deux fois pour ma course d'hier soir !",
@@ -153,7 +153,8 @@ export default function InboxPage() {
 
   const total = stats?.tickets ?? 0;
   const auto = stats?.by_status.auto_send ?? 0;
-  const email = health?.email.enabled ? health.email.address : null;
+  // The address is known before the health check answers: showing it at once avoids a layout shift.
+  const email = health?.email.enabled === false ? null : (health?.email.address ?? SUPPORT_EMAIL);
 
   return (
     <main className="mx-auto max-w-7xl px-5 py-8">
