@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState, useSyncExternalStore, type KeyboardEvent } from "react";
 
+import { useOperator } from "@/components/console/operator";
 import { humanize } from "@/components/console/status";
-import { api, type Agreement, type AnnotationItem, type AnnotationProgress, type GoldLabels } from "@/lib/api";
+import { api, ApiError, type Agreement, type AnnotationItem, type AnnotationProgress, type GoldLabels } from "@/lib/api";
 
 // Field values mirror eval/annotation_guidelines.md (and the backend's Labels model).
 const TYPES = ["complaint", "request", "feedback", "praise", "spam_or_irrelevant"];
@@ -84,6 +85,11 @@ export default function AnnotatePage() {
   const [error, setError] = useState<string | null>(null);
   const [frText, setFrText] = useState("");
   const [version, setVersion] = useState(0);
+  const { state: operator } = useOperator();
+  const explain = (e: unknown) =>
+    e instanceof ApiError && e.status === 401
+      ? "Saving needs agent sign-in (top right): labels are part of the evaluation, so only the team can write them."
+      : (e as Error).message;
 
   useEffect(() => {
     if (annotator.trim().length < 2) return;
@@ -114,7 +120,7 @@ export default function AnnotatePage() {
       });
       setVersion((v) => v + 1);
     } catch (e) {
-      setError((e as Error).message);
+      setError(explain(e));
     }
   }, [annotator, item, labels]);
 
@@ -153,6 +159,11 @@ export default function AnnotatePage() {
         Follow eval/annotation_guidelines.md. Save with the button or Ctrl+Enter.
         {total > 0 && ` You have labelled ${done} of ${total} items in this set.`}
       </p>
+      {operator === "viewer" && (
+        <p className="mt-3 rounded-lg bg-amber-50 px-4 py-2 text-sm text-review">
+          You can browse the messages, but saving labels needs agent sign-in (top right).
+        </p>
+      )}
       {error && <p role="alert" className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-escalated">{error}</p>}
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_22rem]">
@@ -284,7 +295,7 @@ export default function AnnotatePage() {
                   setFrText("");
                   setVersion((v) => v + 1);
                 } catch (e) {
-                  setError((e as Error).message);
+                  setError(explain(e));
                 }
               }}
               className="mt-2 rounded-lg border border-line px-3 py-1.5 text-sm font-semibold disabled:opacity-50">
