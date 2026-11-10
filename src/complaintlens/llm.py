@@ -34,13 +34,32 @@ class OpenAICompatibleClient:
 
         s = settings or get_settings()
         self.model = s.llm_model
-        self._client = OpenAI(base_url=s.llm_base_url, api_key=s.llm_api_key or "none", timeout=60)
+        self.reasoning_effort = s.llm_reasoning_effort if "gpt-oss" in s.llm_model else None
+        # max_retries: the SDK backs off on 429 (rate limit) honouring the server's retry-after,
+        # which keeps us inside the free tier's tokens-per-minute budget instead of failing.
+        self._client = OpenAI(
+            base_url=s.llm_base_url, api_key=s.llm_api_key or "none", timeout=60, max_retries=5
+        )
 
     def chat(self, messages: list[dict[str, str]], temperature: float, json_mode: bool) -> str:
-        kwargs = {"response_format": {"type": "json_object"}} if json_mode else {}
-        resp = self._client.chat.completions.create(
-            model=self.model, messages=messages, temperature=temperature, **kwargs
-        )
+        kwargs: dict = {"response_format": {"type": "json_object"}} if json_mode else {}
+        if self.reasoning_effort:
+            kwargs["reasoning_effort"] = self.reasoning_effort
+        from openai import BadRequestError
+
+        try:
+            resp = self._client.chat.completions.create(
+                model=self.model, messages=messages, temperature=temperature, **kwargs
+            )
+        except BadRequestError as exc:
+            # In JSON mode Groq rejects invalid JSON with HTTP 400 ("json_validate_failed") instead
+            # of returning it. Hand the failed text back so complete_json's retry logic handles it
+            # like any other malformed answer.
+            body = exc.body if isinstance(exc.body, dict) else {}
+            error = body.get("error", body) if isinstance(body, dict) else {}
+            if isinstance(error, dict) and error.get("code") == "json_validate_failed":
+                return str(error.get("failed_generation") or "")
+            raise
         return resp.choices[0].message.content or ""
 
 

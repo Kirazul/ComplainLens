@@ -66,10 +66,28 @@ def test_verify_accepts_supported_numbers_and_rejects_invented_ones(kb):
     v = verify(bad, hits, FACTS)
     assert v["supported"] is False and v["unsupported_numbers"] == [7.0]
 
-    # Known limitation (documented): a wrong number that happens to appear in a cited source
-    # ("charged 2 times" in F3) passes number matching; claim-level NLI verification addresses it.
-    lucky = good.model_copy(update={"reply": good.reply.replace("5 to 10", "2")})
-    assert verify(lucky, hits, FACTS)["supported"] is True
+    # Sentence-level checking: "2" exists in fact F3, but this sentence cites HC-FARES#4, which
+    # has no "2", so it is caught (it passed with the earlier reply-level check).
+    other_source = good.model_copy(update={"reply": good.reply.replace("5 to 10", "2")})
+    assert verify(other_source, hits, FACTS)["unsupported_numbers"] == [2.0]
+
+    # Remaining known limitation: a wrong number that appears in the SAME cited section passes
+    # ("3" comes from "3 to 5 business days" for holds); claim-level NLI checking would catch it.
+    same_source = good.model_copy(update={"reply": good.reply.replace("5 to 10", "3")})
+    assert verify(same_source, hits, FACTS)["supported"] is True
+
+    # Dates are checked against the record's dates (F1 is on 2026-11-06), whatever is cited.
+    dated = Draft(reply="Votre course du 6 novembre a été facturée deux fois [F3].", confidence=0.9)
+    assert verify(dated, hits, FACTS)["supported"] is True
+    wrong_day = Draft(
+        reply="Votre course du 8 novembre a été facturée deux fois [F3].", confidence=0.9
+    )
+    assert verify(wrong_day, hits, FACTS)["unsupported_numbers"] == [8.0]
+
+    # An uncited sentence must still use numbers present in the given sources.
+    uncited = Draft(reply="Refunds take 5 to 10 business days.", citations=[], confidence=0.9)
+    v = verify(uncited, hits, FACTS)
+    assert v["supported"] is True and v["citation_coverage"] == 0.0
 
     fake_cite = good.model_copy(update={"citations": ["HC-NOPE#1"]})
     assert verify(fake_cite, hits, FACTS)["unknown_citations"] == ["HC-NOPE#1"]

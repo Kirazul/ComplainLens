@@ -1,0 +1,36 @@
+{
+  "questions": 70,
+  "llm": "openai/gpt-oss-120b",
+  "variants": {
+    "dense_text": {
+      "mrr@10": 0.62,
+      "recall@1": 0.5,
+      "recall@3": 0.7
+    },
+    "bm25_text": {
+      "mrr@10": 0.492,
+      "recall@1": 0.4,
+      "recall@3": 0.529
+    },
+    "dense_summary": {
+      "mrr@10": 0.654,
+      "recall@1": 0.529,
+      "recall@3": 0.743
+    },
+    "bm25_summary": {
+      "mrr@10": 0.498,
+      "recall@1": 0.386,
+      "recall@3": 0.571
+    },
+    "rrf_dense_text+dense_summary": {
+      "mrr@10": 0.664,
+      "recall@1": 0.557,
+      "recall@3": 0.7
+    },
+    "rrf_dense_text+dense_summary+bm25_summary": {
+      "mrr@10": 0.631,
+      "recall@1": 0.514,
+      "recall@3": 0.686
+    }
+  }
+}

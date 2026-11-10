@@ -26,7 +26,7 @@ from complaintlens.llm import ChatClient, complete_json
 from complaintlens.pipeline.base import Context
 from complaintlens.pipeline.understand import Analysis
 from complaintlens.rag.knowledge import Hit, KnowledgeBase
-from complaintlens.rag.retrieval import BM25Retriever, Retriever
+from complaintlens.rag.retrieval import BM25Retriever, Retriever, search_with_summary
 from complaintlens.schemas import Action, Category, MessageType, RiskFlag, StageResult, Urgency
 from complaintlens.settings import get_settings
 
@@ -97,23 +97,77 @@ def _numbers(text: str) -> set[float]:
 
 
 def verify(draft: Draft, hits: list[Hit], facts: list[dict[str, str]]) -> dict[str, object]:
+    """Two separate checks.
+
+    Grounding (gates sending): every number in the reply must appear in a source the model was
+    given (retrieved Help Center sections or record facts), and every citation must exist.
+    Citation coverage (quality, reported): share of the reply's numbers whose *cited* source
+    contains them. Models sometimes state correct, sourced facts without citing them; that is a
+    presentation weakness, not a hallucination, so it does not block the reply on its own.
+    """
     sources = {h.chunk.id: h.chunk.indexed_text for h in hits} | {f["id"]: f["text"] for f in facts}
     cited = set(draft.citations) | set(_CITATION.findall(draft.reply))
     unknown = sorted(c for c in cited if c not in sources)
-    supported_numbers: set[float] = set()
-    for c in cited & sources.keys():
-        supported_numbers |= _numbers(sources[c])
-    reply_wo_citations = _CITATION.sub("", draft.reply)
-    claimed = _numbers(reply_wo_citations)
-    unsupported = sorted(n for n in claimed if n not in supported_numbers)
-    ok = not unknown and not unsupported and (bool(cited) or not claimed)
+    available: set[float] = set()
+    for text in sources.values():
+        available |= _numbers(text)
+    # Sentence level: a sentence that cites sources must take its numbers from THOSE sources (so a
+    # wrong number cannot hide behind an unrelated section); an uncited sentence must at least use
+    # numbers present somewhere in the sources, and lowers the citation coverage.
+    # Dates ("9 novembre", "Nov 9") are checked against the dates of the customer's record, not
+    # against policy numbers: a day number is a date, not an amount.
+    fact_days = {float(d) for f in facts for d in _ISO_DAY.findall(f["text"])}
+    claimed: set[float] = set()
+    unsupported: set[float] = set()
+    covered = 0
+    for sentence in _sentences(draft.reply):
+        days = {float(d) for pair in _DATE_MENTION.findall(sentence) for d in pair if d}
+        unsupported |= {d for d in days if d not in fact_days}
+        claimed |= days
+        numbers = _numbers(_DATE_MENTION.sub(" ", _CITATION.sub("", sentence)))
+        if not numbers:
+            continue
+        claimed |= numbers
+        refs = [c for c in _CITATION.findall(sentence) if c in sources]
+        if refs:
+            allowed: set[float] = set().union(*(_numbers(sources[c]) for c in refs))
+            covered += 1
+        else:
+            allowed = available
+        unsupported |= {n for n in numbers if n not in allowed}
+    with_numbers = sum(1 for s in _sentences(draft.reply) if _numbers(_CITATION.sub("", s)))
     return {
-        "supported": ok,
+        "supported": not unknown and not unsupported,
         "citations": sorted(cited),
         "unknown_citations": unknown,
         "numbers_checked": len(claimed),
-        "unsupported_numbers": unsupported,
+        "unsupported_numbers": sorted(unsupported),
+        "citation_coverage": round(covered / with_numbers, 2) if with_numbers else 1.0,
     }
+
+
+_MONTHS = (
+    "january|february|march|april|may|june|july|august|september|october|november|december|"
+    "jan|feb|mar|apr|jun|jul|aug|sep|sept|oct|nov|dec|"
+    "janvier|février|fevrier|mars|avril|mai|juin|juillet|août|aout|septembre|octobre|"
+    "novembre|décembre|decembre"
+)
+_DATE_MENTION = re.compile(
+    rf"\b(\d{{1,2}})(?:er)?\s+(?:{_MONTHS})\b|\b(?:{_MONTHS})\.?\s+(\d{{1,2}})\b", re.IGNORECASE
+)
+_ISO_DAY = re.compile(r"\b\d{4}-\d{2}-(\d{2})\b")
+
+_SENTENCE_END = re.compile(r"(?<=[.!?])\s+(?=[^\[])|\n+")
+
+
+def _sentences(text: str) -> list[str]:
+    """Split into sentences, keeping a citation that follows the full stop with its sentence."""
+    return [s for s in _SENTENCE_END.split(text) if s.strip()]
+
+
+def clean_reply(text: str) -> str:
+    """Models occasionally emit escaped newlines ("\\n") inside JSON strings: make them real."""
+    return text.replace("\\n", "\n").strip()
 
 
 # --- templates (no LLM): safe acknowledgements --------------------------------------------------
@@ -205,11 +259,12 @@ def draft_reply(
         "food. Write the reply to the customer.\n"
         "STRICT RULES:\n"
         "1. Use ONLY information from SOURCES. Never invent policies, amounts, delays or facts.\n"
-        "2. After every sentence that states a policy or a fact, cite its source in brackets, "
-        "e.g. [HC-FARES#4] or [F3].\n"
+        "2. After EVERY sentence that states a policy or a fact, put its source ID in square "
+        'brackets, and list the same IDs in `citations`. Example: "Your ride was charged twice, '
+        '$16.42 each time [F4]. Refunds take 5 to 10 business days [HC-FARES#4]."\n'
         "3. Never promise money. If a refund/credit/fee waiver is justified by policy and record, "
-        "say that you have asked the Billing team to approve it, and set proposed_action and "
-        "action_amount.\n"
+        f"say that you have asked the {team_label('Billing', lang)} team to approve it, and set "
+        "proposed_action and action_amount.\n"
         "4. If the record does not show the trip or the facts needed, ask one precise question "
         "(proposed_action=ask_information).\n"
         f"5. Write in {language}, warm and concise (max 130 words), greet the customer (by name "
@@ -225,7 +280,9 @@ def draft_reply(
         f"Analysis: {analysis.summary} Goal: {analysis.customer_goal}\n"
         f"Customer message:\n<<<\n{text}\n>>>\n\nSOURCES:\n{_sources_block(hits, facts)}"
     )
-    return complete_json(client, system, user, Draft, temperature=0.2)
+    draft = complete_json(client, system, user, Draft, temperature=0.2)
+    draft.reply = clean_reply(draft.reply)
+    return draft
 
 
 # --- the stage ---------------------------------------------------------------------------------
@@ -263,10 +320,13 @@ def respond_stage(ctx: Context) -> StageResult:
     else:
         kb: KnowledgeBase = ctx["kb"]
         retriever: Retriever = ctx.get("retriever") or BM25Retriever(kb)
-        # The customer's own words, in their language: the English LLM summary is NOT mixed in,
-        # since English words would dilute a French keyword index (the retrieval test set,
-        # eval/retrieval_questions.jsonl, measures retrieval on customer wording).
-        hits = retriever.search(ctx["text_masked"], lang if lang in ("en", "fr") else "en", k=4)
+        # Customer's words (their language) fused with the LLM's English summary (same sections,
+        # mapped back to their language): MRR 0.664 vs 0.620 on the development questions
+        # (reports/results/retrieval_summary.json). Without an LLM, the text alone is used.
+        llm_summary = analysis.summary if ctx.get("llm") else None
+        hits = search_with_summary(
+            retriever, kb, ctx["text_masked"], llm_summary, lang if lang in ("en", "fr") else "en"
+        )
         client: ChatClient | None = ctx.get("llm")
         if client is None:
             action, kind = Action.AWAITING_APPROVAL, "acknowledgement"

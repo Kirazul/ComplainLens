@@ -22,7 +22,11 @@ class Settings(BaseSettings):
     # LLM: any OpenAI-compatible endpoint (Groq by default, or local Ollama).
     llm_base_url: str = "https://api.groq.com/openai/v1"
     llm_api_key: str = ""
-    llm_model: str = "llama-3.3-70b-versatile"
+    # Chosen 2026-11-10 among the models this Groq key can use (gpt-oss-120b, gpt-oss-20b,
+    # qwen3.8-27b; all 1,000 requests/day, 8,000 tokens/min): most complete structured output in a
+    # side-by-side test, ~1 s per call. Open weights, so results stay reproducible.
+    llm_model: str = "openai/gpt-oss-120b"
+    llm_reasoning_effort: str = "low"  # gpt-oss reasoning budget: fast and cheap in tokens
     llm_cache_dir: Path = ROOT / "data" / "cache" / "llm"
 
     # Retrieval: "dense", "hybrid" (BM25 + dense, RRF) or "bm25". Chosen on the development

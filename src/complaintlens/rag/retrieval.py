@@ -95,6 +95,31 @@ def reciprocal_rank_fusion(rankings: Iterable[list[Hit]], k: int = RRF_K) -> lis
     return [Hit(chunks[key], round(scores[key], 5)) for key in ordered]
 
 
+def search_with_summary(
+    retriever: Retriever,
+    kb: KnowledgeBase,
+    text: str,
+    summary: str | None,
+    lang: str,
+    k: int = 4,
+) -> list[Hit]:
+    """Fuse a search on the customer's own words (their language) with a search on the LLM's
+    English summary (English index, mapped back to the same sections in the customer's language).
+
+    Development set (reports/results/retrieval_summary.json): MRR@10 0.664 vs 0.620 for the text
+    alone; it also fixes polite messages whose greetings dilute the query.
+    """
+    by_text = retriever.search(text, lang, 10)
+    if not summary:
+        return by_text[:k]
+    by_summary = []
+    for hit in retriever.search(summary, "en", 10):
+        chunk = kb.get(hit.chunk.id, lang)
+        if chunk is not None:
+            by_summary.append(Hit(chunk, hit.score))
+    return reciprocal_rank_fusion([by_text, by_summary])[:k]
+
+
 def build_retriever(kb: KnowledgeBase) -> Retriever:
     """The configured retriever; falls back to BM25 if the embedding model cannot be loaded."""
     import logging
