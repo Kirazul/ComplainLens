@@ -41,16 +41,19 @@ class Settings(BaseSettings):
     models_dir: Path = ROOT / "models"
     help_center_dir: Path = ROOT / "company" / "help_center"
 
-    # Email channel. "imap": any IMAP/SMTP mailbox (e.g. Gmail with an app password), which
-    # receives and sends. "mailtm": a free mail.tm inbox (no sign-up), which receives only:
-    # replies are then read on the tracking page and in the console.
-    email_inbox: str = "imap"
+    # Email channel. "agentmail": an AgentMail inbox (HTTPS API, free plan, works where the email
+    # ports are blocked), which receives and replies; EMAIL_ADDRESS is the inbox address.
+    # "imap": any IMAP/SMTP mailbox (e.g. Gmail with an app password).
+    email_inbox: str = "agentmail"
     email_address: str = ""
     email_password: str = ""
     imap_host: str = "imap.gmail.com"
     smtp_host: str = "smtp.gmail.com"
     smtp_port: int = 465
-    mailtm_api: str = "https://api.mail.tm"
+    agentmail_api: str = "https://api.agentmail.to/v0"
+    agentmail_api_key: str = ""
+    # Signing secret of the AgentMail webhook (new mail -> our API at once). Empty = polling only.
+    agentmail_webhook_secret: str = ""
 
     # Console sign-in. The first administrator is created at startup with these credentials
     # (only if no account exists yet; later changes are made in the console's Team page).
@@ -76,11 +79,13 @@ class Settings(BaseSettings):
 
     @property
     def email_enabled(self) -> bool:
+        if self.email_inbox == "agentmail":
+            return bool(self.email_address and self.agentmail_api_key)
         return bool(self.email_address and self.email_password)
 
     @property
     def email_can_send(self) -> bool:
-        return self.email_enabled and self.email_inbox == "imap"
+        return self.email_enabled
 
 
 @cache

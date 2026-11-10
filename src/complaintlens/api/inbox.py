@@ -1,7 +1,8 @@
 """The email poller: new mail becomes tickets, without ever losing a message.
 
-A message is acknowledged (marked read) only after its ticket is stored, and a Message-ID that
-already has a ticket is not processed twice.
+A message is acknowledged only after its ticket is stored, and a Message-ID that is already
+stored is not processed twice. A reply in an existing email thread joins that ticket's
+conversation instead of opening a new one.
 """
 
 from __future__ import annotations
@@ -14,11 +15,11 @@ import httpx
 from sqlmodel import select
 
 from complaintlens.api.state import state
+from complaintlens.channels import agentmail as agentmail_inbox
 from complaintlens.channels import email as imap_inbox
-from complaintlens.channels import mailtm as mailtm_inbox
 from complaintlens.channels.email import Fetched
 from complaintlens.settings import get_settings
-from complaintlens.store import Ticket, new_session
+from complaintlens.store import CustomerMessage, Ticket, new_session
 
 log = logging.getLogger(__name__)
 POLL_SECONDS = 30
@@ -30,25 +31,39 @@ BACKOFF_SECONDS = 120  # wait after the mail provider says "too many requests"
 ACTIVE_WINDOW_SECONDS = 600
 
 
-def _store_email(item: Fetched) -> Ticket | None:
-    """Create the ticket, then mark the email handled. None if this email already has a ticket
-    (a crash between the two steps, or the same Message-ID delivered twice)."""
-    message_id = item.message.external_id
-    if message_id:
-        with new_session() as s:
-            if s.exec(select(Ticket.id).where(Ticket.external_id == message_id)).first():
-                item.ack()
-                return None
-    ticket = state.processor.create_ticket(item.message)
+def _store_email(item: Fetched) -> tuple[Ticket, bool] | None:
+    """Store the email (a new ticket, or a follow-up in its thread's ticket), then mark it
+    handled. Returns the ticket and whether it is new; None if this email is already stored (a
+    crash between the two steps, or the same Message-ID delivered twice)."""
+    message = item.message
+    with new_session() as s:
+        if message.external_id and (
+            s.exec(select(Ticket.id).where(Ticket.external_id == message.external_id)).first()
+            or s.exec(
+                select(CustomerMessage.id).where(CustomerMessage.external_id == message.external_id)
+            ).first()
+        ):
+            item.ack()
+            return None
+        thread = (
+            s.exec(select(Ticket).where(Ticket.thread_id == message.thread_id)).first()
+            if message.thread_id
+            else None
+        )
+    if thread is not None:
+        state.processor.add_message(thread.id, message.body, external_id=message.external_id)
+        item.ack()
+        return thread, False
+    ticket = state.processor.create_ticket(message)
     item.ack()
-    return ticket
+    return ticket, True
 
 
 async def poll_inbox_once() -> int:
     """Fetch new emails and run each through the pipeline; returns how many were new."""
     if time.monotonic() < state.email_backoff_until:
         return 0
-    inbox = mailtm_inbox if get_settings().email_inbox == "mailtm" else imap_inbox
+    inbox = agentmail_inbox if get_settings().email_inbox == "agentmail" else imap_inbox
     try:
         fetched = await asyncio.to_thread(inbox.fetch_new_messages)
         state.email_status.update(last_poll_ok=True, last_error=None)
@@ -67,15 +82,18 @@ async def poll_inbox_once() -> int:
     new = 0
     for item in fetched:  # one bad message must not stop the others (or the poller)
         try:
-            ticket = await asyncio.to_thread(_store_email, item)
+            stored = await asyncio.to_thread(_store_email, item)
         except Exception:
             log.exception("could not store an email; it stays unread and is retried")
             continue
-        if ticket is None:
+        if stored is None:
             continue
+        ticket, is_new = stored
         new += 1
-        try:
-            await asyncio.to_thread(state.processor.run, ticket.id, item.message)
+        try:  # a follow-up runs again on the whole conversation
+            await asyncio.to_thread(
+                state.processor.run, ticket.id, item.message if is_new else None
+            )
         except Exception:
             log.exception("pipeline failed for %s", ticket.number)
     return new

@@ -3,7 +3,6 @@
 serve                 start the API (and the email poller if email is configured)
 send "text" [...]     process one message locally and print its trace (no email sent)
 check                 verify the LLM key and the mailbox credentials work
-inbox-create NAME     create a free mail.tm support inbox (no sign-up) and print its settings
 set-password USER     set a console password (creates USER as an administrator if new)
 """
 
@@ -73,15 +72,15 @@ def cmd_check(args: argparse.Namespace) -> None:
             print(f"LLM: FAILED ({type(exc).__name__}: {exc})")
     else:
         print("LLM: not configured (set LLM_API_KEY in .env); classical fallback will be used")
-    if s.email_enabled and s.email_inbox == "mailtm":
+    if s.email_enabled and s.email_inbox == "agentmail":
         try:
-            from complaintlens.channels import mailtm
+            from complaintlens.channels import agentmail
 
-            mailtm.check_login(s)
-            print(f"Email (mail.tm, receive only): OK ({s.email_address})")
+            count = len(agentmail.fetch_new_messages(s))
+            print(f"Email (AgentMail): OK ({s.email_address}, {count} new messages waiting)")
         except Exception as exc:
             ok = False
-            print(f"Email (mail.tm): FAILED ({type(exc).__name__}: {exc})")
+            print(f"Email (AgentMail): FAILED ({type(exc).__name__}: {exc})")
     elif s.email_enabled:
         try:
             from imap_tools import MailBox
@@ -97,18 +96,8 @@ def cmd_check(args: argparse.Namespace) -> None:
             ok = False
             print(f"Email: FAILED ({type(exc).__name__}: {exc})")
     else:
-        print("Email: not configured (set EMAIL_ADDRESS and EMAIL_PASSWORD in .env)")
+        print("Email: not configured (see .env.example)")
     sys.exit(0 if ok else 1)
-
-
-def cmd_inbox_create(args: argparse.Namespace) -> None:
-    from complaintlens.channels.mailtm import create_inbox
-
-    address, password = create_inbox(args.name)
-    print("Inbox created. Put these in .env (and in the hosting service's variables):")
-    print("EMAIL_INBOX=mailtm")
-    print(f"EMAIL_ADDRESS={address}")
-    print(f"EMAIL_PASSWORD={password}")
 
 
 def cmd_set_password(args: argparse.Namespace) -> None:
@@ -149,9 +138,6 @@ def main() -> None:
     p.set_defaults(func=cmd_send)
     p = sub.add_parser("check", help="verify LLM and email credentials")
     p.set_defaults(func=cmd_check)
-    p = sub.add_parser("inbox-create", help="create a free mail.tm support inbox")
-    p.add_argument("name", help="the part before @, e.g. lunagocare")
-    p.set_defaults(func=cmd_inbox_create)
     p = sub.add_parser("set-password", help="set a console password (account recovery)")
     p.add_argument("username")
     p.set_defaults(func=cmd_set_password)

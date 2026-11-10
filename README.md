@@ -17,7 +17,7 @@ Send a complaint from any of these channels and watch it appear in the console w
 
 | Channel | How | Where the reply goes |
 |---|---|---|
-| Email | write to `lunagocare@fldubai.com` | console (this free inbox receives only) |
+| Email | write to `lunagocare@agentmail.to` | an email reply in the same thread (about a minute) |
 | Contact form | website, "Contact" (optional ride ID) | the ticket's tracking page |
 | Live chat | website, "Chat with us" (every page) | the chat itself; the conversation continues there |
 | Ride rating | website, "Rate a ride" (stars + comment) | the ticket's tracking page |
@@ -85,9 +85,12 @@ pnpm dev                                  # http://localhost:3000/en and http://
 
 Without keys the system still runs end to end: understanding falls back to the classical models and every answer waits for an agent.
 With `LLM_API_KEY` (free Groq key), replies are drafted with retrieval and verified.
-With an email inbox, the API reads it every 30 seconds while in use: either a free mail.tm inbox
-(`uv run complaintlens inbox-create lunagocare` prints the settings; receive only), or any
-IMAP/SMTP mailbox such as Gmail with an app password, which also replies in the same thread.
+Email goes through an [AgentMail](https://agentmail.to) inbox (free plan, 100 emails a day): it
+sends and receives over HTTPS, which matters because Railway's free plan blocks the email ports.
+AgentMail calls the API's webhook as soon as mail arrives (the API is also polled every 30 seconds
+while in use, and hourly by the relay); the reply goes back in the customer's email thread, and
+their reply in that thread joins the same ticket. Any IMAP/SMTP mailbox (e.g. Gmail with an app
+password) also works by configuration (`EMAIL_INBOX=imap`).
 See `.env.example` for every setting.
 
 Process one message from the command line and print its trace:
@@ -113,7 +116,8 @@ the embedding model at build time, so no model weights are stored in git.
 | API, models, database | Railway (Docker image `infra/api.Dockerfile`, SQLite on a 500 MB volume at `/app/data`) | `railway up --service api` from the repository root |
 | Community forum relay | GitHub Actions, workflow `relay.yml` | runs on each new Discussion, and hourly to collect email and post agents' replies |
 
-Railway service variables: `LLM_API_KEY`, `EMAIL_INBOX`, `EMAIL_ADDRESS`, `EMAIL_PASSWORD`,
+Railway service variables: `LLM_API_KEY`, `EMAIL_INBOX`, `EMAIL_ADDRESS`, `AGENTMAIL_API_KEY`,
+`AGENTMAIL_WEBHOOK_SECRET`,
 `ADMIN_PASSWORD`, `CHANNEL_TOKEN`, `PUBLIC_BASE_URL`, `CORS_ORIGINS`, `DATABASE_URL`
 (`sqlite:////app/data/app.db`) and `RAILWAY_RUN_UID=0` (the volume is owned by root). The service
 uses the Dockerfile at `infra/api.Dockerfile`, health check `/api/health`, and sleeps when idle.

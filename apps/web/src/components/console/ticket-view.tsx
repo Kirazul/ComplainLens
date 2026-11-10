@@ -156,7 +156,7 @@ function Bubble({ item, customer, now, sources }: { item: ThreadItem; customer: 
       ? "waiting to be posted on the forum"
       : item.status === "failed"
         ? item.error === "no outbound delivery for this channel"
-          ? "not delivered: the demo inbox can only receive email"
+          ? "not delivered: no way to reach the customer on this channel"
           : `not delivered: ${item.error ?? "unknown error"}`
         : null;
   return (
@@ -192,7 +192,7 @@ function Composer({ ticket, sources, onSent }: { ticket: TicketDetail; sources: 
     setError(null);
     try {
       const r = await api.reply(ticket.id, text.trim());
-      if (r.status === "failed") setError("Saved, but not delivered: the demo email inbox can only receive.");
+      if (r.status === "failed") setError("Saved, but not delivered. Check the email settings.");
       setText("");
       setPreview(false);
       onSent();
@@ -207,7 +207,7 @@ function Composer({ ticket, sources, onSent }: { ticket: TicketDetail; sources: 
     ticket.channel === "forum"
       ? "Posted as a comment in the forum thread."
       : ticket.channel === "email"
-        ? "Email replies cannot be delivered in this demo (the inbox only receives)."
+        ? "Sent by email, in the customer's thread."
         : "The customer sees it in the chat and on their ticket page.";
 
   return (

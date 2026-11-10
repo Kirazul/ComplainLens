@@ -10,7 +10,7 @@
 
 We create a **fictional ride-hailing company** ("LunaGo", rides only), bilingual English/French. Food-delivery (Uber Eats) conversations, about 11% of the real Uber data, are out of scope and removed when the dataset is built (§5.1). Customers have an account with their rides, book new rides on the website, and give a ride ID when they write about a ride. The company is real in every way that matters for the demo:
 - a public website (Help Center, contact form, live chat, trip ratings);
-- a real email address (`lunagocare@fldubai.com`, a free mail.tm inbox);
+- a real email address (`lunagocare@agentmail.to`, a free AgentMail inbox that receives and replies);
 - a public community forum (the repository's GitHub Discussions, answered by the pipeline);
 - a customer database of riders, drivers and trips.
 
@@ -315,7 +315,7 @@ Each NLP stage lists the proposed method, the **baseline** it must beat, and the
 
 | Channel | How it reaches us (all free; as built, 2026-11-10) |
 |---|---|
-| **Email** `lunagocare@fldubai.com` | mail.tm inbox (created through its public API, no sign-up), polled every 30 s while the API is in use and hourly by the relay. Receive only: replies are shown in the console. Any IMAP/SMTP mailbox (e.g. Gmail) works by configuration and also replies by email |
+| **Email** `lunagocare@agentmail.to` | AgentMail inbox (free plan, HTTPS API: Railway's free plan blocks the email ports). A webhook wakes the API when mail arrives (also polled every 30 s while in use and hourly by the relay); the reply goes back in the same email thread, and the customer's reply in that thread joins the same ticket. Any IMAP/SMTP mailbox (e.g. Gmail) works by configuration |
 | **Website contact form + live chat** | Next.js site → API |
 | **Trip rating** (stars + comment, as after a trip in the app) | Website → API, channel `review`; the rating travels in the subject so the classifier reads it |
 | **Community forum** | GitHub Discussions of the repository → GitHub Actions relay (`relay.yml`) → API; the reply is posted as a comment |
@@ -499,12 +499,12 @@ RAG appears in three places only. In each, a model without retrieval fails in a 
 ```
  CUSTOMER SIDE (LunaGo)                          COMPANY SIDE (ComplaintLens)
  ┌──────────────────────────┐                      ┌───────────────────────────────────────────┐
- │ Website: Help Center,    │──┐                   │ FastAPI  ─►  Postgres job queue  ─► Worker │
+ │ Website: accounts, rides,│──┐                   │ FastAPI  ─►  Postgres job queue  ─► Worker │
  │ complaint form, chat,    │  │   HTTPS           │                                   pipeline│
  │ demo rider app           │  ├──────────────────►│  1 normalize + PII mask   6 embed/similar  │
  ├──────────────────────────┤  │                   │  2 language               7 cluster/trends │
- │ Email (mail.tm inbox)    │──┤ polled inbox      │  3 type/needs-reply       8 route/priority │
- │  lunagocare@fldubai.com  │  │ (receive only)    │  4 category/severity/risk 9 RAG + trip     │
+ │ Email (AgentMail inbox)  │──┤ webhook + polling │  3 type/needs-reply       8 route/priority │
+ │ lunagocare@agentmail.to  │  │ (replies by email)│  4 category/severity/risk 9 RAG + trip     │
  ├──────────────────────────┤  │                   │  5 entities + link trip     facts + verify │
  │ Community forum (GitHub) │──┘ via Actions relay │                          10 gate → send   │
  └──────────────────────────┘                      └──────────────┬────────────────────────────┘
@@ -541,7 +541,7 @@ RAG appears in three places only. In each, a model without retrieval fails in a 
 | Website + console | **GitHub Pages** (Next.js static export, workflow `pages.yml`) | https://kirazul.github.io/ComplainLens/ ; no server needed: every page is static and talks to the API |
 | API + models | **Railway** (Docker, 1 GB RAM, sleeps when idle) | https://api-production-a4e30.up.railway.app ; the multilingual embedding model is loaded in int8 to fit 1 GB (§5.6) |
 | Database | **SQLite** on a Railway volume (500 MB) | Enough for the demo; Postgres works by changing `DATABASE_URL` |
-| Email inbound | **mail.tm** | Receive only (see §6.1) |
+| Email | **AgentMail** | Receives and replies over HTTPS, free plan (100 emails a day) |
 | Community forum | **GitHub Discussions + Actions** | Relay on each new post; hourly run collects email and posts agents' replies |
 | LLM | **Groq** free tier | Rate-limited; replies cached; local Ollama fallback |
 | Models and datasets | **Hugging Face Hub** | Model cards and datasheets (both cited in the spec's references) |

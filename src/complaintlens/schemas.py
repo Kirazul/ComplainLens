@@ -82,6 +82,7 @@ class InboundMessage(BaseModel):
     received_at: datetime = Field(default_factory=utcnow)
     external_id: str | None = None  # e.g. the email Message-ID or the forum post ID
     in_reply_to: str | None = None  # e.g. the email In-Reply-To header
+    thread_id: str | None = None  # the email conversation it belongs to (AgentMail thread)
 
 
 class StageResult(BaseModel):

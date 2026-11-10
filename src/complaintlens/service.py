@@ -141,6 +141,7 @@ class Processor:
                 received_at=inbound.received_at,
                 external_id=inbound.external_id,
                 in_reply_to=inbound.in_reply_to,
+                thread_id=inbound.thread_id,
                 status="processing",
             )
             session.add(ticket)
@@ -151,11 +152,11 @@ class Processor:
             )
             return ticket
 
-    def add_message(self, ticket_id: int, body: str) -> Ticket:
+    def add_message(self, ticket_id: int, body: str, external_id: str | None = None) -> Ticket:
         """Fast: store a customer's follow-up. Then call ``run(ticket_id)`` to answer it."""
         with new_session(self.database_url) as session:
             ticket = self._get(session, ticket_id)
-            session.add(CustomerMessage(ticket_id=ticket_id, body=body))
+            session.add(CustomerMessage(ticket_id=ticket_id, body=body, external_id=external_id))
             ticket.status, ticket.updated_at = "processing", utcnow()
             session.add(ticket)
             session.commit()
@@ -356,7 +357,7 @@ class Processor:
                 reply.status, reply.sent_at = "sent", utcnow()
             elif ticket.channel in RELAYED:  # the forum relay posts it, then marks it sent
                 reply.status = "queued"
-            else:  # e.g. a receive-only inbox: visible in the console, not delivered
+            else:  # no way to deliver on this channel: visible in the console only
                 reply.status, reply.error = "failed", "no outbound delivery for this channel"
             session.add(reply)
             self.publish({"type": "reply", "ticket_id": ticket.id, "status": reply.status})

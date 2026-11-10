@@ -23,6 +23,7 @@ def api_factory(tmp_path, monkeypatch) -> Iterator[Callable[..., TestClient]]:
             "DATABASE_URL": f"sqlite:///{(tmp_path / 'api.db').as_posix()}",
             "LLM_API_KEY": "",  # offline: classical fallback, no network
             "EMAIL_ADDRESS": "",
+            "EMAIL_INBOX": "agentmail",
             "CHANNEL_TOKEN": "",
             "RETRIEVAL": "bm25",  # no embedding model download
             "ADMIN_PASSWORD": ADMIN_PASSWORD,

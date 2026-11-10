@@ -1,12 +1,9 @@
-"""Forum relay, mail.tm inbox, email poller and abuse limits."""
+"""Forum relay, email poller and abuse limits."""
 
-import httpx
 import pytest
 from fastapi import HTTPException
 
-from complaintlens.channels import mailtm
 from complaintlens.security import RateLimiter
-from complaintlens.settings import Settings
 from tests.conftest import sign_in
 
 CHANNEL = "relay-secret"
@@ -86,55 +83,6 @@ def test_rate_limiter_daily_cap():
     assert exc.value.status_code == 429
 
 
-RAW = (
-    b"From: Prof <prof@univ.tn>\r\nTo: lunagocare@fldubai.com\r\nSubject: Refund\r\n"
-    b"Message-ID: <m1@univ.tn>\r\nContent-Type: text/plain; charset=utf-8\r\n\r\n"
-    b"I was charged twice.\r\n"
-)
-AUTO = RAW.replace(b"Subject: Refund", b"Subject: Away\r\nAuto-Submitted: auto-replied")
-
-
-def test_mailtm_inbox_fetches_unseen_mail_and_skips_auto_replies(monkeypatch):
-    patched: list[str] = []
-
-    def handler(request: httpx.Request) -> httpx.Response:
-        path = request.url.path
-        if path == "/token":
-            return httpx.Response(200, json={"token": "t"})
-        if path == "/messages":
-            members = [
-                {"id": "1", "seen": False, "createdAt": "2026-11-10T07:23:44+00:00"},
-                {"id": "2", "seen": False},
-                {"id": "3", "seen": True},
-            ]
-            return httpx.Response(200, json={"hydra:member": members})
-        if path.endswith("/download"):
-            return httpx.Response(200, content=RAW if "/1/" in path else AUTO)
-        if request.method == "PATCH":
-            patched.append(path)
-            return httpx.Response(200, json={})
-        return httpx.Response(404)
-
-    monkeypatch.setattr(
-        mailtm,
-        "_client",
-        lambda s: httpx.Client(
-            base_url="https://mail.test", transport=httpx.MockTransport(handler)
-        ),
-    )
-    monkeypatch.setattr(mailtm, "_tokens", {})
-    s = Settings(email_inbox="mailtm", email_address="lunagocare@fldubai.com", email_password="p")
-    fetched = mailtm.fetch_new_messages(s)
-    assert [f.message.sender for f in fetched] == ["prof@univ.tn"]
-    message = fetched[0].message
-    assert message.subject == "Refund" and "charged twice" in message.body
-    # No Date header in RAW: the server's arrival time is used, never a made-up date.
-    assert message.received_at.isoformat() == "2026-11-10T07:23:44+00:00"
-    assert patched == ["/messages/2"]  # the auto-reply is marked seen at once
-    fetched[0].ack()
-    assert patched == ["/messages/2", "/messages/1"]  # the real one only once acknowledged
-
-
 def test_received_time_falls_back_to_now_for_missing_or_naive_dates():
     from datetime import UTC, datetime
 
@@ -171,7 +119,7 @@ def test_email_poller_stores_before_acknowledging_and_skips_duplicates(client, m
         return [Fetched(message, lambda: acks.append("m1"))]
 
     monkeypatch.setattr(poller.imap_inbox, "fetch_new_messages", inbox)
-    monkeypatch.setattr(poller.mailtm_inbox, "fetch_new_messages", inbox)
+    monkeypatch.setattr(poller.agentmail_inbox, "fetch_new_messages", inbox)
     assert asyncio.run(poller.poll_inbox_once()) == 1
     # Same Message-ID: acknowledged, not processed again.
     assert asyncio.run(poller.poll_inbox_once()) == 0

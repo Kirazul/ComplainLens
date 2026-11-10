@@ -1113,65 +1113,65 @@
   ],
   "clusters": [
     {
-      "id": 1,
-      "size": 1815,
+      "id": 21,
+      "size": 1847,
       "words": [
         "charged",
         "cancelled",
         "driver",
         "didn",
-        "paid",
-        "cash",
+        "refund",
         "pay",
-        "toll"
+        "trip",
+        "cash"
       ],
       "examples": [
         "When your [USER] driver accuses you of stealing his “hustle” money from his cup holder but then finds it under his seat and was rude and disrespectful &amp; denies you a refund...",
-        "[USER] We got charged incorrectly for trips we didn’t take and others that were cancelled by drivers 4 times in one night. 🤔 [URL]",
-        "[COMPANY] why does it say I'm on the trip when I haven't been picked up yet? Am I getting charged?"
+        "#[COMPANY] , I was charged for the trip which didn’t even happen, driver cancelled but I was charged.. kindly help... PFA [URL]",
+        ".[USER] [USER] who do I DM when app said I was on trip and the driver was going places while I was still home? It charged me."
       ]
     },
     {
-      "id": 10,
-      "size": 1776,
+      "id": 23,
+      "size": 1837,
       "words": [
-        "account",
-        "disabled",
-        "hacked",
-        "password",
-        "reset",
-        "login",
-        "log",
-        "delete"
-      ],
-      "examples": [
-        "[COMPANY] After contacting you concerning deactivation of my account, it was reactivated but after 48 hrs, ,it has been been deactivated. Please help",
-        "Hi my [COMPANY] account was hacked.I just reveived a message telling me that someone is taking a ride on my expense. [URL]",
-        "[COMPANY] Hello!! I need help with my account. The message I'm getting says that my account needs attention, but I'm not sure why."
-      ]
-    },
-    {
-      "id": 29,
-      "size": 1706,
-      "words": [
+        "his",
         "car",
         "hit",
-        "his",
-        "accident",
-        "driving",
         "him",
+        "driving",
+        "accident",
         "driver",
         "pulled"
       ],
       "examples": [
         "[USER] worst most unprofessional driver ever !! asked for extra fee when he showed up ! yelling at me cause [COMPANY] don't pay for his 30k car??? [URL]",
-        "So..an [USER] driver was arrested for posing as a DCYF official &amp; trying to pick up a kid from school. What's it going to take to stop this?",
-        "[COMPANY] just had the best Über ride ever home after a great night out please pass on my thanks to your driver, Waqar. He made my day 😊"
+        "My [USER] driver picked me up in a Kia...app said he was in a Mazda. Hashtag sketchy lol.",
+        "I said to my [COMPANY] driver, can you pull into this driveway he said: \"you can come here. Thanks\"... what happened to service?"
       ]
     },
     {
-      "id": 25,
-      "size": 1572,
+      "id": 0,
+      "size": 1749,
+      "words": [
+        "cancelled",
+        "cancel",
+        "minutes",
+        "waiting",
+        "canceled",
+        "late",
+        "mins",
+        "waited"
+      ],
+      "examples": [
+        ".[USER] I️t took our driver over 5 minutes to start moving for our ride. We have a flight to catch. If they can’t do the ride then they shouldn’t accept I️t. #CustomerService",
+        "So my [USER] driver cancelled after pulling up at my house",
+        "[USER] [COMPANY] my 1st driver canceled after making me wait 5 min, 2nd called &amp; asked me to cancel, &amp; 3rd is now 11 min away 😐 i'm late"
+      ]
+    },
+    {
+      "id": 11,
+      "size": 1596,
       "words": [
         "charged",
         "twice",
@@ -1179,18 +1179,37 @@
         "charge",
         "double",
         "charging",
-        "trip",
-        "bank"
+        "bank",
+        "trip"
       ],
       "examples": [
         "[USER] you need to correct false charges from a trip in Lexington KY on Saturday. I want my $13 back #lyingdriver #theft",
-        "[USER] charged twice for rides I didn't take cancelled and paid 5 now 53 and 55 charged on my Acct what's up",
-        "[USER] I was charged for an [COMPANY] I didn't actiallly take. Please advise how I will reimbursed. [COMPANY]"
+        "[USER] [COMPANY] [USER] How it's possible.. You are charging INR 300+ for just 3 minutes??? [URL]",
+        "[COMPANY] Help! I was charged twice for a ride this morning, and not only that but I got 2 other unrecognizable charges aswell!"
       ]
     },
     {
-      "id": 23,
-      "size": 1556,
+      "id": 22,
+      "size": 1596,
+      "words": [
+        "drivers",
+        "cars",
+        "riders",
+        "rating",
+        "driving",
+        "smoke",
+        "car",
+        "they"
+      ],
+      "examples": [
+        "1 hour+ inside an old Altima that smells and has ripped stain seats, with an inexperienced miami driver [USER] standards down now 4 applying!",
+        "OK [COMPANY] I AM SICK OF GETTING SO MANY DODGY DRIVERS WHO ACT DUMB AND TAKE THE WRONG ROUTE ON PURPOSE... TOO MANY TIMES OVER AND OVER\n[COMPANY] YALL KEEP APOLOGISING BUT ITS ALMOST EVERY TIME??? How much money am I gonna keep wasting at the expense of me and my friends???",
+        "Why does my [USER] driver have the AC on when it’s 55F outside"
+      ]
+    },
+    {
+      "id": 5,
+      "size": 1531,
       "words": [
         "price",
         "fare",
@@ -1198,94 +1217,37 @@
         "surge",
         "pricing",
         "prices",
-        "discount",
+        "charging",
         "charge"
       ],
       "examples": [
         "[COMPANY] Minimum fare rides lose money. Fix it.",
-        "[COMPANY] [USER] dear can i knw the reason y the fare shown to me is different frm fare shown to driver\n[COMPANY] [USER] Wen i booked the cab it showed 215 bt it was showing 243 to driver.i was forced to pay it.need a clarification asap",
-        "[USER] you are fucking crazy thinking I'm going to pay for a $21 ride rasing the pricing up just because of the weather bullshit"
+        "Really [USER] [USER] last night 55$ from airport,tonight send my in laws 95$,your “dynamic pricing” is a good enough answer. #bullshit",
+        "[COMPANY] hi there! Why don’t I see my Verizon phone discount? Could you help me with this? Thanks!!"
       ]
     },
     {
       "id": 27,
-      "size": 1527,
+      "size": 1524,
       "words": [
-        "drivers",
-        "cars",
-        "riders",
-        "they",
-        "driving",
-        "should",
-        "stop",
-        "passengers"
+        "doughnuts",
+        "donuts",
+        "fuck",
+        "shit",
+        "fucking",
+        "all",
+        "guys",
+        "smells"
       ],
       "examples": [
-        "[COMPANY] your drivers are now officially worse than the auto walas. And you sit there and refuse to listen.\n[COMPANY] Or even reply.",
-        "[COMPANY] are your drivers properly trained!? Because I’m sick of drivers dropping me off and not ending the ride when they do!",
-        "What a joke [USER]. Half of the share &amp; go cars don't have Ac, for the rest, we have to explicitly tell the drivers to turn it on. [USER] [URL]"
+        "Hey, all, this guy picked my cousin up in Pittsburgh on Friday for [USER] and tried sexually assaulting her. His name is Feruzbek. [URL]",
+        "[COMPANY] hey guys can you give people answers back when they are deactivated by someone claiming dui fraudulently.",
+        "[COMPANY] I have messaged you another issue."
       ]
     },
     {
-      "id": 3,
-      "size": 1508,
-      "words": [
-        "cancelled",
-        "cancel",
-        "refused",
-        "canceled",
-        "airport",
-        "him",
-        "called",
-        "destination"
-      ],
-      "examples": [
-        "[USER] my driver just drove me to the department of air travel instead of the airport.......... rufkm",
-        "[COMPANY] hola me están cobrando una ruta que no realice, mi ruta era de 15 cuadras; conductor fue a aeropuerto ayuda!!",
-        "[COMPANY] I waited to solve my last ride issue. But I didn’t get any call from many months. Pathetic service I’ve ever seen."
-      ]
-    },
-    {
-      "id": 18,
-      "size": 1502,
-      "words": [
-        "customer",
-        "service",
-        "worst",
-        "ever",
-        "horrible",
-        "services",
-        "terrible",
-        "customers"
-      ],
-      "examples": [
-        "[USER] awful customer service, why bother trying to contact the head office?",
-        "You can tell [COMPANY] don't care about their customers when they tweet the wrong person [URL]",
-        "[USER] worst service in the world. 15min wait when I order &amp; now it's over an hour. Absolute con and you charge me full whack for this!!😡"
-      ]
-    },
-    {
-      "id": 11,
-      "size": 1471,
-      "words": [
-        "app",
-        "working",
-        "error",
-        "ios",
-        "deleting",
-        "use",
-        "update",
-        "keeps"
-      ],
-      "examples": [
-        "[USER] your app and website still don’t work",
-        "[USER] £267 for a 15 min drive! You can clearly see what address I put into the app.. no reply on the app.",
-        "[COMPANY] I've been online for over 30 minutes with no ride requests and already restarted the app"
-      ]
-    },
-    {
-      "id": 5,
-      "size": 1454,
+      "id": 1,
+      "size": 1435,
       "words": [
         "cancellation",
         "fee",
@@ -1294,17 +1256,55 @@
         "cancelling",
         "charge",
         "fees",
-        "charged"
+        "pay"
       ],
       "examples": [
         "Hey [USER] my scheduled ride canceled on me when he was 1 minute away. If I cancel I pay $5. I need a $5 credit.",
-        "[USER] so I've been waiting on this driver out in the rain for the past 20 minutes and you guys wanna charge me for cancelling?",
-        "[USER] My driver is asking for a cash payment and refusing pickup. Not even cancelling trip so that I can book another [COMPANY] KA11B2405\n[USER] [USER] [COMPANY] KA11B2405 asking for cash and refusing pick up. Not even cancelling the trip. I am being charged to cancel the trip"
+        "[USER] is a joke. When you’re waiting in the exact right spot and the driver cancels for no reason and then you get charged 😠",
+        "[USER] i don't understand why do you have to charge the customer even when the driver is at fault. Driver asks me to cancel the ride yet I have to pay the fine???"
       ]
     },
     {
-      "id": 15,
-      "size": 1434,
+      "id": 3,
+      "size": 1400,
+      "words": [
+        "driver",
+        "drivers",
+        "him",
+        "driving",
+        "action",
+        "cab",
+        "calls",
+        "his"
+      ],
+      "examples": [
+        "[USER] my driver just drove me to the department of air travel instead of the airport.......... rufkm",
+        "[COMPANY] you should give an option to select language. Driver cant speak english here, and they keep talking in arabic as if i understand",
+        ".[COMPANY] [USER] The driver got us wrong way, took the entire amount which was thrice the expected. Behaved rude when asked for a reason\n[COMPANY] [USER] [COMPANY] [USER] kindly get back to me"
+      ]
+    },
+    {
+      "id": 19,
+      "size": 1399,
+      "words": [
+        "contact",
+        "number",
+        "support",
+        "customer",
+        "complaint",
+        "someone",
+        "speak",
+        "talk"
+      ],
+      "examples": [
+        "[COMPANY] I’m not getting your texts. [URL]",
+        "[COMPANY] Is there a way for me to message your support team outside of the app? Its stupid how much you have to go thru to contact [COMPANY]",
+        "[COMPANY] your L1 support team is not listening to me nor helping me adequately"
+      ]
+    },
+    {
+      "id": 29,
+      "size": 1370,
       "words": [
         "payment",
         "credit",
@@ -1313,226 +1313,207 @@
         "cards",
         "paypal",
         "add",
-        "bank"
+        "credits"
       ],
       "examples": [
         "[USER] any reason I’m trying to Inform ur support staff that my debit card is being charged fraudulently from another [COMPANY] account while I’m at work and no one seems to care?",
-        "[COMPANY] I need to replace the credit card on my acct but the app won't let me do it and the computer says you have to use the app. Help!",
-        "[COMPANY] how to I upload multiple documents at the same time like my car insurance"
+        "[USER] my app won’t let me add a new payment method. It says there is an issue. I have tried about 4 different payment methods. Please help!",
+        "[COMPANY] need your help please- suspicious credit card transactions on my account, coming from [COMPANY] but I haven’t taken a ride?"
       ]
     },
     {
-      "id": 21,
-      "size": 1375,
+      "id": 2,
+      "size": 1369,
       "words": [
-        "driver",
-        "drivers",
-        "route",
-        "cab",
-        "location",
-        "him",
-        "destination",
-        "drop"
+        "customer",
+        "service",
+        "worst",
+        "ever",
+        "horrible",
+        "customers",
+        "services",
+        "terrible"
       ],
       "examples": [
-        "[COMPANY] driver drove me to wrong location, makes me get out anyway and [USER] won't provide a proper refund 🙃🙃🙃 #Delete #Fail Sup [USER] 😘😘😘",
-        "alright u mothers i think my [USER] driver stole a fry [USER] [URL]\n[USER] [USER] SPEAK",
-        "Poor service from [USER], my driver isn't letting my Mexican friend in the car 😡 [URL]"
-      ]
-    },
-    {
-      "id": 14,
-      "size": 1322,
-      "words": [
-        "fucking",
-        "fuck",
-        "shit",
-        "smells",
-        "guys",
-        "man",
-        "life",
-        "guy"
-      ],
-      "examples": [
-        "[COMPANY] since the ParisGamesWeek your system dosnt work by paypal. F*** it i'm taking taxis.",
-        "[COMPANY] hellllloooo",
-        "Just got in an [USER] and the guy said he uses this to “beat liberals”. Is that a funny joke to anyone?? [URL]"
-      ]
-    },
-    {
-      "id": 17,
-      "size": 1314,
-      "words": [
-        "pass",
-        "ride",
-        "rides",
-        "purchase",
-        "passes",
-        "request",
-        "schedule",
-        "buy"
-      ],
-      "examples": [
-        "[USER] hi just for a ride and it seemed to think I wanted to go to my original location. I canceled trip but want to see about being credited",
-        "DM@[COMPANY] I didn’t book the ride. 615 788 2088 Pete Hodes boo",
-        "[COMPANY] I need a ride and my app is throwing an error. I don't have much time to get to the airport for my flight. HELP."
-      ]
-    },
-    {
-      "id": 28,
-      "size": 1307,
-      "words": [
-        "airport",
-        "available",
-        "city",
-        "area",
-        "delhi",
-        "live",
-        "tomorrow",
-        "schedule"
-      ],
-      "examples": [
-        "[USER] i’m only a few months away from 21. let me drive anyway",
-        "Planning a trip to Lansdowne from Delhi with office frnds. Does [USER] [COMPANY] provides cab? Wht abt [USER] ? Which is better?",
-        "[USER] Today i booked a cab from Ghaziabad to south extension Delhi.. the fair which was reflecting in my application was 307 &amp; then i booked it &amp; when i reached to my destination, they charged 517 bucks &amp; dere was no jam &amp; nothing on the way to destination. I'm ver disappointed."
+        "[USER] awful customer service, why bother trying to contact the head office?",
+        "Shoutout to [COMPANY] [USER] for a terrible experience. Trash service. Will be using [USER] next time.",
+        "Don't bother using [USER] terrible service. #awful #useless"
       ]
     },
     {
       "id": 6,
-      "size": 1278,
+      "size": 1298,
       "words": [
-        "minutes",
-        "mins",
-        "away",
-        "min",
-        "wait",
-        "waiting",
-        "late",
-        "time"
+        "account",
+        "disabled",
+        "login",
+        "log",
+        "delete",
+        "deactivated",
+        "locked",
+        "access"
       ],
       "examples": [
-        ".[USER] I️t took our driver over 5 minutes to start moving for our ride. We have a flight to catch. If they can’t do the ride then they shouldn’t accept I️t. #CustomerService",
-        "This thing where [USER] allows drivers to accept a ride when they are “completing a ride” needs to stop. I wait over 15 mins every time👎🏽#Boo\n[USER] [USER] .Is it better? At least you know there are no drivers. There’re TONS of drivers close by w/ no passengers, but I’m stuck waiting 20 mins.",
-        "Hey [USER], tell your drivers that once a customer gets in the car, they can’t say “Awww dayum, I️ gots to get to work in 20 minutes. I can’t take you there!” #RideLyft"
+        "[COMPANY] After contacting you concerning deactivation of my account, it was reactivated but after 48 hrs, ,it has been been deactivated. Please help",
+        "[COMPANY] not able to book [COMPANY]. WTF. Account block kar diya kya?",
+        "Hi [USER] I keep getting text notifications to verify a new account but I haven't requested or setup a new account??"
       ]
     },
     {
-      "id": 4,
-      "size": 1121,
+      "id": 16,
+      "size": 1278,
       "words": [
         "vehicle",
         "license",
-        "insurance",
-        "car",
-        "drive",
         "report",
-        "item",
-        "contact"
+        "car",
+        "driver",
+        "insurance",
+        "name",
+        "drive"
       ],
       "examples": [
-        "kya khassi support hai yaar [COMPANY]. i am an [COMPANY] rider not driver. they are telling me to take docs to nearby [COMPANY] office for verification and all i was asked was to update my cellphone number 👺👺",
-        "[COMPANY] I can't get in touch with [COMPANY] xchange leasing to schedule a pickup",
-        "[COMPANY] my driver is having issues with the gps as well as I do what the hell is going please reply ASAP"
-      ]
-    },
-    {
-      "id": 19,
-      "size": 1116,
-      "words": [
-        "rating",
-        "star",
-        "stars",
-        "drivers",
-        "worst",
-        "gave",
-        "rated",
-        "accidentally"
-      ],
-      "examples": [
-        "1 hour+ inside an old Altima that smells and has ripped stain seats, with an inexperienced miami driver [USER] standards down now 4 applying!",
-        "Definitely need a refund after this moron of a driver NEVER came &amp; made me late for work [USER] Maybe fire people with 1.75 stars??",
-        "[USER] fucc yall off rip, yall stupid ass drivers bout to make my mom late for her flight."
+        ".[COMPANY] My driver broke down. Any tips on getting a refund?",
+        "[COMPANY] [USER] I'm trying to leave a tip for my driver and the link from the email isn't working. Can you help? Thanks! 🚗",
+        "[COMPANY] can I dm you? Had an issue with a driver this morning"
       ]
     },
     {
       "id": 20,
-      "size": 1106,
+      "size": 1271,
       "words": [
-        "help",
-        "fix",
-        "wtf",
-        "link",
-        "joke",
-        "isn",
-        "problem",
-        "why"
+        "pass",
+        "ride",
+        "rides",
+        "passes",
+        "purchase",
+        "rider",
+        "renew",
+        "buy"
       ],
       "examples": [
-        "[USER] wtf is this.. every time I try to use the app it gives me this crap [URL]",
-        "[USER] [USER] [COMPANY] [USER] [USER] I’ve been online since 5:30 this morning your rep said in your system I haven’t been in ovr24hr [URL]",
-        "[USER] It's also a very frustrating tease to have a \"request invoice\" button on the website, but when button is pressed state: \"This trip was taken in a country for which [COMPANY] doesn't provide business features such as transportation invoices.\"\nWhy not?? Take the button off then!"
+        "[USER] hi just for a ride and it seemed to think I wanted to go to my original location. I canceled trip but want to see about being credited",
+        "Thanks [USER]. My ride never showed up. Tried to cancel the ride that I never got, but I was already charged for it.",
+        "[COMPANY] I tried to take an [COMPANY] this morning&amp;it was making me pay for old rides that were already taken&amp;paid for! Need help asap!"
       ]
     },
     {
-      "id": 22,
-      "size": 1091,
+      "id": 14,
+      "size": 1257,
       "words": [
-        "emails",
-        "mail",
-        "reply",
-        "address",
-        "response",
-        "sent",
-        "messages",
-        "complaint"
+        "available",
+        "airport",
+        "city",
+        "area",
+        "live",
+        "tomorrow",
+        "delhi",
+        "schedule"
       ],
       "examples": [
-        "[COMPANY] I’m not getting your texts. [URL]",
-        "[USER] Have exchanged 100s of emails with them over 45 days, new lie and misleading information received everyday. Just want my phon maild",
-        "[COMPANY] my girlfriend is being spammed by verification service, is she being hacked?"
-      ]
-    },
-    {
-      "id": 8,
-      "size": 1061,
-      "words": [
-        "refund",
-        "refunded",
-        "money",
-        "back",
-        "want",
-        "trip",
-        "paid",
-        "receipt"
-      ],
-      "examples": [
-        ".[COMPANY] My driver broke down. Any tips on getting a refund?",
-        "Hey [USER] my ride was suppose to be 7.99 your fucking driver took me the wrong way now it's 23 dollars I want a full refund",
-        "[USER] I suggest you refund me. Out of order. Never using [COMPANY] again."
+        "[COMPANY]; why do you make it impossible to arrange for a pick up at an FBO at an airport? I'm in the US and no matter what I do, the pick up location defaults to the terminal. I'm not at the the terminal. I'm at the FBO. You guys lost 3 rides tonight.",
+        "[COMPANY] hello I have obtained my Ph licence and bought a car. Still no on boarding in Birmingham uk it's been a month anyhelp?",
+        "[USER] [USER] plz get these “TC” license MORONS off the fucking road in and around nyc and the tri State area"
       ]
     },
     {
       "id": 12,
-      "size": 1059,
+      "size": 1233,
       "words": [
-        "minutes",
-        "wait",
-        "waiting",
-        "mins",
-        "long",
-        "hours",
-        "days",
-        "hour"
+        "help",
+        "issue",
+        "error",
+        "fix",
+        "support",
+        "code",
+        "problem",
+        "again"
       ],
       "examples": [
-        "[USER] [COMPANY] hopeless. Waiting for someone to respond on my request, more than 30 hrs",
-        "Wow had [USER] cancel on me 3 times this morning.. wtf.",
-        "[COMPANY] still waiting on actual support... nothing seems to be working"
+        "[USER] wtf is this.. every time I try to use the app it gives me this crap [URL]",
+        "[COMPANY] [USER] I am utterly disappointed by the non responsiveness of [COMPANY] support on all open issues related to my acc at 919414882215",
+        "[COMPANY] [USER] [USER] 1 month trying to get my lost camera returned. Please don't lose it! Please let me know how to get it back\n[COMPANY] [USER] [USER] not having a great experience with your support team. Just trying to get an item back. Can someone help?"
       ]
     },
     {
-      "id": 13,
-      "size": 1020,
+      "id": 9,
+      "size": 1165,
+      "words": [
+        "minutes",
+        "mins",
+        "wait",
+        "waiting",
+        "long",
+        "min",
+        "away",
+        "hour"
+      ],
+      "examples": [
+        "Think I'll start using [USER] more. [USER] drivers canceled on me three times left me waiting for nearly an hour.",
+        "I thought this was supposed to be the faster option [USER] [URL]\n[USER] well never mind i think they heard my complaint [URL]",
+        "[USER] [USER] really? When did the 5 min rule disappear? Also, it went up in time which is why I cancelled since I'm in a hurry [URL]"
+      ]
+    },
+    {
+      "id": 26,
+      "size": 1149,
+      "words": [
+        "refund",
+        "money",
+        "refunded",
+        "back",
+        "receipt",
+        "want",
+        "paid",
+        "trip"
+      ],
+      "examples": [
+        "[COMPANY] I booked a trip with you tonight, and after I paid for the trip the driver never came and the drive was completed in the app, what can we do to get our money back?",
+        "[USER] I had issue with [COMPANY] pool on 29th Oct. Still I don't get refund amount. [URL]",
+        "[COMPANY]\nDidnt recieved cashbach fir paymenr done with paytm."
+      ]
+    },
+    {
+      "id": 8,
+      "size": 1121,
+      "words": [
+        "app",
+        "working",
+        "deleting",
+        "ios",
+        "use",
+        "error",
+        "work",
+        "won"
+      ],
+      "examples": [
+        "[USER] your app and website still don’t work",
+        "Something is wrong with my #[COMPANY] app ☹️",
+        "[USER] what does \"can't verify payment profile\" mean? Super annoying app"
+      ]
+    },
+    {
+      "id": 17,
+      "size": 1108,
+      "words": [
+        "gps",
+        "route",
+        "drivers",
+        "maps",
+        "map",
+        "destination",
+        "away",
+        "directions"
+      ],
+      "examples": [
+        "[COMPANY] STOP SENDING ME DRIVERS SAYING THEIR 5 MINUTES AWAY WHEN THEY'RE REALLY 20 I HAVE PLACES TO BE!",
+        "[USER] can you not find some way to give priority to drivers that are 2minutes from me over the ones that are 10+?",
+        "[COMPANY] what's the deal with your drivers? Why can't they accept a ride only when they want to? Would be much better if they stop wasting people's time! Check timestamp of my ride at #bangalore airport. This is despite multiple calls to the driver [URL]"
+      ]
+    },
+    {
+      "id": 15,
+      "size": 1034,
       "words": [
         "left",
         "lost",
@@ -1540,37 +1521,18 @@
         "her",
         "friend",
         "mobile",
-        "iphone",
-        "car"
+        "car",
+        "forgot"
       ],
       "examples": [
         "[USER] [USER] My friend, Harsh Ranjan left his phone in [COMPANY] cab while returning home. He tried calling his phone, it rang at the beginning then after few seconds it's coming as switched off. I am sharing the driver details and trip details. Kindly help. [URL]",
-        "[COMPANY] left my phone in a car pls contact them asap",
-        "I am so disppointed with the lack of support from [COMPANY] my driver literally held my new iPhone hostage for hours in freezing temps"
+        "How can I find out if my phone has been dropped off at the Green Light Hub? [USER]",
+        "[COMPANY] it’s been 9 hours and I still haven’t heard back on my lost phone. What is going on???"
       ]
     },
     {
-      "id": 0,
-      "size": 989,
-      "words": [
-        "contact",
-        "number",
-        "talk",
-        "customer",
-        "speak",
-        "someone",
-        "call",
-        "support"
-      ],
-      "examples": [
-        "[COMPANY] Hi! I have a problem getting my invocie in Mexico (tax-legal facturas). Can you help or do you have a help center for Mexico?",
-        "[USER] How does one get help with a customer service issue preferably by phone?",
-        "[USER] u guys don’t even have a customer care number how should one reach you in distress???"
-      ]
-    },
-    {
-      "id": 9,
-      "size": 922,
+      "id": 18,
+      "size": 940,
       "words": [
         "number",
         "verification",
@@ -1583,51 +1545,89 @@
       ],
       "examples": [
         "Literally stranded because of [USER] and because there is no support phone number I have to wait from a message from [COMPANY] Smh 🤦🏾‍♂️",
-        "[COMPANY]\nWhen I tried to take [COMPANY] Cash or by Master or Visa Card using my Nokia 6 mobile getting following error [URL]",
-        "[COMPANY] this is utter bullcrap. Have updated the app, called and had my account reconfigured, logged out and in, reset my phone. [URL]"
+        "can y’all [USER] gimme back my phone????",
+        "[COMPANY] login system is a shit like a real shit, cant you guys just put a login button in your app and not suddenly come out with 'your mobile number is already in use' . Seriously its frustating\nTry to sign in through browser and this happens. Emailed them already but nobody replied. Fuck [USER] [URL]\n[USER] Few mins ago they replied, \"there is no account associated with this number\". Then how the fuck I CANNOT SIGN UP OR SIGN IN USING MY FUCKING NUMBER YOU [COMPANY] SHIT"
       ]
     },
     {
-      "id": 2,
-      "size": 777,
+      "id": 28,
+      "size": 925,
       "words": [
         "order",
         "ordered",
         "placed",
         "ordering",
-        "hour",
         "orders",
+        "hour",
         "missing",
         "half"
       ],
       "examples": [
         "Hi [USER] this is an inadequate response to me telling you I had to throw away the entire £18 order. If eat in, would’ve been sent back [URL]",
-        "i’m never ordering [USER] ever again. they fuck my shit up every time",
-        "[COMPANY] i have just made a new account and whenever i try to order an [COMPANY] it says “oops something went wrong”"
+        "[COMPANY] I've tried ordering an [COMPANY] for the first time on Saturday and it just showed my an error message. Had to go with Lyft instead",
+        "Dear [USER], this morning I received another attempt to upcharge me for an \"[COMPANY]XL upgrade\" when it's clear this ride, a week ago, was an [COMPANY]X. I'm truly suspecting that your employees have a secondary agenda because ...dude, this is blatant. [URL]"
       ]
     },
     {
-      "id": 16,
-      "size": 655,
+      "id": 4,
+      "size": 877,
+      "words": [
+        "app",
+        "request",
+        "schedule",
+        "error",
+        "option",
+        "ride",
+        "book",
+        "says"
+      ],
+      "examples": [
+        "Sometimes I can’t tell if my [USER] app is messing up or if my driver likes to make me wait longer by doing donuts on the way to get me",
+        "[USER] hi yhere i have a problem i cant use my apps as a driver and no one help here in ksa [URL]",
+        "[USER] my parents are flying into Seattle airport tomorrow. Can I request and pay for their [COMPANY] with my app even though I wont be with"
+      ]
+    },
+    {
+      "id": 25,
+      "size": 833,
+      "words": [
+        "hacked",
+        "password",
+        "reset",
+        "account",
+        "emails",
+        "address",
+        "someone",
+        "hack"
+      ],
+      "examples": [
+        "[COMPANY] need to recover my account whose password I've lost. I've not added any email address.",
+        "[USER] suspect fraudulent use of my email address on an [COMPANY] account... what do I do...help facility on website useless!",
+        "[USER] got given a voucher code on 30th Sep tried to use it today and it has expired. No mention of expiry in email??"
+      ]
+    },
+    {
+      "id": 13,
+      "size": 644,
       "words": [
         "promo",
         "code",
         "codes",
         "apply",
         "promotion",
-        "promotional",
         "applied",
+        "promotional",
         "promos"
       ],
       "examples": [
         "I need a hookup with an [USER] promo code. Help a nigga out! #[COMPANY]promo #fucklyft #[COMPANY]",
-        "I got charged regular price when i used my 10 off promo code, it said it was applied too [USER]",
-        "[COMPANY] why did my promo just disappear? I didn’t take my 10 rides"
+        "[COMPANY] hey I got an email for a fall promotion, but when I go to apply it, it says it is not a valid promo code.",
+        "[COMPANY] [USER] unable to apply promo code as no such option is available. [URL]"
       ]
     },
     {
-      "id": 26,
-      "size": 514,
+      "id": 7,
+      "size": 532,
       "words": [
         "help",
         "need",
@@ -1636,31 +1636,31 @@
         "please",
         "thank",
         "item",
-        "asap"
+        "some"
       ],
       "examples": [
         "[COMPANY] WTF??? Trying to book &amp; it just says Oops. Trying to get help &amp; nothing is working. HELP!!! I need to book urgently #[COMPANY]drama",
-        "[COMPANY] i need help asap",
-        "[COMPANY] my [COMPANY] doesn’t even have a seatbelt so if I die 😊😊😊😊"
+        "[COMPANY] how can I start [COMPANY] in my town",
+        "[COMPANY]. I need your help!!!"
       ]
     },
     {
-      "id": 7,
-      "size": 501,
+      "id": 10,
+      "size": 531,
       "words": [
-        "doughnuts",
-        "donuts",
-        "krispy",
-        "free",
-        "mcdonald",
-        "kreme",
-        "fries",
-        "ordered"
+        "wtf",
+        "joke",
+        "explain",
+        "these",
+        "link",
+        "mean",
+        "hungry",
+        "wth"
       ],
       "examples": [
-        "[USER] you failed me, seriously a burrito and queso when I ordered a salad?! And no request to get this fixed... help me out!",
-        "Craving dumplings. Help a sister out [USER] 👋🏼",
-        "[COMPANY] I have been charged by your app for the ‘free’ Krispy Kreme doughnuts which got cancelled! Please send a refund"
+        "[COMPANY] Again [URL]",
+        "[COMPANY] [USER] [USER] [URL]",
+        "[USER] how can i fix this? [URL]"
       ]
     },
     {
@@ -1673,13 +1673,13 @@
         "respond",
         "please",
         "reply",
-        "thanks",
-        "dmed"
+        "dmed",
+        "thanks"
       ],
       "examples": [
         "Bruh can someone at [USER] [COMPANY] get back to me on my Dms 😒😒😒😒",
-        "Please dm me back [COMPANY]",
-        "[USER] please se DM"
+        "[COMPANY] please check your dm and follow up...ty",
+        "[COMPANY] DM please"
       ]
     }
   ]

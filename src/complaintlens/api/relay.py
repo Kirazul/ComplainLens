@@ -10,12 +10,13 @@ from __future__ import annotations
 import asyncio
 from typing import Any
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from pydantic import BaseModel, Field
 from sqlmodel import col, select
 
 from complaintlens.api.inbox import poll_inbox_once
 from complaintlens.api.state import state
+from complaintlens.channels.agentmail import verify_webhook
 from complaintlens.schemas import Channel, InboundMessage, utcnow
 from complaintlens.security import require_channel_token
 from complaintlens.settings import get_settings
@@ -24,6 +25,8 @@ from complaintlens.store import Reply, Ticket, new_session
 router = APIRouter(
     prefix="/api/channels", tags=["relay"], dependencies=[Depends(require_channel_token)]
 )
+# Called by AgentMail when new mail arrives; authenticated by its signature, not the channel token.
+webhooks = APIRouter(prefix="/api/channels", tags=["relay"])
 
 
 class ForumPostIn(BaseModel):
@@ -113,3 +116,13 @@ def forum_delivered(payload: DeliveredIn) -> dict[str, int]:
         s.commit()
     state.bus.publish({"type": "reply", "status": "sent", "count": done})
     return {"delivered": done}
+
+
+@webhooks.post("/email/webhook", status_code=202)
+async def email_webhook(request: Request, background: BackgroundTasks) -> dict[str, bool]:
+    """New mail at AgentMail: collect it now (the request also wakes a sleeping service)."""
+    secret = get_settings().agentmail_webhook_secret
+    if not verify_webhook(secret, dict(request.headers), await request.body()):
+        raise HTTPException(401, "invalid signature")
+    background.add_task(poll_inbox_once)
+    return {"accepted": True}

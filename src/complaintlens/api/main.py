@@ -14,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from complaintlens import annotation, auth
 from complaintlens.api import account, inbox, public, relay, research, staff
 from complaintlens.api.state import state
+from complaintlens.channels.agentmail import AgentMailSender
 from complaintlens.channels.email import EmailSender
 from complaintlens.events import EventBus
 from complaintlens.llm import default_client
@@ -50,7 +51,10 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         per_key=settings.messages_per_ip_per_hour, window=3600, total=settings.messages_per_day
     )
     state.login_limiter = RateLimiter(per_key=10, window=900, total=2000, what="sign-in attempts")
-    senders = {Channel.EMAIL.value: EmailSender(settings)} if settings.email_can_send else {}
+    email_sender = (
+        AgentMailSender(settings) if settings.email_inbox == "agentmail" else EmailSender(settings)
+    )
+    senders = {Channel.EMAIL.value: email_sender} if settings.email_can_send else {}
     kb = KnowledgeBase.load(settings.help_center_dir)
     retriever = await asyncio.to_thread(build_retriever, kb)
     state.processor = Processor(
@@ -66,6 +70,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             "enabled": True,
             "address": settings.email_address,
             "sends_replies": settings.email_can_send,
+            "provider": settings.email_inbox,
         }
         state.email_task = asyncio.create_task(inbox.email_loop())
     yield
@@ -98,3 +103,4 @@ async def track_activity(request: Request, call_next):
 
 for module in (public, account, staff, research, relay):
     app.include_router(module.router)
+app.include_router(relay.webhooks)

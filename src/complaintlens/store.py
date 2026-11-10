@@ -68,6 +68,7 @@ class Ticket(SQLModel, table=True):
     body: str
     received_at: datetime = Field(default_factory=utcnow)
     external_id: str | None = Field(default=None, index=True)  # email Message-ID
+    thread_id: str | None = Field(default=None, index=True)  # email conversation (AgentMail)
     in_reply_to: str | None = None
     # processing | auto_send | awaiting_approval | escalated | no_reply | answered | closed
     status: str = "new"
@@ -97,6 +98,7 @@ class CustomerMessage(SQLModel, table=True):
     ticket_id: int = Field(foreign_key="ticket.id", index=True)
     body: str
     received_at: datetime = Field(default_factory=utcnow)
+    external_id: str | None = Field(default=None, index=True)  # the email's Message-ID, if any
 
 
 class StageRecord(SQLModel, table=True):

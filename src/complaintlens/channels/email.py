@@ -21,6 +21,7 @@ from email.utils import formataddr, make_msgid
 from imap_tools import AND, MailBox, MailMessage, MailMessageFlags
 
 from complaintlens.pipeline.normalize import html_to_text
+from complaintlens.pipeline.respond import strip_citations
 from complaintlens.schemas import Channel, InboundMessage, utcnow
 from complaintlens.settings import Settings, get_settings
 from complaintlens.store import Reply, Ticket
@@ -143,7 +144,7 @@ def build_reply_email(ticket: Ticket, reply: Reply, settings: Settings) -> Email
     footer = FOOTER[lang].format(
         ticket=ticket.number, company=settings.company_name, track_url=track_url(ticket, settings)
     )
-    email.set_content(reply.body + footer)
+    email.set_content(strip_citations(reply.body) + footer)
     return email
 
 
