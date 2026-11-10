@@ -160,7 +160,7 @@ export default function InboxPage() {
     <main className="mx-auto max-w-7xl px-5 py-8">
       <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
         <h1 className="text-2xl font-semibold">Inbox</h1>
-        <span className="flex items-center gap-2 text-sm text-muted" role="status">
+        <span className="flex w-full items-center gap-2 text-sm text-muted md:w-auto" role="status">
           <span
             className={`size-2 rounded-full ${connected ? "bg-sent" : "bg-quiet"}`}
             aria-hidden
@@ -168,7 +168,7 @@ export default function InboxPage() {
           {connected ? "Live. New messages appear here as they arrive." : "Connecting to live updates…"}
         </span>
         {/* Rendered before the health check answers (empty) so the page does not shift. */}
-        <span className="min-h-5 text-sm text-muted md:ml-auto">
+        <span className="min-h-5 w-full text-sm text-muted md:ml-auto md:w-auto">
           {health &&
             (health.llm.enabled ? `Language model ${health.llm.model}` : "No language model (classical fallback)")}
         </span>
