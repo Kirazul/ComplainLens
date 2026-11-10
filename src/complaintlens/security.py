@@ -19,7 +19,8 @@ from complaintlens.settings import get_settings
 
 
 def _matches(given: str | None, expected: str) -> bool:
-    return bool(given) and secrets.compare_digest(given or "", expected)
+    # Bytes: compare_digest rejects non-ASCII str, and a header can contain anything.
+    return bool(given) and secrets.compare_digest((given or "").encode(), expected.encode())
 
 
 def is_operator(request: Request) -> bool:

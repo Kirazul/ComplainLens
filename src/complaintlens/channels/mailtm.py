@@ -4,22 +4,26 @@ mail.tm receives only (it has no SMTP), so with this inbox replies are read on t
 and in the console. Each message's raw source is downloaded and parsed exactly like an IMAP
 message, so loop protection and normalisation are the same for both inboxes.
 
-Create the inbox once with ``uv run complaintlens inbox create <name>``.
+Create the inbox once with ``uv run complaintlens inbox-create <name>``.
+
+mail.tm limits request rates (HTTP 429), so the login token is reused until it expires and the
+caller polls at a modest pace and backs off when told to.
 """
 
 from __future__ import annotations
 
 import logging
 import secrets
+from datetime import datetime
 
 import httpx
 from imap_tools import MailMessage
 
-from complaintlens.channels.email import is_automatic, to_inbound
-from complaintlens.schemas import InboundMessage
+from complaintlens.channels.email import Fetched, should_skip, to_inbound
 from complaintlens.settings import Settings, get_settings
 
 log = logging.getLogger(__name__)
+_tokens: dict[str, str] = {}  # address -> login token, reused across polls
 
 
 def _client(s: Settings) -> httpx.Client:
@@ -53,29 +57,49 @@ def check_login(settings: Settings | None = None) -> None:
         _token(client, s.email_address, s.email_password)
 
 
-def fetch_new_messages(settings: Settings | None = None) -> list[InboundMessage]:
-    """Fetch unseen messages, mark them seen, and return the ones we should process."""
+def _authorize(client: httpx.Client, s: Settings, refresh: bool = False) -> None:
+    if refresh or s.email_address not in _tokens:
+        _tokens[s.email_address] = _token(client, s.email_address, s.email_password)
+    client.headers["Authorization"] = f"Bearer {_tokens[s.email_address]}"
+
+
+def _get(client: httpx.Client, s: Settings, path: str, **kwargs) -> httpx.Response:
+    r = client.get(path, **kwargs)
+    if r.status_code == 401:  # token expired: log in again once
+        _authorize(client, s, refresh=True)
+        r = client.get(path, **kwargs)
+    r.raise_for_status()
+    return r
+
+
+def fetch_new_messages(settings: Settings | None = None) -> list[Fetched]:
+    """Unseen messages to process; skipped ones (automatic replies, our own) are marked seen.
+
+    Raises ``httpx.HTTPStatusError`` (e.g. 429 when rate-limited): the caller retries later.
+    """
     s = settings or get_settings()
-    out: list[InboundMessage] = []
-    with _client(s) as client:
-        client.headers["Authorization"] = (
-            f"Bearer {_token(client, s.email_address, s.email_password)}"
-        )
-        listing = client.get("/messages", params={"page": 1})
-        listing.raise_for_status()
-        for item in listing.json()["hydra:member"]:
-            if item.get("seen"):
-                continue
-            raw = client.get(f"/messages/{item['id']}/download")
-            raw.raise_for_status()
-            client.patch(
-                f"/messages/{item['id']}",
+
+    def mark_seen(message_id: str) -> None:
+        with _client(s) as c:
+            _authorize(c, s)
+            c.patch(
+                f"/messages/{message_id}",
                 json={"seen": True},
                 headers={"Content-Type": "application/merge-patch+json"},
             ).raise_for_status()
-            msg = MailMessage.from_bytes(raw.content)
-            if msg.from_.lower() == s.email_address.lower() or is_automatic(msg):
-                log.info("skipping automatic/own message from %s", msg.from_)
+
+    out: list[Fetched] = []
+    with _client(s) as client:
+        _authorize(client, s)
+        listing = _get(client, s, "/messages", params={"page": 1})
+        for item in listing.json()["hydra:member"]:
+            if item.get("seen"):
                 continue
-            out.append(to_inbound(msg))
+            raw = _get(client, s, f"/messages/{item['id']}/download").content
+            msg = MailMessage.from_bytes(raw)
+            if should_skip(msg, s):
+                mark_seen(item["id"])
+                continue
+            arrived = datetime.fromisoformat(item["createdAt"]) if item.get("createdAt") else None
+            out.append(Fetched(to_inbound(msg, arrived), lambda i=item["id"]: mark_seen(i)))
     return out

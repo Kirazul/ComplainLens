@@ -12,17 +12,33 @@ from __future__ import annotations
 
 import logging
 import smtplib
+from collections.abc import Callable
+from dataclasses import dataclass
+from datetime import datetime, timedelta
 from email.message import EmailMessage
 from email.utils import formataddr, make_msgid
 
-from imap_tools import AND, MailBox, MailMessage
+from imap_tools import AND, MailBox, MailMessage, MailMessageFlags
 
 from complaintlens.pipeline.normalize import html_to_text
-from complaintlens.schemas import Channel, InboundMessage
+from complaintlens.schemas import Channel, InboundMessage, utcnow
 from complaintlens.settings import Settings, get_settings
 from complaintlens.store import Reply, Ticket
 
 log = logging.getLogger(__name__)
+
+
+@dataclass
+class Fetched:
+    """A new email and how to mark it handled in the mailbox.
+
+    The caller stores the ticket first and acknowledges afterwards, so a crash in between can only
+    cause a duplicate (skipped by Message-ID), never a lost message.
+    """
+
+    message: InboundMessage
+    ack: Callable[[], None]
+
 
 FOOTER = {
     "en": "\n\n—\nTicket {ticket} · {company} Support\nFollow your request: {track_url}\n"
@@ -50,7 +66,18 @@ def is_automatic(msg: MailMessage) -> bool:
     )
 
 
-def to_inbound(msg: MailMessage) -> InboundMessage:
+def received_time(header_date: datetime | None, arrived: datetime | None = None) -> datetime:
+    """When the message reached us: the mail server's arrival time if known, else the Date header
+    if it is a real, time-zoned date (it is the sender's clock and may be missing), else now."""
+    if arrived is not None:
+        return arrived
+    now = utcnow()
+    if header_date and header_date.tzinfo and abs(now - header_date) < timedelta(days=7):
+        return header_date
+    return now
+
+
+def to_inbound(msg: MailMessage, arrived: datetime | None = None) -> InboundMessage:
     body = msg.text or html_to_text(msg.html or "")
     return InboundMessage(
         channel=Channel.EMAIL,
@@ -58,24 +85,39 @@ def to_inbound(msg: MailMessage) -> InboundMessage:
         sender_name=(msg.from_values.name or None) if msg.from_values else None,
         subject=msg.subject or None,
         body=body,
-        received_at=msg.date,
+        received_at=received_time(msg.date, arrived),
         external_id=_header(msg, "message-id") or None,
         in_reply_to=_header(msg, "in-reply-to") or None,
     )
 
 
-def fetch_new_messages(settings: Settings | None = None) -> list[InboundMessage]:
-    """Fetch unread messages, mark them read, and return the ones we should process."""
+def should_skip(msg: MailMessage, settings: Settings) -> bool:
+    if msg.from_.lower() == settings.email_address.lower() or is_automatic(msg):
+        log.info("skipping automatic/own message from %s", msg.from_)
+        return True
+    return False
+
+
+def fetch_new_messages(settings: Settings | None = None) -> list[Fetched]:
+    """Unread messages to process; skipped ones (automatic replies, our own) are marked read."""
     s = settings or get_settings()
-    out: list[InboundMessage] = []
+    out: list[Fetched] = []
+
+    def mark_read(uid: str) -> Callable[[], None]:
+        def ack() -> None:
+            with MailBox(s.imap_host).login(s.email_address, s.email_password) as mb:
+                mb.flag(uid, MailMessageFlags.SEEN, True)
+
+        return ack
+
     with MailBox(s.imap_host).login(
         s.email_address, s.email_password, initial_folder="INBOX"
     ) as mb:
-        for msg in mb.fetch(AND(seen=False), mark_seen=True, bulk=True):
-            if msg.from_.lower() == s.email_address.lower() or is_automatic(msg):
-                log.info("skipping automatic/own message from %s", msg.from_)
+        for msg in mb.fetch(AND(seen=False), mark_seen=False, bulk=True):
+            if should_skip(msg, s):
+                mb.flag(msg.uid, MailMessageFlags.SEEN, True)
                 continue
-            out.append(to_inbound(msg))
+            out.append(Fetched(to_inbound(msg), mark_read(msg.uid)))
     return out
 
 

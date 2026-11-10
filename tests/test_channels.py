@@ -139,8 +139,12 @@ def test_mailtm_inbox_fetches_unseen_mail_and_skips_auto_replies(monkeypatch):
         if path == "/token":
             return httpx.Response(200, json={"token": "t"})
         if path == "/messages":
-            members = [{"id": "1", "seen": False}, {"id": "2", "seen": False}]
-            return httpx.Response(200, json={"hydra:member": [*members, {"id": "3", "seen": True}]})
+            members = [
+                {"id": "1", "seen": False, "createdAt": "2026-11-10T07:23:44+00:00"},
+                {"id": "2", "seen": False},
+                {"id": "3", "seen": True},
+            ]
+            return httpx.Response(200, json={"hydra:member": members})
         if path.endswith("/download"):
             return httpx.Response(200, content=RAW if "/1/" in path else AUTO)
         if request.method == "PATCH":
@@ -155,8 +159,61 @@ def test_mailtm_inbox_fetches_unseen_mail_and_skips_auto_replies(monkeypatch):
             base_url="https://mail.test", transport=httpx.MockTransport(handler)
         ),
     )
+    monkeypatch.setattr(mailtm, "_tokens", {})
     s = Settings(email_inbox="mailtm", email_address="lunagocare@fldubai.com", email_password="p")
-    messages = mailtm.fetch_new_messages(s)
-    assert [m.sender for m in messages] == ["prof@univ.tn"]
-    assert messages[0].subject == "Refund" and "charged twice" in messages[0].body
-    assert patched == ["/messages/1", "/messages/2"]  # both marked seen, even the skipped one
+    fetched = mailtm.fetch_new_messages(s)
+    assert [f.message.sender for f in fetched] == ["prof@univ.tn"]
+    message = fetched[0].message
+    assert message.subject == "Refund" and "charged twice" in message.body
+    # No Date header in RAW: the server's arrival time is used, never a made-up date.
+    assert message.received_at.isoformat() == "2026-11-10T07:23:44+00:00"
+    assert patched == ["/messages/2"]  # the auto-reply is marked seen at once
+    fetched[0].ack()
+    assert patched == ["/messages/2", "/messages/1"]  # the real one only once acknowledged
+
+
+def test_received_time_falls_back_to_now_for_missing_or_naive_dates():
+    from datetime import UTC, datetime
+
+    from complaintlens.channels.email import received_time
+
+    assert received_time(datetime(1900, 1, 1)).year >= 2026  # imap_tools' "no Date header"
+    recent = datetime.now(UTC)
+    assert received_time(recent) == recent
+
+
+def test_channel_token_comparison_tolerates_non_ascii_headers(client):
+    r = client.get(
+        "/api/channels/forum/outbox", headers={"X-Channel-Token": "jeton-é".encode("latin-1")}
+    )
+    assert r.status_code == 401
+
+
+def test_email_poller_stores_before_acknowledging_and_skips_duplicates(client, monkeypatch):
+    import asyncio
+
+    from complaintlens import api
+    from complaintlens.channels.email import Fetched
+    from complaintlens.schemas import Channel, InboundMessage
+
+    acks: list[str] = []
+
+    def inbox(_settings=None):
+        message = InboundMessage(
+            channel=Channel.EMAIL,
+            sender="prof@univ.tn",
+            body="My order never came",
+            external_id="<m1>",
+        )
+        return [Fetched(message, lambda: acks.append("m1"))]
+
+    monkeypatch.setattr(api.imap_inbox, "fetch_new_messages", inbox)
+    monkeypatch.setattr(api.mailtm_inbox, "fetch_new_messages", inbox)
+    assert asyncio.run(api.poll_inbox_once()) == 1
+    assert (
+        asyncio.run(api.poll_inbox_once()) == 0
+    )  # same Message-ID: acknowledged, not re-processed
+    assert acks == ["m1", "m1"]
+    auth = {"Authorization": f"Bearer {OPERATOR}"}
+    tickets = client.get("/api/tickets", headers=auth).json()
+    assert [t["sender"] for t in tickets] == ["prof@univ.tn"]
