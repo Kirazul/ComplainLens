@@ -1,7 +1,12 @@
 """Database tables (SQLModel). SQLite locally, Postgres in production: same code, ``DATABASE_URL``.
 
 Company side (LunaGo, fictional, synthetic): Customer, Trip (rides and food orders).
-ComplaintLens side: Ticket, StageRecord (one per pipeline stage: the X-ray trace), Reply.
+ComplaintLens side: Ticket, CustomerMessage (the customer's follow-ups in the same conversation),
+StageRecord (one per pipeline stage: the X-ray trace), Reply (what LunaGo sent or drafted).
+Staff side: User, LoginSession (console sign-in).
+
+New columns on existing tables are added at startup (``_add_missing_columns``): the deployed
+database keeps its data across releases without a migration tool.
 """
 
 from __future__ import annotations
@@ -11,7 +16,7 @@ from datetime import datetime
 from functools import cache
 from typing import Any
 
-from sqlalchemy import JSON, Column
+from sqlalchemy import JSON, Column, inspect, text
 from sqlmodel import Field, Session, SQLModel, create_engine
 
 from complaintlens.schemas import utcnow
@@ -61,7 +66,8 @@ class Ticket(SQLModel, table=True):
     received_at: datetime = Field(default_factory=utcnow)
     external_id: str | None = Field(default=None, index=True)  # email Message-ID
     in_reply_to: str | None = None
-    status: str = "new"  # new|processing|auto_sent|awaiting_approval|escalated|no_reply|closed
+    # processing | auto_send | awaiting_approval | escalated | no_reply | answered | closed
+    status: str = "new"
     language: str | None = None
     team: str | None = None
     priority: int | None = None
@@ -72,10 +78,22 @@ class Ticket(SQLModel, table=True):
     total_ms: float | None = None
     # Secret for the customer's tracking link: only someone with the link can see the ticket.
     track_key: str = Field(default_factory=lambda: secrets.token_urlsafe(9))
+    # Last time the customer or the team wrote (the inbox is sorted by it). None on old rows.
+    updated_at: datetime | None = Field(default_factory=utcnow)
 
     @property
     def number(self) -> str:
         return f"LG-{self.id:06d}" if self.id else "LG-??????"
+
+
+class CustomerMessage(SQLModel, table=True):
+    """A follow-up from the customer in an existing conversation (the first message is
+    ``Ticket.body``)."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    ticket_id: int = Field(foreign_key="ticket.id", index=True)
+    body: str
+    received_at: datetime = Field(default_factory=utcnow)
 
 
 class StageRecord(SQLModel, table=True):
@@ -97,10 +115,31 @@ class Reply(SQLModel, table=True):
     body: str
     citations: list[str] = Field(default_factory=list, sa_column=Column(JSON))
     verification: dict[str, Any] = Field(default_factory=dict, sa_column=Column(JSON))
-    status: str = "draft"  # draft | sent | failed
+    status: str = "draft"  # draft | queued | sent | failed
     created_at: datetime = Field(default_factory=utcnow)
     sent_at: datetime | None = None
     error: str | None = None
+    author: str | None = None  # the agent who sent it; None = sent automatically
+
+
+class User(SQLModel, table=True):
+    """A support agent or administrator who signs in to the console."""
+
+    id: int | None = Field(default=None, primary_key=True)
+    username: str = Field(index=True, unique=True)
+    name: str
+    role: str = "agent"  # agent | admin (admins also manage the team)
+    password_hash: str
+    created_at: datetime = Field(default_factory=utcnow)
+
+
+class LoginSession(SQLModel, table=True):
+    """A signed-in browser. Only a hash of the token is stored."""
+
+    token_hash: str = Field(primary_key=True)
+    user_id: int = Field(foreign_key="user.id", index=True)
+    created_at: datetime = Field(default_factory=utcnow)
+    expires_at: datetime
 
 
 class AnnotationItem(SQLModel, table=True):
@@ -131,7 +170,25 @@ def get_engine(url: str | None = None):
     connect_args = {"check_same_thread": False} if url.startswith("sqlite") else {}
     engine = create_engine(url, connect_args=connect_args)
     SQLModel.metadata.create_all(engine)
+    _add_missing_columns(engine)
     return engine
+
+
+def _add_missing_columns(engine) -> None:
+    """Add columns that a newer release declares to tables created by an older one (nullable,
+    so existing rows stay valid). Renames and removals are not handled: avoid them."""
+    existing = inspect(engine)
+    with engine.begin() as conn:
+        for table in SQLModel.metadata.sorted_tables:
+            if not existing.has_table(table.name):
+                continue
+            present = {c["name"] for c in existing.get_columns(table.name)}
+            for column in table.columns:
+                if column.name not in present:
+                    kind = column.type.compile(dialect=engine.dialect)
+                    conn.execute(
+                        text(f'ALTER TABLE "{table.name}" ADD COLUMN "{column.name}" {kind}')
+                    )
 
 
 def new_session(url: str | None = None) -> Session:

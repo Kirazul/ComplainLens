@@ -19,14 +19,23 @@ Send a complaint from any of these channels and watch it appear in the console w
 |---|---|---|
 | Email | write to `lunagocare@fldubai.com` | console (this free inbox receives only) |
 | Contact form | website, "Contact support" | the ticket's tracking page |
-| Live chat | website, "Chat with us" (every page) | the chat itself |
+| Live chat | website, "Chat with us" (every page) | the chat itself; the conversation continues there |
 | Trip rating | website, "Rate a trip" (stars + comment) | the ticket's tracking page |
 | Community forum | [GitHub Discussions](https://github.com/Kirazul/ComplainLens/discussions) of this repository | a comment in the thread |
 
-The console is public and read-only: customer emails and names are masked. **Agents** sign in
-with the operator token (top right of the console, value in the local `.env` as
-`OPERATOR_TOKEN`) to see contacts and approve or edit AI drafts. The API sleeps when idle to stay
-within the free plan: the first request after a pause can take about 20 seconds.
+Every ticket is a conversation: a customer can keep writing in the chat or on the ticket page, and
+the AI reads the whole conversation again. Once an agent has replied, the AI only drafts.
+
+The console is for staff only: sign in with a username and password. The first administrator is
+created at startup from `ADMIN_USERNAME` / `ADMIN_PASSWORD` (locally, without a password:
+`admin` / `admin`). Administrators add agents on the **Team** page; anyone can change their own
+password from the account menu. Lost password: `uv run complaintlens set-password admin`.
+
+In a conversation the agent sees the AI's suggestion in the reply box (send it, edit it, or write
+their own), why the AI decided what it did, and the **Trip check**: which ride or order the message
+was linked to, why, and the facts from the record that the reply may state (every number in a reply
+is checked against them). The API sleeps when idle to stay within the free plan: the first request
+after a pause can take about 20 seconds.
 
 - Plan and research: [`docs/plan.md`](docs/plan.md)
 - Project proposal: [`docs/proposal.md`](docs/proposal.md)
@@ -92,10 +101,10 @@ the embedding model at build time, so no model weights are stored in git.
 |---|---|---|
 | Website and console | GitHub Pages (static export) | workflow `pages.yml` on every push to `main` touching `apps/web` or the Help Center; the API address comes from the repository variable `API_URL` |
 | API, models, database | Railway (Docker image `infra/api.Dockerfile`, SQLite on a 500 MB volume at `/app/data`) | `railway up --service api` from the repository root |
-| Community forum relay | GitHub Actions, workflow `relay.yml` | runs on each new Discussion, and hourly to collect email and post approved replies |
+| Community forum relay | GitHub Actions, workflow `relay.yml` | runs on each new Discussion, and hourly to collect email and post agents' replies |
 
 Railway service variables: `LLM_API_KEY`, `EMAIL_INBOX`, `EMAIL_ADDRESS`, `EMAIL_PASSWORD`,
-`OPERATOR_TOKEN`, `CHANNEL_TOKEN`, `PUBLIC_BASE_URL`, `CORS_ORIGINS`, `DATABASE_URL`
+`ADMIN_PASSWORD`, `CHANNEL_TOKEN`, `PUBLIC_BASE_URL`, `CORS_ORIGINS`, `DATABASE_URL`
 (`sqlite:////app/data/app.db`) and `RAILWAY_RUN_UID=0` (the volume is owned by root). The service
 uses the Dockerfile at `infra/api.Dockerfile`, health check `/api/health`, and sleeps when idle.
 GitHub: secret `CHANNEL_TOKEN` (same value as on Railway) and variable `API_URL`.

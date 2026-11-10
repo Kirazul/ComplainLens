@@ -142,8 +142,8 @@ def test_end_to_end_refund_case_sends_ack_and_keeps_draft_for_approval(processor
         }
     assert {e["type"] for e in events} >= {"ticket_created", "stage", "ticket_updated"}
 
-    approved = p.approve(ticket.id)
-    assert approved.status == "sent"
+    approved = p.agent_reply(ticket.id, author="Rimel")
+    assert approved.status == "sent" and approved.author == "Rimel"
     assert sender.sent[-1][1] == "answer"
 
 

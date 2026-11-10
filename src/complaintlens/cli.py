@@ -4,6 +4,7 @@ serve                 start the API (and the email poller if email is configured
 send "text" [...]     process one message locally and print its trace (no email sent)
 check                 verify the LLM key and the mailbox credentials work
 inbox-create NAME     create a free mail.tm support inbox (no sign-up) and print its settings
+set-password USER     set a console password (creates USER as an administrator if new)
 """
 
 from __future__ import annotations
@@ -110,6 +111,29 @@ def cmd_inbox_create(args: argparse.Namespace) -> None:
     print(f"EMAIL_PASSWORD={password}")
 
 
+def cmd_set_password(args: argparse.Namespace) -> None:
+    import getpass
+
+    from sqlmodel import select
+
+    from complaintlens import auth
+    from complaintlens.store import User, new_session
+
+    username = args.username.strip().lower()
+    password = getpass.getpass(f"New password for {username}: ")
+    try:
+        auth.check_password(password)
+    except Exception:
+        sys.exit(f"The password needs at least {auth.MIN_PASSWORD} characters.")
+    with new_session() as s:
+        user = s.exec(select(User).where(User.username == username)).first()
+        if user is None:
+            auth.check_new_account(username, password)
+            user = User(username=username, name=username.title(), role="admin", password_hash="")
+        auth.set_password(s, user, password)
+    print(f"Password set for {username}.")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(prog="complaintlens")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -128,6 +152,9 @@ def main() -> None:
     p = sub.add_parser("inbox-create", help="create a free mail.tm support inbox")
     p.add_argument("name", help="the part before @, e.g. lunagocare")
     p.set_defaults(func=cmd_inbox_create)
+    p = sub.add_parser("set-password", help="set a console password (account recovery)")
+    p.add_argument("username")
+    p.set_defaults(func=cmd_set_password)
     args = parser.parse_args()
     args.func(args)
 

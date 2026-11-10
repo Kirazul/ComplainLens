@@ -53,13 +53,17 @@ class Settings(BaseSettings):
     smtp_port: int = 465
     mailtm_api: str = "https://api.mail.tm"
 
-    # Console actions (approve a reply, save an annotation) need this token; without it the
-    # console is read-only and customer contacts are masked. Empty = open (local development).
-    operator_token: str = ""
+    # Console sign-in. The first administrator is created at startup with these credentials
+    # (only if no account exists yet; later changes are made in the console's Team page).
+    # Without ADMIN_PASSWORD the password is "admin": fine on a laptop, never on a server.
+    admin_username: str = "admin"
+    admin_password: str = ""
+    session_hours: int = 12
     # Shared secret of the forum relay (GitHub Actions). Empty = forum channel disabled.
     channel_token: str = ""
-    # Abuse and quota protection for public message submission (each message costs LLM calls).
-    messages_per_ip_per_hour: int = 12
+    # Abuse and quota protection for public messages (each one costs two LLM calls). A chat
+    # conversation sends several messages, hence 30 per hour.
+    messages_per_ip_per_hour: int = 30
     messages_per_day: int = 300
 
     public_base_url: str = "http://localhost:3000"

@@ -1,9 +1,8 @@
-"""Access control and abuse protection for the public API.
+"""Machine access and abuse protection for the public API (staff sign-in is in ``auth.py``).
 
-- Operators (support agents) send ``Authorization: Bearer <OPERATOR_TOKEN>``; everyone else sees
-  the console read-only, with customer contacts masked.
 - The forum relay sends ``X-Channel-Token: <CHANNEL_TOKEN>``.
-- Message submission is rate-limited per client and per day: each message costs LLM calls.
+- Customer messages are rate-limited per client and per day (each one costs LLM calls), and
+  sign-in attempts per client (password guessing).
 """
 
 from __future__ import annotations
@@ -23,19 +22,6 @@ def _matches(given: str | None, expected: str) -> bool:
     return bool(given) and secrets.compare_digest((given or "").encode(), expected.encode())
 
 
-def is_operator(request: Request) -> bool:
-    expected = get_settings().operator_token
-    if not expected:  # local development: no token configured
-        return True
-    auth = request.headers.get("authorization", "")
-    return auth.startswith("Bearer ") and _matches(auth.removeprefix("Bearer "), expected)
-
-
-def require_operator(request: Request) -> None:
-    if not is_operator(request):
-        raise HTTPException(401, "operator token required")
-
-
 def require_channel_token(request: Request) -> None:
     expected = get_settings().channel_token
     if not expected:
@@ -44,27 +30,11 @@ def require_channel_token(request: Request) -> None:
         raise HTTPException(401, "invalid channel token")
 
 
-def mask_contact(contact: str | None) -> str | None:
-    """``rimel.zouari@example.com`` -> ``r••••@example.com`` (forum logins are public already)."""
-    if not contact or "@" not in contact or contact.startswith("forum:"):
-        return contact
-    local, domain = contact.split("@", 1)
-    return f"{local[:1]}••••@{domain}"
-
-
-def mask_name(name: str | None) -> str | None:
-    """``Rimel Zouari`` -> ``Rimel Z.``: enough to tell customers apart, not to identify them."""
-    if not name:
-        return name
-    parts = name.split()
-    return parts[0] if len(parts) == 1 else f"{parts[0]} {parts[-1][0]}."
-
-
 class RateLimiter:
     """Sliding-window limits: ``per_key`` events per ``window`` seconds, ``total`` per day."""
 
-    def __init__(self, per_key: int, window: float, total: int) -> None:
-        self.per_key, self.window, self.total = per_key, window, total
+    def __init__(self, per_key: int, window: float, total: int, what: str = "messages") -> None:
+        self.per_key, self.window, self.total, self.what = per_key, window, total, what
         self._events: dict[str, deque[float]] = defaultdict(deque)
         self._day: deque[float] = deque()
         self._lock = threading.Lock()
@@ -78,9 +48,9 @@ class RateLimiter:
             while self._day and now - self._day[0] > 86_400:
                 self._day.popleft()
             if len(self._day) >= self.total:
-                raise HTTPException(429, "daily message limit reached, please try again tomorrow")
+                raise HTTPException(429, f"daily limit of {self.what} reached, try again tomorrow")
             if len(events) >= self.per_key:
-                raise HTTPException(429, "too many messages, please try again later")
+                raise HTTPException(429, f"too many {self.what}, try again later")
             events.append(now)
             self._day.append(now)
 

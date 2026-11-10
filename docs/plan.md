@@ -542,7 +542,7 @@ RAG appears in three places only. In each, a model without retrieval fails in a 
 | API + models | **Railway** (Docker, 1 GB RAM, sleeps when idle) | https://api-production-a4e30.up.railway.app ; the multilingual embedding model is loaded in int8 to fit 1 GB (§5.6) |
 | Database | **SQLite** on a Railway volume (500 MB) | Enough for the demo; Postgres works by changing `DATABASE_URL` |
 | Email inbound | **mail.tm** | Receive only (see §6.1) |
-| Community forum | **GitHub Discussions + Actions** | Relay on each new post; hourly run collects email and posts approved replies |
+| Community forum | **GitHub Discussions + Actions** | Relay on each new post; hourly run collects email and posts agents' replies |
 | LLM | **Groq** free tier | Rate-limited; replies cached; local Ollama fallback |
 | Models and datasets | **Hugging Face Hub** | Model cards and datasheets (both cited in the spec's references) |
 

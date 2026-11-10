@@ -72,7 +72,7 @@ export default async function SiteLayout({ children, params }: LayoutProps<"/[la
           </div>
         </footer>
         <Suspense fallback={null}>
-          <ChatWidget lang={lang} t={t.chat} phases={t.phases} />
+          <ChatWidget lang={lang} t={t} />
         </Suspense>
       </body>
     </html>

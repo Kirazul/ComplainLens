@@ -7,7 +7,8 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { ChannelMark } from "@/components/console/channel";
 import { humanize, StatusPill } from "@/components/console/status";
 import { useEvents } from "@/components/console/use-events";
-import { api, FORUM_URL, SUPPORT_EMAIL, type Health, type Stats, type TicketSummary } from "@/lib/api";
+import { api, FORUM_URL, SUPPORT_EMAIL, type Stats, type TicketSummary } from "@/lib/api";
+import { ago } from "@/lib/time";
 
 const EXAMPLES = [
   "J'ai été facturé deux fois pour ma course d'hier soir !",
@@ -16,38 +17,21 @@ const EXAMPLES = [
   "How do cancellation fees work?",
 ];
 
-// Filters group the pipeline's decisions the way a support lead thinks about them.
-const FILTERS = [
+const TABS = [
   { id: "all", label: "All", statuses: null },
-  { id: "agent", label: "Needs an agent", statuses: ["awaiting_approval"] },
-  { id: "escalated", label: "Escalated", statuses: ["escalated"] },
-  { id: "answered", label: "Answered", statuses: ["auto_send", "answered"] },
-  { id: "quiet", label: "No reply needed", statuses: ["no_reply", "closed"] },
+  { id: "todo", label: "To do", statuses: ["awaiting_approval", "escalated"] },
+  { id: "ai", label: "Solved by AI", statuses: ["auto_send"] },
+  { id: "answered", label: "Answered", statuses: ["answered"] },
+  { id: "closed", label: "Closed", statuses: ["closed", "no_reply"] },
 ] as const;
-type FilterId = (typeof FILTERS)[number]["id"];
-
-const SITE = "/en";
-
-function ago(iso: string, now: number): string {
-  const seconds = Math.round((new Date(iso).getTime() - now) / 1000);
-  const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto", style: "short" });
-  if (Math.abs(seconds) < 60) return "just now";
-  if (Math.abs(seconds) < 3600) return rtf.format(Math.round(seconds / 60), "minute");
-  if (Math.abs(seconds) < 86400) return rtf.format(Math.round(seconds / 3600), "hour");
-  return rtf.format(Math.round(seconds / 86400), "day");
-}
-
-function customer(t: TicketSummary): string {
-  if (t.sender.startsWith("forum:")) return `@${t.sender.slice(6)}`;
-  return t.sender_name ? `${t.sender_name}` : t.sender;
-}
+type TabId = (typeof TABS)[number]["id"];
 
 function Priority({ value }: { value: number | null }) {
   if (value == null) return <span className="text-muted">…</span>;
   const tone = value >= 70 ? "bg-escalated" : value >= 40 ? "bg-review" : "bg-quiet";
   return (
-    <span className="flex items-center gap-2" aria-label={`Priority ${value} of 100`}>
-      <span className="h-1.5 w-12 rounded-full bg-desk" aria-hidden>
+    <span className="flex items-center gap-2" title={`Priority ${value} of 100`}>
+      <span className="h-1.5 w-10 rounded-full bg-desk" aria-hidden>
         <span className={`block h-1.5 rounded-full ${tone}`} style={{ width: `${Math.max(value, 4)}%` }} />
       </span>
       <span className="w-6 text-right">{value}</span>
@@ -55,31 +39,30 @@ function Priority({ value }: { value: number | null }) {
   );
 }
 
+function who(t: TicketSummary): string {
+  if (t.sender.startsWith("forum:")) return `@${t.sender.slice(6)}`;
+  return t.sender_name || t.sender;
+}
+
 export default function InboxPage() {
   const router = useRouter();
   const [tickets, setTickets] = useState<TicketSummary[] | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
-  const [health, setHealth] = useState<Health | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [filter, setFilter] = useState<FilterId>("all");
-  const [composerOpen, setComposerOpen] = useState(false);
-  const [draft, setDraft] = useState(EXAMPLES[0]);
-  const [sending, setSending] = useState(false);
-  const [copied, setCopied] = useState(false);
+  const [tab, setTab] = useState<TabId>("all");
+  const [trying, setTrying] = useState(false);
   const [fresh, setFresh] = useState<Set<number>>(new Set());
   const [now, setNow] = useState(() => Date.now());
   const known = useRef<Set<number> | null>(null);
-
-  // Bumped by live events; every bump reloads the list (and ignores answers that arrive too late).
-  const [version, setVersion] = useState(0);
+  const [version, setVersion] = useState(0); // bumped by live events: reload
 
   useEffect(() => {
     let active = true;
     Promise.all([api.tickets(), api.stats()])
       .then(([t, s]) => {
         if (!active) return;
-        // Rows that were not there before arrive highlighted (not on the first load).
         if (known.current) {
+          // Conversations that are new arrive highlighted (not on the first load).
           const added = t.filter((x) => !known.current!.has(x.id)).map((x) => x.id);
           if (added.length) setFresh(new Set(added));
         }
@@ -89,16 +72,13 @@ export default function InboxPage() {
         setError(null);
         setNow(Date.now());
       })
-      .catch((e: Error) => {
-        if (active) setError(`The API is not reachable right now (${e.message}). It may be waking up: try again in a few seconds.`);
-      });
+      .catch(() => active && setError("The server is not reachable right now. It may be waking up: this page retries on its own."));
     return () => {
       active = false;
     };
   }, [version]);
 
   useEffect(() => {
-    api.health().then(setHealth).catch(() => setHealth(null));
     const tick = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(tick);
   }, []);
@@ -113,196 +93,121 @@ export default function InboxPage() {
     if (event.type !== "stage") setVersion((v) => v + 1);
   });
 
+  // Not connected yet (the server may be waking up): retry the list every few seconds.
+  useEffect(() => {
+    if (!error) return;
+    const timer = setTimeout(() => setVersion((v) => v + 1), 5000);
+    return () => clearTimeout(timer);
+  }, [error, version]);
+
   const counts = useMemo(() => {
-    const out: Record<FilterId, number> = { all: 0, agent: 0, escalated: 0, answered: 0, quiet: 0 };
+    const out = Object.fromEntries(TABS.map((t) => [t.id, 0])) as Record<TabId, number>;
     for (const t of tickets ?? []) {
       out.all += 1;
-      for (const f of FILTERS)
-        if (f.statuses && (f.statuses as readonly string[]).includes(t.status)) out[f.id] += 1;
+      for (const tb of TABS) if (tb.statuses && (tb.statuses as readonly string[]).includes(t.status)) out[tb.id] += 1;
     }
     return out;
   }, [tickets]);
 
   const shown = useMemo(() => {
-    const f = FILTERS.find((x) => x.id === filter)!;
-    return (tickets ?? []).filter((t) => !f.statuses || (f.statuses as readonly string[]).includes(t.status));
-  }, [tickets, filter]);
-
-  async function sendTest(e: FormEvent) {
-    e.preventDefault();
-    setSending(true);
-    try {
-      // example.com is reserved for examples (RFC 2606) and accepted by the email validator.
-      const t = await api.submit({ email: "console.demo@example.com", body: draft, channel: "web" });
-      router.push(`/console/ticket/?id=${t.id}`);
-    } catch (err) {
-      setError((err as Error).message);
-      setSending(false);
-    }
-  }
-
-  async function copyEmail(address: string) {
-    try {
-      await navigator.clipboard.writeText(address);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      // clipboard unavailable: the address stays visible to copy by hand
-    }
-  }
+    const statuses = TABS.find((x) => x.id === tab)!.statuses as readonly string[] | null;
+    return (tickets ?? []).filter((t) => !statuses || statuses.includes(t.status));
+  }, [tickets, tab]);
 
   const total = stats?.tickets ?? 0;
-  const auto = stats?.by_status.auto_send ?? 0;
-  // The address is known before the health check answers: showing it at once avoids a layout shift.
-  const email = health?.email.enabled === false ? null : (health?.email.address ?? SUPPORT_EMAIL);
+  const by = stats?.by_status ?? {};
+  const solved = by.auto_send ?? 0;
 
   return (
     <main className="mx-auto max-w-7xl px-5 py-8">
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-3">
         <h1 className="text-2xl font-semibold">Inbox</h1>
-        <span className="flex w-full items-center gap-2 text-sm text-muted md:w-auto" role="status">
-          <span
-            className={`size-2 rounded-full ${connected ? "bg-sent" : "bg-quiet"}`}
-            aria-hidden
-          />
-          {connected ? "Live. New messages appear here as they arrive." : "Connecting to live updates…"}
+        <span className="flex items-center gap-2 text-sm text-muted" role="status">
+          <span className={`size-2 rounded-full ${connected ? "bg-sent" : "bg-quiet"}`} aria-hidden />
+          {connected ? "Live" : "Connecting…"}
         </span>
-        {/* Rendered before the health check answers (empty) so the page does not shift. */}
-        <span className="min-h-5 w-full text-sm text-muted md:ml-auto md:w-auto">
-          {health &&
-            (health.llm.enabled ? `Language model ${health.llm.model}` : "No language model (classical fallback)")}
-        </span>
+        <button
+          type="button"
+          onClick={() => setTrying(!trying)}
+          aria-expanded={trying}
+          className="ml-auto rounded-lg border border-line bg-white px-3.5 py-2 text-sm font-semibold hover:border-ink"
+        >
+          {trying ? "Close" : "Try it as a customer"}
+        </button>
       </div>
 
+      {trying && <TryPanel onSent={(id) => router.push(`/console/ticket/?id=${id}`)} />}
+
       {error && (
-        <p role="alert" className="mt-4 rounded-lg bg-red-50 px-4 py-3 text-escalated">
+        <p role="alert" className="mt-4 rounded-lg bg-amber-50 px-4 py-3 text-review">
           {error}
         </p>
       )}
 
-      <dl className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-xl border border-line bg-line md:grid-cols-5">
+      <dl className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
         {[
-          ["Messages", total, null],
-          ["Answered automatically", auto, total ? `${Math.round((auto / total) * 100)}% of messages` : null],
-          ["Waiting for an agent", stats?.by_status.awaiting_approval ?? 0, "AI draft ready to approve"],
-          ["Escalated", stats?.by_status.escalated ?? 0, "Safety or legal risk"],
-          [
-            "Average processing",
-            stats ? `${(stats.avg_processing_ms / 1000).toFixed(1)} s` : "…",
-            "From arrival to decision",
-          ],
+          ["Conversations", total, "All time"],
+          ["Solved by AI", solved, total ? `${Math.round((solved / total) * 100)}% of all` : " "],
+          ["Need a reply", by.awaiting_approval ?? 0, "Waiting for an agent"],
+          ["Urgent", by.escalated ?? 0, "Safety or legal risk"],
         ].map(([label, value, hint]) => (
-          <div key={label as string} className="bg-white px-4 py-3">
+          <div key={label as string} className="rounded-xl border border-line bg-white px-4 py-3">
             <dt className="text-sm text-muted">{label}</dt>
             <dd className="mt-1 text-2xl font-semibold">{stats ? value : "…"}</dd>
-            {/* Always present (a no-break space until the numbers load) so nothing shifts. */}
-            <dd className="text-xs text-muted">{(stats && hint) || " "}</dd>
+            <dd className="text-xs text-muted">{stats ? hint : " "}</dd>
           </div>
         ))}
       </dl>
 
-      <section aria-labelledby="reach" className="mt-6 rounded-xl border border-line bg-white px-4 py-3">
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-3 text-sm">
-          <h2 id="reach" className="font-semibold">
-            Send a complaint from anywhere
-          </h2>
-          {email && (
-            <span className="flex items-center gap-2">
-              <ChannelMark channel="email" showLabel={false} />
-              <a href={`mailto:${email}`} className="underline-offset-2 hover:underline">
-                {email}
-              </a>
-              <button type="button" onClick={() => copyEmail(email)} className="text-xs text-muted hover:text-ink">
-                {copied ? "Copied" : "Copy"}
-              </button>
-            </span>
-          )}
-          <Link href={`${SITE}/contact`} className="hover:underline">
-            <ChannelMark channel="web" />
-          </Link>
-          <Link href={`${SITE}/?chat=open`} className="hover:underline">
-            <ChannelMark channel="chat" />
-          </Link>
-          <Link href={`${SITE}/rate`} className="hover:underline">
-            <ChannelMark channel="review" />
-          </Link>
-          <a href={FORUM_URL} target="_blank" rel="noreferrer" className="hover:underline">
-            <ChannelMark channel="forum" />
-          </a>
+      <div role="tablist" aria-label="Show" className="mt-8 flex gap-1 overflow-x-auto border-b border-line">
+        {TABS.map((t) => (
           <button
-            type="button"
-            onClick={() => setComposerOpen(!composerOpen)}
-            aria-expanded={composerOpen}
-            className="rounded-lg bg-ink px-3 py-1.5 font-semibold text-white md:ml-auto"
-          >
-            {composerOpen ? "Close test message" : "Write a test message"}
-          </button>
-        </div>
-        {composerOpen && (
-          <form onSubmit={sendTest} className="mt-4 border-t border-line pt-4">
-            <label className="text-sm font-medium" htmlFor="test-message">
-              Message, as a customer would write it (English or French)
-            </label>
-            <textarea
-              id="test-message"
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              rows={3}
-              className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-sm"
-            />
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              {EXAMPLES.map((example) => (
-                <button
-                  key={example}
-                  type="button"
-                  onClick={() => setDraft(example)}
-                  className="max-w-64 truncate rounded-full border border-line px-2.5 py-0.5 text-xs hover:border-ink"
-                  title={example}
-                >
-                  {example}
-                </button>
-              ))}
-              <button
-                type="submit"
-                disabled={sending || draft.trim().length < 2}
-                className="ml-auto rounded-lg bg-sent px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-              >
-                {sending ? "Sending…" : "Send and watch the pipeline"}
-              </button>
-            </div>
-          </form>
-        )}
-      </section>
-
-      <div role="tablist" aria-label="Filter by decision" className="mt-6 flex flex-wrap gap-1 border-b border-line">
-        {FILTERS.map((f) => (
-          <button
-            key={f.id}
+            key={t.id}
             role="tab"
             type="button"
-            aria-selected={filter === f.id}
-            onClick={() => setFilter(f.id)}
-            className={`-mb-px border-b-2 px-3 py-2 text-sm ${
-              filter === f.id ? "border-ink font-semibold" : "border-transparent text-muted hover:text-ink"
+            aria-selected={tab === t.id}
+            onClick={() => setTab(t.id)}
+            className={`-mb-px whitespace-nowrap border-b-2 px-3 py-2 text-sm ${
+              tab === t.id ? "border-ink font-semibold" : "border-transparent text-muted hover:text-ink"
             }`}
           >
-            {f.label} <span className="ml-1 text-muted">{counts[f.id]}</span>
+            {t.label}
+            <span className={`ml-1.5 rounded-full px-1.5 text-xs ${t.id === "todo" && counts.todo ? "bg-amber-100 text-review" : "text-muted"}`}>
+              {counts[t.id]}
+            </span>
           </button>
         ))}
       </div>
 
-      <div className="mt-3 overflow-x-auto rounded-xl border border-line bg-white">
+      {/* Phones: one card per conversation. */}
+      <ul className="mt-3 divide-y divide-line overflow-hidden rounded-xl border border-line bg-white md:hidden">
+        {shown.map((t) => (
+          <li key={t.id} className={fresh.has(t.id) ? "row-new" : ""}>
+            <Link href={`/console/ticket/?id=${t.id}`} className="block px-4 py-3 active:bg-desk">
+              <span className="flex items-center gap-2">
+                <span className="min-w-0 flex-1 truncate font-semibold">{who(t)}</span>
+                <StatusPill status={t.status} />
+              </span>
+              <span className="mt-1 line-clamp-2 text-sm">{t.summary ?? t.subject ?? "Reading the message…"}</span>
+              <span className="mt-1 flex items-center gap-2 text-xs text-muted">
+                <ChannelMark channel={t.channel} showLabel={false} />
+                {[t.team, ago(t.updated_at, now)].filter(Boolean).join(" · ")}
+                {t.messages > 1 && ` · ${t.messages} messages`}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+
+      <div className="mt-3 hidden overflow-x-auto rounded-xl border border-line bg-white md:block">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-line text-muted">
             <tr>
-              <th scope="col" className="px-4 py-2.5 font-medium">Ticket</th>
-              <th scope="col" className="hidden px-4 py-2.5 font-medium md:table-cell">Received</th>
-              <th scope="col" className="hidden px-4 py-2.5 font-medium lg:table-cell">Channel</th>
-              <th scope="col" className="hidden px-4 py-2.5 font-medium lg:table-cell">Customer</th>
+              <th scope="col" className="px-4 py-2.5 font-medium">Customer</th>
               <th scope="col" className="px-4 py-2.5 font-medium">Message</th>
-              <th scope="col" className="hidden px-4 py-2.5 font-medium md:table-cell">Team</th>
-              <th scope="col" className="hidden px-4 py-2.5 font-medium sm:table-cell">Priority</th>
-              <th scope="col" className="px-4 py-2.5 font-medium">Decision</th>
+              <th scope="col" className="px-4 py-2.5 font-medium">Status</th>
+              <th scope="col" className="px-4 py-2.5 font-medium">Priority</th>
+              <th scope="col" className="px-4 py-2.5 font-medium">Last activity</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -312,57 +217,116 @@ export default function InboxPage() {
                 onClick={() => router.push(`/console/ticket/?id=${t.id}`)}
                 className={`cursor-pointer align-top hover:bg-desk ${fresh.has(t.id) ? "row-new" : ""}`}
               >
-                <td className="whitespace-nowrap px-4 py-3">
+                <td className="px-4 py-3">
                   <Link
                     href={`/console/ticket/?id=${t.id}`}
                     onClick={(e) => e.stopPropagation()}
-                    className="font-semibold underline-offset-2 hover:underline"
+                    className="block max-w-48 truncate font-semibold underline-offset-2 hover:underline"
                   >
-                    {t.number}
+                    {who(t)}
                   </Link>
-                  {t.language && <span className="ml-2 text-xs uppercase text-muted">{t.language}</span>}
+                  <span className="mt-0.5 flex items-center gap-2 text-xs text-muted">
+                    <ChannelMark channel={t.channel} showLabel={false} />
+                    {t.number}
+                  </span>
                 </td>
-                <td className="hidden whitespace-nowrap px-4 py-3 text-muted md:table-cell">
-                  <time dateTime={t.received_at} title={new Date(t.received_at).toLocaleString()}>
-                    {ago(t.received_at, now)}
-                  </time>
-                </td>
-                <td className="hidden px-4 py-3 lg:table-cell">
-                  <ChannelMark channel={t.channel} />
-                </td>
-                <td className="hidden max-w-44 truncate px-4 py-3 lg:table-cell">{customer(t)}</td>
                 <td className="max-w-md px-4 py-3">
                   <p className="line-clamp-2">{t.summary ?? t.subject ?? "Reading the message…"}</p>
-                  {t.message_type && (
-                    <p className="mt-0.5 text-xs text-muted">
-                      {humanize(t.message_type)}
-                      {t.categories.length > 0 && `, ${t.categories.map(humanize).join(", ")}`}
-                      {t.risk_flags.length > 0 && (
-                        <span className="font-semibold text-escalated">, risk: {t.risk_flags.map(humanize).join(", ")}</span>
-                      )}
-                    </p>
-                  )}
+                  <p className="mt-0.5 text-xs text-muted">
+                    {[t.team, ...t.categories.map(humanize)].filter(Boolean).join(" · ")}
+                    {t.risk_flags.length > 0 && <span className="font-semibold text-escalated"> · risk: {t.risk_flags.map(humanize).join(", ")}</span>}
+                    {t.messages > 1 && <span> · {t.messages} messages</span>}
+                  </p>
                 </td>
-                <td className="hidden whitespace-nowrap px-4 py-3 md:table-cell">{t.team ?? "…"}</td>
-                <td className="hidden px-4 py-3 sm:table-cell">
+                <td className="px-4 py-3">
+                  <StatusPill status={t.status} />
+                </td>
+                <td className="px-4 py-3">
                   <Priority value={t.priority} />
                 </td>
-                <td className="whitespace-nowrap px-4 py-3">
-                  <StatusPill status={t.status} />
+                <td className="whitespace-nowrap px-4 py-3 text-muted">
+                  <time dateTime={t.updated_at} title={new Date(t.updated_at).toLocaleString()}>
+                    {ago(t.updated_at, now)}
+                  </time>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {tickets && shown.length === 0 && (
-          <p className="px-4 py-10 text-center text-muted">
-            {tickets.length === 0
-              ? "No messages yet. Send one by email, from the website, the chat, a trip rating or the forum, and it appears here within seconds."
-              : "Nothing with this decision right now."}
-          </p>
-        )}
-        {!tickets && !error && <p className="px-4 py-10 text-center text-muted">Loading the inbox…</p>}
       </div>
+      {tickets && shown.length === 0 && (
+        <p className="mt-3 rounded-xl border border-dashed border-line px-4 py-12 text-center text-muted">
+          {tickets.length === 0 ? "No conversations yet. Use “Try it as a customer” to send the first one." : tab === "todo" ? "Nothing to do. Every conversation is handled." : "Nothing here right now."}
+        </p>
+      )}
+      {!tickets && !error && <p className="mt-3 px-4 py-12 text-center text-muted">Loading…</p>}
     </main>
+  );
+}
+
+// Send a test message, or open one of the real customer channels.
+function TryPanel({ onSent }: { onSent: (ticketId: number) => void }) {
+  const [draft, setDraft] = useState(EXAMPLES[0]);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function send(e: FormEvent) {
+    e.preventDefault();
+    setSending(true);
+    try {
+      // example.com is reserved for examples (RFC 2606).
+      const t = await api.submit({ email: "console.demo@example.com", body: draft, channel: "web" });
+      onSent(t.id);
+    } catch (err) {
+      setError((err as Error).message);
+      setSending(false);
+    }
+  }
+
+  const link = "underline-offset-2 hover:underline";
+  return (
+    <section aria-label="Try it as a customer" className="mt-4 rounded-xl border border-line bg-white p-4">
+      <form onSubmit={send}>
+        <label className="text-sm font-medium" htmlFor="test-message">
+          Write a message as a customer would (English or French)
+        </label>
+        <textarea
+          id="test-message"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          rows={3}
+          className="mt-1 w-full rounded-lg border border-line px-3 py-2 text-sm"
+        />
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          {EXAMPLES.map((example) => (
+            <button
+              key={example}
+              type="button"
+              onClick={() => setDraft(example)}
+              title={example}
+              className="max-w-60 truncate rounded-full border border-line px-2.5 py-0.5 text-xs hover:border-ink"
+            >
+              {example}
+            </button>
+          ))}
+          <button
+            type="submit"
+            disabled={sending || draft.trim().length < 2}
+            className="ml-auto rounded-lg bg-ink px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+          >
+            {sending ? "Sending…" : "Send and watch"}
+          </button>
+        </div>
+        {error && <p role="alert" className="mt-2 text-sm text-escalated">{error}</p>}
+      </form>
+      <p className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line pt-3 text-sm text-muted">
+        <span>Or use a real channel:</span>
+        <a href={`mailto:${SUPPORT_EMAIL}`} className={link}><ChannelMark channel="email" /></a>
+        <Link href="/en/contact" className={link}><ChannelMark channel="web" /></Link>
+        <Link href="/en/?chat=open" className={link}><ChannelMark channel="chat" /></Link>
+        <Link href="/en/rate" className={link}><ChannelMark channel="review" /></Link>
+        <a href={FORUM_URL} target="_blank" rel="noreferrer" className={link}><ChannelMark channel="forum" /></a>
+      </p>
+    </section>
   );
 }

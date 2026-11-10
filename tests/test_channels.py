@@ -1,35 +1,20 @@
-"""Forum relay, mail.tm inbox, operator access and abuse limits."""
+"""Forum relay, mail.tm inbox, email poller and abuse limits."""
 
 import httpx
 import pytest
 from fastapi import HTTPException
-from fastapi.testclient import TestClient
 
-from complaintlens import store
 from complaintlens.channels import mailtm
-from complaintlens.security import RateLimiter, mask_contact
-from complaintlens.settings import Settings, get_settings
+from complaintlens.security import RateLimiter
+from complaintlens.settings import Settings
+from tests.conftest import sign_in
 
-OPERATOR, CHANNEL = "op-secret", "relay-secret"
+CHANNEL = "relay-secret"
 
 
 @pytest.fixture
-def client(tmp_path, monkeypatch):
-    monkeypatch.setenv("DATABASE_URL", f"sqlite:///{(tmp_path / 'api.db').as_posix()}")
-    monkeypatch.setenv("LLM_API_KEY", "")
-    monkeypatch.setenv("EMAIL_ADDRESS", "")
-    monkeypatch.setenv("RETRIEVAL", "bm25")
-    monkeypatch.setenv("OPERATOR_TOKEN", OPERATOR)
-    monkeypatch.setenv("CHANNEL_TOKEN", CHANNEL)
-    monkeypatch.setenv("MESSAGES_PER_IP_PER_HOUR", "2")
-    get_settings.cache_clear()
-    store.get_engine.cache_clear()
-    from complaintlens.api import app
-
-    with TestClient(app) as c:
-        yield c
-    get_settings.cache_clear()
-    store.get_engine.cache_clear()
+def client(api_factory):
+    return api_factory(CHANNEL_TOKEN=CHANNEL, MESSAGES_PER_IP_PER_HOUR="2")
 
 
 def post_forum(client, token=CHANNEL, **overrides):
@@ -64,22 +49,6 @@ def test_forum_post_is_processed_and_its_reply_queued_then_delivered(client):
     assert client.get("/api/channels/forum/outbox", headers=headers).json() == []
 
 
-def test_console_is_read_only_and_masked_without_the_operator_token(client):
-    client.post("/api/messages", json={"email": "rimel@example.com", "body": "My app crashes"})
-    ticket = client.get("/api/tickets").json()[0]
-    assert ticket["sender"] == "r••••@example.com"
-    assert client.post(f"/api/tickets/{ticket['id']}/approve", json={}).status_code == 401
-    assert client.get("/api/operator").json() == {"operator": False}
-
-    auth = {"Authorization": f"Bearer {OPERATOR}"}
-    assert client.get("/api/tickets", headers=auth).json()[0]["sender"] == "rimel@example.com"
-    assert client.get("/api/operator", headers=auth).json() == {"operator": True}
-    assert (
-        client.post(f"/api/tickets/{ticket['id']}/approve", json={}, headers=auth).status_code
-        == 200
-    )
-
-
 def test_message_submission_is_rate_limited_per_client(client):
     msg = {"email": "a@example.com", "body": "Where is my order?"}
     assert client.post("/api/messages", json=msg).status_code == 202
@@ -106,20 +75,6 @@ def test_review_channel_is_accepted(client):
         },
     )
     assert r.status_code == 202
-
-
-def test_mask_name():
-    from complaintlens.security import mask_name
-
-    assert mask_name("Rimel Zouari") == "Rimel Z."
-    assert mask_name("Sam") == "Sam"
-    assert mask_name(None) is None
-
-
-def test_mask_contact():
-    assert mask_contact("rimel.zouari@example.com") == "r••••@example.com"
-    assert mask_contact("forum:rider42") == "forum:rider42"
-    assert mask_contact(None) is None
 
 
 def test_rate_limiter_daily_cap():
@@ -200,7 +155,7 @@ def test_channel_token_comparison_tolerates_non_ascii_headers(client):
 def test_email_poller_stores_before_acknowledging_and_skips_duplicates(client, monkeypatch):
     import asyncio
 
-    from complaintlens import api
+    from complaintlens.api import inbox as poller
     from complaintlens.channels.email import Fetched
     from complaintlens.schemas import Channel, InboundMessage
 
@@ -215,13 +170,11 @@ def test_email_poller_stores_before_acknowledging_and_skips_duplicates(client, m
         )
         return [Fetched(message, lambda: acks.append("m1"))]
 
-    monkeypatch.setattr(api.imap_inbox, "fetch_new_messages", inbox)
-    monkeypatch.setattr(api.mailtm_inbox, "fetch_new_messages", inbox)
-    assert asyncio.run(api.poll_inbox_once()) == 1
-    assert (
-        asyncio.run(api.poll_inbox_once()) == 0
-    )  # same Message-ID: acknowledged, not re-processed
+    monkeypatch.setattr(poller.imap_inbox, "fetch_new_messages", inbox)
+    monkeypatch.setattr(poller.mailtm_inbox, "fetch_new_messages", inbox)
+    assert asyncio.run(poller.poll_inbox_once()) == 1
+    # Same Message-ID: acknowledged, not processed again.
+    assert asyncio.run(poller.poll_inbox_once()) == 0
     assert acks == ["m1", "m1"]
-    auth = {"Authorization": f"Bearer {OPERATOR}"}
-    tickets = client.get("/api/tickets", headers=auth).json()
+    tickets = client.get("/api/tickets", headers=sign_in(client)).json()
     assert [t["sender"] for t in tickets] == ["prof@univ.tn"]

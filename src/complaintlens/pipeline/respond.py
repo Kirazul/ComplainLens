@@ -170,6 +170,11 @@ def clean_reply(text: str) -> str:
     return text.replace("\\n", "\n").strip()
 
 
+def strip_citations(text: str) -> str:
+    """Citations like [HC-FARES#4] are for agents and the verifier, not for customers."""
+    return re.sub(r"\s?\[(?:HC-[A-Z]+#\d+|F\d+)\]", "", text)
+
+
 # --- templates (no LLM): safe acknowledgements --------------------------------------------------
 
 TEAM_NAMES_FR = {
@@ -251,6 +256,7 @@ def draft_reply(
     name: str,
     hits: list[Hit],
     facts: list[dict[str, str]],
+    history: list[dict[str, str]] | None = None,
 ) -> Draft:
     company = get_settings().company_name
     language = {"fr": "French", "en": "English"}.get(lang, "English")
@@ -280,6 +286,15 @@ def draft_reply(
         f"Analysis: {analysis.summary} Goal: {analysis.customer_goal}\n"
         f"Customer message:\n<<<\n{text}\n>>>\n\nSOURCES:\n{_sources_block(hits, facts)}"
     )
+    if history and len(history) > 1:  # a follow-up: answer the latest message, in context
+        said = "\n".join(
+            f"{'Customer' if h['from'] == 'customer' else company}: {h['text']}" for h in history
+        )
+        user += (
+            f"\n\nCONVERSATION SO FAR (oldest first):\n<<<\n{said}\n>>>\n"
+            f"Reply to the customer's latest message. Do not repeat what {company} already said, "
+            "and keep the greeting short."
+        )
     draft = complete_json(client, system, user, Draft, temperature=0.2)
     draft.reply = clean_reply(draft.reply)
     return draft
@@ -333,7 +348,9 @@ def respond_stage(ctx: Context) -> StageResult:
             message = render("review", lang, name=name, ticket=ticket_no, team=team)
             reasons.append("no LLM configured: an agent writes the answer")
         else:
-            draft = draft_reply(client, ctx["text_masked"], analysis, lang, name, hits, facts)
+            draft = draft_reply(
+                client, ctx["text_masked"], analysis, lang, name, hits, facts, ctx.get("history")
+            )
             verification = verify(draft, hits, facts)
             message = draft.reply
             if draft.proposed_action in MONEY_ACTIONS:

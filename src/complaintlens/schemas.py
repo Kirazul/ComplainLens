@@ -13,6 +13,11 @@ def utcnow() -> datetime:
     return datetime.now(UTC)
 
 
+def as_utc(dt: datetime) -> datetime:
+    """SQLite gives back naive datetimes; every time we store is UTC."""
+    return dt.replace(tzinfo=UTC) if dt.tzinfo is None else dt
+
+
 class Channel(StrEnum):
     EMAIL = "email"  # the support inbox
     WEB = "web"  # the contact form on the website

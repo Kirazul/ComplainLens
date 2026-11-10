@@ -2,15 +2,15 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { API_URL } from "@/lib/api";
+import { readEvents } from "@/lib/api";
 
 export interface LiveEvent {
-  type: "ticket_created" | "stage" | "ticket_updated" | "reply";
+  type: "ticket_created" | "stage" | "ticket_updated" | "reply" | "message";
   ticket_id: number;
   [key: string]: unknown;
 }
 
-// Subscribe to the API's Server-Sent Events stream; reconnects automatically (EventSource).
+// Subscribe to the API's live events; reconnects after a drop (the API may be waking up).
 export function useEvents(onEvent: (event: LiveEvent) => void): boolean {
   const handler = useRef(onEvent);
   const [connected, setConnected] = useState(false);
@@ -18,17 +18,31 @@ export function useEvents(onEvent: (event: LiveEvent) => void): boolean {
     handler.current = onEvent;
   });
   useEffect(() => {
-    const source = new EventSource(`${API_URL}/api/events`);
-    source.onopen = () => setConnected(true);
-    source.onerror = () => setConnected(false);
-    source.onmessage = (message) => {
-      try {
-        handler.current(JSON.parse(message.data) as LiveEvent);
-      } catch {
-        // ignore malformed events
-      }
+    const controller = new AbortController();
+    let retry: ReturnType<typeof setTimeout>;
+    let delay = 2000; // doubles after each failed attempt, up to 30 s; reset once connected
+    const connect = () => {
+      readEvents(
+        (event) => handler.current(event as LiveEvent),
+        () => {
+          delay = 2000;
+          setConnected(true);
+        },
+        controller.signal,
+      )
+        .catch(() => undefined)
+        .finally(() => {
+          if (controller.signal.aborted) return;
+          setConnected(false);
+          retry = setTimeout(connect, delay);
+          delay = Math.min(delay * 2, 30_000);
+        });
     };
-    return () => source.close();
+    connect();
+    return () => {
+      controller.abort();
+      clearTimeout(retry);
+    };
   }, []);
   return connected;
 }

@@ -18,11 +18,11 @@ Facts given to the reply writer are computed here by code from the record, never
 from __future__ import annotations
 
 import re
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 
 from complaintlens.demo_data import customer_trips, get_or_create_customer
 from complaintlens.pipeline.base import Context
-from complaintlens.schemas import Category, StageResult
+from complaintlens.schemas import Category, StageResult, as_utc
 from complaintlens.store import Trip
 
 MIN_SCORE = 3.0
@@ -70,16 +70,11 @@ def _charge_amounts(trip: Trip) -> set[float]:
     return {round(c["amount"], 2) for c in trip.charges} | {round(trip.total, 2)}
 
 
-def _utc(dt: datetime) -> datetime:
-    """SQLite drops time zones on read; all our datetimes are stored in UTC."""
-    return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
-
-
 def score_trip(
     trip: Trip, text: str, categories: list[Category], now: datetime
 ) -> tuple[float, list[str]]:
     score, why = 0.0, []
-    now, started = _utc(now), _utc(trip.started_at)
+    now, started = as_utc(now), as_utc(trip.started_at)
     refs = {f"LG-{m}" for m in _TRIP_REF.findall(text)}
     if trip.id.upper() in refs:
         score += 10

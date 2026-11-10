@@ -1,10 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState, useSyncExternalStore, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useState, type KeyboardEvent } from "react";
 
-import { useOperator } from "@/components/console/operator";
+import { useSession } from "@/components/console/shell";
 import { humanize } from "@/components/console/status";
-import { api, ApiError, type Agreement, type AnnotationItem, type AnnotationProgress, type GoldLabels } from "@/lib/api";
+import { api, type Agreement, type AnnotationItem, type AnnotationProgress, type GoldLabels } from "@/lib/api";
 
 // Field values mirror eval/annotation_guidelines.md (and the backend's Labels model).
 const TYPES = ["complaint", "request", "feedback", "praise", "spam_or_irrelevant"];
@@ -49,34 +49,8 @@ function Choice({ label, active, onClick }: { label: string; active: boolean; on
   );
 }
 
-const NAME_KEY = "complaintlens.annotator";
-
-function subscribeStorage(callback: () => void) {
-  window.addEventListener("storage", callback);
-  return () => window.removeEventListener("storage", callback);
-}
-
-function readStoredName(): string {
-  try {
-    return window.localStorage.getItem(NAME_KEY) ?? "";
-  } catch {
-    return ""; // storage unavailable: the name is simply not remembered
-  }
-}
-
 export default function AnnotatePage() {
-  // The remembered name comes from localStorage (an external store); what the user types wins.
-  const storedName = useSyncExternalStore(subscribeStorage, readStoredName, () => "");
-  const [typedName, setTypedName] = useState<string | null>(null);
-  const annotator = typedName ?? storedName;
-  const setAnnotator = (value: string) => {
-    setTypedName(value);
-    try {
-      window.localStorage.setItem(NAME_KEY, value);
-    } catch {
-      // ignore
-    }
-  };
+  const annotator = useSession()?.user.username ?? "";
   const [setName, setSetName] = useState("pilot");
   const [item, setItem] = useState<AnnotationItem | null | undefined>(undefined);
   const [progress, setProgress] = useState<AnnotationProgress | null>(null);
@@ -85,17 +59,13 @@ export default function AnnotatePage() {
   const [error, setError] = useState<string | null>(null);
   const [frText, setFrText] = useState("");
   const [version, setVersion] = useState(0);
-  const { state: operator } = useOperator();
-  const explain = (e: unknown) =>
-    e instanceof ApiError && e.status === 401
-      ? "Saving needs agent sign-in (top right): labels are part of the evaluation, so only the team can write them."
-      : (e as Error).message;
+  const explain = (e: unknown) => (e as Error).message;
 
   useEffect(() => {
-    if (annotator.trim().length < 2) return;
+    if (!annotator) return;
     let active = true;
     api
-      .annotateNext(annotator.trim(), setName)
+      .annotateNext(setName)
       .then((r) => {
         if (!active) return;
         setItem(r.item);
@@ -113,7 +83,7 @@ export default function AnnotatePage() {
   const save = useCallback(async () => {
     if (!item || problems(labels).length) return;
     try {
-      await api.annotateSave(item.id, annotator.trim(), {
+      await api.annotateSave(item.id, {
         ...labels,
         urgency: labels.response_required ? labels.urgency : null,
         severity: labels.message_type === "complaint" ? labels.severity : null,
@@ -122,7 +92,7 @@ export default function AnnotatePage() {
     } catch (e) {
       setError(explain(e));
     }
-  }, [annotator, item, labels]);
+  }, [item, labels]);
 
   function onKey(e: KeyboardEvent) {
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) save();
@@ -132,22 +102,13 @@ export default function AnnotatePage() {
     list.includes(value) ? list.filter((v) => v !== value) : list.length < max ? [...list, value] : list;
 
   const left = problems(labels);
-  const done = progress?.labelled[setName]?.[annotator.trim().toLowerCase()] ?? 0;
+  const done = progress?.labelled[setName]?.[annotator] ?? 0;
   const total = progress?.items[setName] ?? 0;
 
   return (
     <main className="mx-auto max-w-7xl px-5 py-8" onKeyDown={onKey}>
       <div className="flex flex-wrap items-end gap-4">
-        <h1 className="mr-auto text-2xl font-semibold">Annotate gold messages</h1>
-        <label className="text-sm">
-          <span className="block text-muted">Your name</span>
-          <input
-            value={annotator}
-            onChange={(e) => setAnnotator(e.target.value)}
-            className="mt-1 rounded-lg border border-line px-3 py-1.5"
-            placeholder="aziz or rimel"
-          />
-        </label>
+        <h1 className="mr-auto text-2xl font-semibold">Annotate</h1>
         <label className="text-sm">
           <span className="block text-muted">Set</span>
           <select value={setName} onChange={(e) => setSetName(e.target.value)} className="mt-1 rounded-lg border border-line px-3 py-1.5">
@@ -156,21 +117,14 @@ export default function AnnotatePage() {
         </label>
       </div>
       <p className="mt-2 text-sm text-muted">
-        Follow eval/annotation_guidelines.md. Save with the button or Ctrl+Enter.
-        {total > 0 && ` You have labelled ${done} of ${total} items in this set.`}
+        Label each message by the guidelines (eval/annotation_guidelines.md).
+        {total > 0 && ` You have done ${done} of ${total}.`}
       </p>
-      {operator === "viewer" && (
-        <p className="mt-3 rounded-lg bg-amber-50 px-4 py-2 text-sm text-review">
-          You can browse the messages, but saving labels needs agent sign-in (top right).
-        </p>
-      )}
       {error && <p role="alert" className="mt-3 rounded-lg bg-red-50 px-4 py-2 text-escalated">{error}</p>}
 
       <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_22rem]">
         <section aria-label="Message to label">
-          {annotator.trim().length < 2 ? (
-            <p className="rounded-xl border border-dashed border-line bg-white p-8 text-muted">Enter your name to start.</p>
-          ) : item === null ? (
+          {item === null ? (
             <p className="rounded-xl border border-dashed border-line bg-white p-8 text-muted">
               Nothing left for you in this set. Thank you.
             </p>

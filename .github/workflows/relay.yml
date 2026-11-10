@@ -2,7 +2,7 @@
 # - Community forum: each new post in this repository's Discussions (any category except
 #   Announcements) goes through the pipeline; the reply is posted back as a comment.
 # - Every hour: wakes the API (it sleeps when idle), collects new support email, and posts
-#   replies that agents approved since (they wait in the API's forum outbox).
+#   replies that agents sent since (they wait in the API's forum outbox).
 # Needs the repository variable API_URL and the secret CHANNEL_TOKEN (same value as on the API).
 name: Channels relay
 
