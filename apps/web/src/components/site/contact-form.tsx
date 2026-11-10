@@ -56,7 +56,7 @@ export function ContactForm({ lang, t }: { lang: Lang; t: Dict["contact"] }) {
             aria-describedby="email-hint"
             className={field}
           />
-          <span id="email-hint" className="mt-1 block text-sm text-slate/70">
+          <span id="email-hint" className="mt-1 block text-sm text-slate">
             {t.emailHint}
           </span>
         </label>

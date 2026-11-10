@@ -136,7 +136,7 @@ export function ChatWidget({ lang, t, phases }: { lang: Lang; t: Dict["chat"]; p
           aria-label={t.title}
           className="fixed inset-x-3 bottom-20 z-40 flex max-h-[min(36rem,calc(100dvh-7rem))] flex-col overflow-hidden rounded-3xl bg-paper shadow-[0_24px_60px_-20px_rgba(30,27,75,0.55)] ring-1 ring-night/15 sm:inset-x-auto sm:right-5 sm:w-[25rem]"
         >
-          <header className="flex items-center gap-3 bg-night px-5 py-4 text-paper">
+          <div className="flex items-center gap-3 bg-night px-5 py-4 text-paper">
             <Moon phase={conv ? done : 1} size={34} />
             <div>
               <h2 className="font-display text-lg font-bold leading-tight">{t.title}</h2>
@@ -144,7 +144,7 @@ export function ChatWidget({ lang, t, phases }: { lang: Lang; t: Dict["chat"]; p
                 {conv ? (decided ? conv.ticket?.number : `${current ? phases[current] : t.working}…`) : null}
               </p>
             </div>
-          </header>
+          </div>
 
           <div className="flex-1 space-y-4 overflow-y-auto px-5 py-5">
             <p className="max-w-[92%] rounded-2xl rounded-bl-md bg-white px-4 py-3 text-night ring-1 ring-lilac">

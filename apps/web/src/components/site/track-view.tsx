@@ -46,7 +46,7 @@ export function TrackView({
   }, [id, trackKey]);
 
   if (missing) return <p className="text-lg">{t.track.notFound}</p>;
-  if (!ticket) return <p className="text-slate/70">…</p>;
+  if (!ticket) return <p className="text-slate">…</p>;
 
   const done = ticket.phases.filter((p) => p.done).length as 0 | 1 | 2 | 3 | 4;
   const statusLine =
@@ -83,7 +83,7 @@ export function TrackView({
           <li
             key={p.name}
             className={`flex items-center gap-3 rounded-2xl px-4 py-3 ${
-              p.done ? "bg-white text-night ring-1 ring-lilac" : "text-slate/50"
+              p.done ? "bg-white text-night ring-1 ring-lilac" : "text-slate/80"
             }`}
           >
             <Moon phase={(p.done ? i + 1 : 0) as 0 | 1 | 2 | 3 | 4} size={28} surface="day" />
@@ -100,7 +100,7 @@ export function TrackView({
           </article>
         ))}
       </div>
-      <p className="mt-8 text-sm text-slate/70">{t.track.emailNote}</p>
+      <p className="mt-8 text-sm text-slate">{t.track.emailNote}</p>
     </div>
   );
 }

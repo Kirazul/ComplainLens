@@ -92,7 +92,7 @@ export function RateForm({ lang, t, contact }: { lang: Lang; t: Dict["rate"]; co
       <label className="block max-w-md">
         <span className="font-semibold text-night">{contact.email}</span>
         <input name="email" type="email" required autoComplete="email" className={field} />
-        <span className="mt-1 block text-sm text-slate/70">{contact.emailHint}</span>
+        <span className="mt-1 block text-sm text-slate">{contact.emailHint}</span>
       </label>
 
       {error && (

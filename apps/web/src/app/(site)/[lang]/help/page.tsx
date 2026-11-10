@@ -37,7 +37,7 @@ export default async function HelpPage({ params }: PageProps<"/[lang]/help">) {
                   <section key={s.id} id={s.id.replace("#", "-")}>
                     <h3 className="font-display text-xl font-semibold text-night">{s.heading}</h3>
                     <p className="mt-2 max-w-[68ch] leading-relaxed">{s.text}</p>
-                    <p className="mt-1 text-xs text-slate/60">{s.id}</p>
+                    <p className="mt-1 text-xs text-slate">{s.id}</p>
                   </section>
                 ))}
               </div>

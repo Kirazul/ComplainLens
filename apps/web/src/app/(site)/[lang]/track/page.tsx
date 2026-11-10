@@ -15,7 +15,7 @@ export default async function TrackPage({ params }: PageProps<"/[lang]/track">) 
     <div className="mx-auto max-w-3xl px-5 py-14">
       <h1 className="font-display text-5xl font-extrabold tracking-tight text-night">{t.track.title}</h1>
       <div className="mt-10">
-        <Suspense fallback={<p className="text-slate/70">…</p>}>
+        <Suspense fallback={<p className="text-slate">…</p>}>
           <TrackFromQuery lang={lang} t={t} />
         </Suspense>
       </div>

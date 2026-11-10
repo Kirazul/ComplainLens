@@ -88,7 +88,7 @@ function StageBody({ stage }: { stage: StageRecord }) {
               <span className="inline-flex flex-wrap gap-1">
                 {(o.entities as { type: string; text: string }[]).map((e) => (
                   <span key={e.type + e.text} className="rounded bg-blue-50 px-1.5 py-0.5 text-xs text-blue-900 ring-1 ring-blue-200">
-                    {e.text} <span className="text-blue-700/70">{humanize(e.type.toLowerCase())}</span>
+                    {e.text} <span className="text-blue-800">{humanize(e.type.toLowerCase())}</span>
                   </span>
                 ))}
               </span>
