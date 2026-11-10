@@ -30,7 +30,7 @@ from complaintlens.llm import ChatClient
 from complaintlens.pipeline.base import run_stages
 from complaintlens.pipeline.language import language_stage
 from complaintlens.pipeline.link import link_stage
-from complaintlens.pipeline.normalize import normalize_stage
+from complaintlens.pipeline.normalize import clean_email_body, normalize_stage
 from complaintlens.pipeline.pii import mask_pii, pii_stage
 from complaintlens.pipeline.respond import render, respond_stage, strip_citations
 from complaintlens.pipeline.understand import understand_stage
@@ -169,6 +169,10 @@ class Processor:
         """Everything the customer said, as one message for the stages, and the conversation
         so far for the reply writer (personal data masked: it is sent to the LLM)."""
         items = thread(session, ticket, for_customer=True)
+        if ticket.channel == Channel.EMAIL:  # each email cleaned on its own: joined, the first
+            for i in items:  # one's signature or quote would cut off every later email
+                if i["from"] == "customer":
+                    i["body"] = clean_email_body(i["body"])
         said = [i["body"] for i in items if i["from"] == "customer"]
         inbound = InboundMessage(
             channel=Channel(ticket.channel),

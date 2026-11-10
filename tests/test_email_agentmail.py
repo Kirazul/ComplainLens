@@ -173,3 +173,41 @@ def test_webhook_endpoint_rejects_unsigned_calls(client):
         client.post("/api/channels/email/webhook", json={"type": "message.received"}).status_code
         == 401
     )
+
+
+def test_ride_id_in_an_email_follow_up_reaches_the_ride_check(tmp_path):
+    # Regression (live, 2026-11-10): the follow-up was joined after the first email's signature,
+    # so cleaning the joined text cut it off and "LG-99999" never reached the ride check.
+    from complaintlens.rag.knowledge import KnowledgeBase
+    from complaintlens.service import Processor
+    from complaintlens.settings import get_settings
+
+    url = f"sqlite:///{(tmp_path / 'f.db').as_posix()}"
+    p = Processor(KnowledgeBase.load(get_settings().help_center_dir), None, database_url=url)
+    first = InboundMessage(
+        channel=Channel.EMAIL,
+        sender="sam@example.com",
+        body="How do I get back something I left in a car?\n\n--\nSam",
+        external_id="<1>",
+        thread_id="t1",
+    )
+    ticket = p.process(first)
+    p.add_message(ticket.id, "It was ride LG-99999.\n\n--\nSam", external_id="<2>")
+    again = p.run(ticket.id)
+    with new_session(url) as s:
+        from sqlmodel import select
+
+        from complaintlens.store import StageRecord
+
+        link = s.exec(
+            select(StageRecord).where(StageRecord.ticket_id == again.id, StageRecord.name == "link")
+        ).one()
+    assert link.output["ride_ids_quoted"] == ["LG-99999"]
+    assert again.status == "needs_info"  # not on this customer's account: asked again
+
+
+def test_agentmail_footer_is_removed():
+    inbound = agentmail.to_inbound(
+        message("<z@x>", "a <a@b.co>", "Hi", "My ride\n\n-- \nSent via AgentMail")
+    )
+    assert inbound.body == "My ride"

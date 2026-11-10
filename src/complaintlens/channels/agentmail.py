@@ -41,6 +41,8 @@ _AUTOMATIC = re.compile(
     r"|r[ée]ponse automatique|absent)",
     re.IGNORECASE,
 )
+# The footer AgentMail's free plan adds to emails sent from AgentMail inboxes (e.g. our tests).
+_AGENTMAIL_FOOTER = re.compile(r"\s*--\s*\n?\s*Sent via AgentMail\s*$", re.IGNORECASE)
 _ROBOT_SENDERS = re.compile(r"mailer-daemon|postmaster|no-?reply", re.IGNORECASE)
 
 
@@ -75,6 +77,7 @@ def to_inbound(message: dict) -> InboundMessage:
         or message.get("text")
         or html_to_text(message.get("extracted_html") or message.get("html") or "")
     )
+    body = _AGENTMAIL_FOOTER.sub("", body)
     stamp = message.get("timestamp") or message.get("created_at")
     received = datetime.fromisoformat(stamp.replace("Z", "+00:00")) if stamp else utcnow()
     return InboundMessage(
