@@ -42,3 +42,11 @@ jobs:
         run: pnpm exec next typegen && pnpm exec tsc --noEmit
       - name: Build
         run: pnpm build
+
+  web-image:
+    # The docker compose image of the website (the API image is built by every Railway deploy).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build infra/web.Dockerfile
+        run: docker build -f infra/web.Dockerfile -t complaintlens-web .

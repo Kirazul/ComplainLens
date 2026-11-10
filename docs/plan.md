@@ -9,9 +9,9 @@
 ## 0. The plan in one screen
 
 We create a **fictional ride-hailing and food-delivery company** ("LunaGo": one app for rides and food delivery), operating in **Montréal**. It covers both because 49% of real Uber support conversations are about rides and 16% about food delivery (§5.1). Montréal is a naturally bilingual English/French city. The company is real in every way that matters for the demo:
-- a public website (Help Center, complaint form, live chat);
-- a real email address (`support@<our-domain>`);
-- a Telegram support bot;
+- a public website (Help Center, contact form, live chat, trip ratings);
+- a real email address (`lunagocare@fldubai.com`, a free mail.tm inbox);
+- a public community forum (the repository's GitHub Discussions, answered by the pipeline);
 - a customer database of riders, drivers and trips.
 
 All of it is hosted for free.
@@ -313,13 +313,17 @@ Each NLP stage lists the proposed method, the **baseline** it must beat, and the
 ### 6.1 Channels, ingestion and preprocessing
 - **Channel adapters → one `Message` schema:**
 
-| Channel | How it reaches us (all free) |
+| Channel | How it reaches us (all free; as built, 2026-11-10) |
 |---|---|
-| **Email** `support@<domain>` | Cloudflare Email Routing → Cloudflare Email Worker → our API webhook (instant, no polling). Fallback: a Gmail address polled over IMAP |
-| **Website form + live chat** | Next.js site → API |
-| **Telegram bot** | Telegram Bot API webhook → API |
-| **Ride feedback** (rating + comment after a trip, in the demo rider app) | Website → API |
-| *Stretch:* social mentions | Bluesky API (free) |
+| **Email** `lunagocare@fldubai.com` | mail.tm inbox (created through its public API, no sign-up), polled every 30 s while the API is in use and hourly by the relay. Receive only: replies are shown in the console. Any IMAP/SMTP mailbox (e.g. Gmail) works by configuration and also replies by email |
+| **Website contact form + live chat** | Next.js site → API |
+| **Trip rating** (stars + comment, as after a trip in the app) | Website → API, channel `review`; the rating travels in the subject so the classifier reads it |
+| **Community forum** | GitHub Discussions of the repository → GitHub Actions relay (`relay.yml`) → API; the reply is posted as a comment |
+
+Changed from the first plan, and why: a custom domain, Cloudflare and Resend need accounts we
+could not create unattended; Telegram needs a phone number. The forum replaces Telegram as the
+second public, real channel; it is also the closest to the Twitter conversations our data comes
+from (public post, public answer).
 
 - **Email-specific cleaning:**
   - Strip quoted earlier messages, signatures and HTML.
@@ -370,7 +374,7 @@ Each NLP stage lists the proposed method, the **baseline** it must beat, and the
 - **Entities:** **GLiNER** (multilingual zero-shot) with our labels (DATE/TIME, MONEY, LOCATION, TRIP_REF, DRIVER_REF, PAYMENT_REF).
   - Baseline: spaCy + regex.
   - Metric: span F1 on 200 annotated messages.
-- **Customer linking:** sender email / Telegram ID → rider record (exact match).
+- **Customer linking:** sender email / forum login → rider record (exact match).
 - **Trip linking:**
   - Rank the rider's trips by agreement with the extracted entities (date, amount, place), using a simple, explainable score.
   - Metric: top-1 accuracy on 150 linked test cases.
@@ -499,12 +503,12 @@ RAG appears in three places only. In each, a model without retrieval fails in a 
  │ complaint form, chat,    │  │   HTTPS           │                                   pipeline│
  │ demo rider app           │  ├──────────────────►│  1 normalize + PII mask   6 embed/similar  │
  ├──────────────────────────┤  │                   │  2 language               7 cluster/trends │
- │ Email support@domain     │──┤ Cloudflare Email  │  3 type/needs-reply       8 route/priority │
- │  (Cloudflare Worker)     │  │ Worker → webhook  │  4 category/severity/risk 9 RAG + trip     │
+ │ Email (mail.tm inbox)    │──┤ polled inbox      │  3 type/needs-reply       8 route/priority │
+ │  lunagocare@fldubai.com  │  │ (receive only)    │  4 category/severity/risk 9 RAG + trip     │
  ├──────────────────────────┤  │                   │  5 entities + link trip     facts + verify │
- │ Telegram bot             │──┘                   │                          10 gate → send   │
+ │ Community forum (GitHub) │──┘ via Actions relay │                          10 gate → send   │
  └──────────────────────────┘                      └──────────────┬────────────────────────────┘
-          ▲  replies on the same channel (Resend email, Telegram, chat)  │
+          ▲  replies on the same channel (chat, ticket page, forum)      │
           └────────────────────────────────────────────────────────────────┘
                                    Postgres + pgvector (tickets, vectors, trips, audit log)
                                                   ▲
@@ -525,21 +529,20 @@ RAG appears in three places only. In each, a model without retrieval fails in a 
 | LLM | **Open-weights model** through the **Groq free tier**; the same model family locally via **Ollama** as a fallback | Free and fast; open weights → reproducible; model ID and date pinned |
 | Frontend | **Next.js 16** + TypeScript strict + Tailwind v4 + **shadcn/ui** + TanStack Query/Table + **ECharts** + WebGL scatter for the topic map + **next-intl** (EN/FR) | Best-in-class React stack; fully bilingual interface |
 | Email in / out | **Cloudflare Email Routing + Email Worker** (inbound, free, unlimited) / **Resend** (outbound, free: ~3,000/month, 100/day) | Real `support@` address on our own domain; replies thread correctly in the professor's mailbox |
-| Chat | **Telegram Bot API** (free) | A second real channel in two minutes of setup |
+| Second public channel | **GitHub Discussions** + Actions relay (free) | Public post, public answer, like the Twitter data; no account to create (Telegram needs a phone number) |
 | Annotation | **Argilla** on a free HF Space | Both members annotate online; κ computed automatically |
 | Quality | ruff, pyright, pytest, Playwright, pre-commit, GitHub Actions | A green CI badge is visible proof of engineering quality |
 | Report | LaTeX, ACL template (Overleaf, free) | Looks like a real NLP paper |
 
-### 9.1 Free hosting map
+### 9.1 Free hosting map (as built, 2026-11-10)
 
 | Piece | Free host | Notes |
 |---|---|---|
-| Domain | **GitHub Student Developer Pack** (free 1st year: Namecheap `.me`, get.tech `.tech`, Name.com) | Needs student verification; renewal after a year is paid, which doesn't matter for the defence |
-| DNS + email inbound | **Cloudflare** (free) | Email Routing is on the free plan |
-| Email outbound | **Resend** free tier | 100/day is plenty for the demo |
-| Website + console | **Vercel Hobby** | Auto-deploys from GitHub |
-| API + models + worker | **Hugging Face Spaces** (Docker, CPU Basic 2 vCPU / 16 GB) | Kept awake by a scheduled ping. Fallback: Oracle Cloud Always Free VM (4 ARM cores / 24 GB) or Student Pack credits |
-| Database | **Neon** free Postgres + pgvector | ~100 compute-hours/month and 0.5–1 GB, enough for the demo |
+| Website + console | **GitHub Pages** (Next.js static export, workflow `pages.yml`) | https://kirazul.github.io/ComplainLens/ ; no server needed: every page is static and talks to the API |
+| API + models | **Railway** (Docker, 1 GB RAM, sleeps when idle) | https://api-production-a4e30.up.railway.app ; the multilingual embedding model is loaded in int8 to fit 1 GB (§5.6) |
+| Database | **SQLite** on a Railway volume (500 MB) | Enough for the demo; Postgres works by changing `DATABASE_URL` |
+| Email inbound | **mail.tm** | Receive only (see §6.1) |
+| Community forum | **GitHub Discussions + Actions** | Relay on each new post; hourly run collects email and posts approved replies |
 | LLM | **Groq** free tier | Rate-limited; replies cached; local Ollama fallback |
 | Models and datasets | **Hugging Face Hub** | Model cards and datasheets (both cited in the spec's references) |
 
@@ -638,7 +641,7 @@ complaintlens/
 | Tier | Content |
 |---|---|
 | **Core** (must ship, fully evaluated) | Email + web form + chat channels; preprocessing + PII; language ID; triage; category; severity + risk; entities + trip linking; similar/duplicates; clustering; trends; priority + routing; RAG replies with trip facts + verifier + conformal gate; console (Live, Inbox, Ticket X-ray, Topics, Trends, Experiments); free deployment; RQ1–RQ4 |
-| **Extended** | Telegram bot; ops assistant (R2); root cause + RQ5; Replay; INT8 + multi-task ablations; SetFit learning curve |
+| **Extended** | Community forum channel (done); ops assistant (R2); root cause + RQ5; Replay; INT8 + multi-task ablations; SetFit learning curve |
 | **Stretch** | Emotion; Bluesky channel; voice messages (Whisper); active learning from agent edits |
 
 If time runs short, we cut Stretch first, then Extended. Core is never cut.

@@ -3,7 +3,30 @@
 Multilingual (English/French) complaint understanding, routing and verified response, with guaranteed-risk automation.
 NLP semester project 2026–2027, by Mohamed Aziz Mansour and Rimel Zouari.
 
-The live demo runs as the support desk of **LunaGo**, a fictional ride and food-delivery app in Montréal. A customer writes by email or on the website. ComplaintLens cleans the message, masks personal data, detects the language and understands it. It then links the message to the customer's trip, retrieves the relevant policy and drafts a cited reply. The reply is verified, and the system decides whether to send it, wait for an agent, or escalate. Every step is visible live in the console.
+The live demo runs as the support desk of **LunaGo**, a fictional ride and food-delivery app in Montréal. A customer writes from any channel. ComplaintLens cleans the message, masks personal data, detects the language and understands it. It then links the message to the customer's trip, retrieves the relevant policy and drafts a cited reply. The reply is verified, and the system decides whether to send it, wait for an agent, or escalate. Every step is visible live in the console.
+
+## Live demo
+
+| | |
+|---|---|
+| LunaGo website (EN/FR) | https://kirazul.github.io/ComplainLens/ |
+| ComplaintLens console | https://kirazul.github.io/ComplainLens/console/ |
+| API (docs) | https://api-production-a4e30.up.railway.app/docs |
+
+Send a complaint from any of these channels and watch it appear in the console within seconds:
+
+| Channel | How | Where the reply goes |
+|---|---|---|
+| Email | write to `lunagocare@fldubai.com` | console (this free inbox receives only) |
+| Contact form | website, "Contact support" | the ticket's tracking page |
+| Live chat | website, "Chat with us" (every page) | the chat itself |
+| Trip rating | website, "Rate a trip" (stars + comment) | the ticket's tracking page |
+| Community forum | [GitHub Discussions](https://github.com/Kirazul/ComplainLens/discussions) of this repository | a comment in the thread |
+
+The console is public and read-only: customer emails and names are masked. **Agents** sign in
+with the operator token (top right of the console, value in the local `.env` as
+`OPERATOR_TOKEN`) to see contacts and approve or edit AI drafts. The API sleeps when idle to stay
+within the free plan: the first request after a pause can take about 20 seconds.
 
 - Plan and research: [`docs/plan.md`](docs/plan.md)
 - Project proposal: [`docs/proposal.md`](docs/proposal.md)
@@ -13,12 +36,13 @@ The live demo runs as the support desk of **LunaGo**, a fictional ride and food-
 
 | Path | What |
 |---|---|
-| `src/complaintlens/` | Python package: pipeline stages, RAG, store, email channel, API, CLI |
+| `src/complaintlens/` | Python package: pipeline stages, RAG, store, channels (email, forum), API, CLI |
 | `apps/web/` | Next.js app: LunaGo public site (`/en`, `/fr`) and ComplaintLens console (`/console`) |
 | `company/help_center/` | LunaGo Help Center (EN/FR), the RAG knowledge base |
 | `ml/scripts/` | Data preparation, EDA, baselines, training |
 | `reports/results/` | Every reported number, as JSON |
 | `tests/` | Python tests (`uv run pytest`) |
+| `infra/`, `.github/workflows/` | Docker images; CI, website deploy, forum relay |
 
 ## Run it locally
 
@@ -42,7 +66,10 @@ pnpm dev                                  # http://localhost:3000/en and http://
 
 Without keys the system still runs end to end: understanding falls back to the classical models and every answer waits for an agent.
 With `LLM_API_KEY` (free Groq key), replies are drafted with retrieval and verified.
-With `EMAIL_ADDRESS` and `EMAIL_PASSWORD` (a Gmail app password), the API reads the inbox every 15 seconds and replies by email in the same thread.
+With an email inbox, the API reads it every 30 seconds while in use: either a free mail.tm inbox
+(`uv run complaintlens inbox-create lunagocare` prints the settings; receive only), or any
+IMAP/SMTP mailbox such as Gmail with an app password, which also replies in the same thread.
+See `.env.example` for every setting.
 
 Process one message from the command line and print its trace:
 
@@ -59,16 +86,22 @@ docker compose up --build      # website :3000, console :3000/console, API :8000
 The API image downloads the public 2019 complaint data, retrains the classical models and fetches
 the embedding model at build time, so no model weights are stored in git.
 
-## Deploy (free)
+## How it is hosted (free)
 
-- **API → Hugging Face Docker Space.** In the GitHub repository settings, add the secret `HF_TOKEN`
-  (a Hugging Face write token) and the variable `HF_SPACE` (e.g. `your-name/complaintlens-api`).
-  Every push to `main` then deploys `infra/api.Dockerfile` (workflow `deploy-space.yml`).
-  Set the Space secrets `LLM_API_KEY`, `EMAIL_ADDRESS`, `EMAIL_PASSWORD`, `PUBLIC_BASE_URL`, and
-  optionally `DATABASE_URL` (a free Neon Postgres, `postgresql+psycopg://...`) to keep tickets
-  across restarts.
-- **Website → Vercel.** Import the repository, set the root directory to `apps/web` and the
-  environment variable `NEXT_PUBLIC_API_URL` to the Space URL (`https://<user>-<space>.hf.space`).
+| Part | Where | How it updates |
+|---|---|---|
+| Website and console | GitHub Pages (static export) | workflow `pages.yml` on every push to `main` touching `apps/web` or the Help Center; the API address comes from the repository variable `API_URL` |
+| API, models, database | Railway (Docker image `infra/api.Dockerfile`, SQLite on a 500 MB volume at `/app/data`) | `railway up --service api` from the repository root |
+| Community forum relay | GitHub Actions, workflow `relay.yml` | runs on each new Discussion, and hourly to collect email and post approved replies |
+
+Railway service variables: `LLM_API_KEY`, `EMAIL_INBOX`, `EMAIL_ADDRESS`, `EMAIL_PASSWORD`,
+`OPERATOR_TOKEN`, `CHANNEL_TOKEN`, `PUBLIC_BASE_URL`, `CORS_ORIGINS`, `DATABASE_URL`
+(`sqlite:////app/data/app.db`) and `RAILWAY_RUN_UID=0` (the volume is owned by root). The service
+uses the Dockerfile at `infra/api.Dockerfile`, health check `/api/health`, and sleeps when idle.
+GitHub: secret `CHANNEL_TOKEN` (same value as on Railway) and variable `API_URL`.
+
+The embedding model is loaded from its official int8 file so the whole service fits the 1 GB
+container; the measured cost is in `reports/results/retrieval_int8.json` (not significant).
 
 ## Data
 
@@ -92,7 +125,12 @@ Data files are not stored in git.
 
 ## Reproduce the reported numbers
 
+Every number in the plan and the report comes from a JSON file in `reports/results/`, written by
+the script named in its docstring. For example:
+
 ```powershell
 uv run python ml/scripts/eda_first_contacts.py data/interim/uber_first_contacts.parquet --out reports/results/eda_uber_first_contacts.json
 uv run python ml/scripts/baseline_complaints2019.py --out reports/results/baseline_complaints2019.json
+uv run python ml/scripts/eval_retrieval.py --models sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2 --out reports/results/retrieval_helpcenter.json
+uv run python ml/scripts/eval_quantization.py --out reports/results/retrieval_int8.json
 ```
